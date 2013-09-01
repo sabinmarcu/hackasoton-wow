@@ -200,21 +200,15 @@
       this$.loadApplication = bind$(this$, 'loadApplication', prototype);
       this$.fixStylesheets = bind$(this$, 'fixStylesheets', prototype);
       this$.firstTimeInclude = bind$(this$, 'firstTimeInclude', prototype);
-      this$.continueLoad = bind$(this$, 'continueLoad', prototype);
       this$.baseSetup();
       this$.firstTimeInclude();
       this$.loadLibs();
       this$.fixStylesheets();
-      window.Loading = new (DepMan.helper("Loading"))();
-      window.DBStorage = new (DepMan.helper("Storage"))(this$.continueLoad);
+      this$.loadApplication();
       return this$;
     } function ctor$(){} ctor$.prototype = prototype;
-    prototype.continueLoad = function(){
-      return this.loadApplication();
-    };
     prototype.baseSetup = function(){
       AppInfo.displayname == null && (AppInfo.displayname = AppInfo.name);
-      window.echo = require("classes/Object").echo;
       document.title = AppInfo.displayname;
       return function(){
         var meta;
@@ -251,7 +245,7 @@
       return window.Tester = new (DepMan.helper("Tester"))();
     };
     prototype.fixStylesheets = function(){
-      var styles, fwstyles;
+      var styles, fwstyles, regex, str;
       styles = window.getStylesheets();
       fwstyles = $('#css-font-awesome');
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT OPEN SANS 300 WOFF HERE\>\>/g, DepMan.font("woff/opensans1"));
@@ -259,29 +253,21 @@
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ELECTROLIZE WOFF HERE\>\>/g, DepMan.font("woff/electrolize"));
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ROBOTO 100 WOFF HERE\>\>/g, DepMan.font("woff/roboto100"));
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ROBOTO 400 WOFF HERE\>\>/g, DepMan.font("woff/roboto400"));
+      regex = /[\"\']escape-nib - ([^;]*)[\"\']/gm;
+      str = regex.exec(styles.innerHTML);
+      while (str && str.length) {
+        styles.innerHTML = styles.innerHTML.replace(str[0], str[1]);
+        str = regex.exec(styles.innerHTML);
+      }
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME EOT HERE\>\>/g, DepMan.font("eot/fontawesome-webfont")));
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME TTF HERE\>\>/g, DepMan.font("ttf/fontawesome-webfont")));
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME WOFF HERE\>\>/g, DepMan.font("woff/fontawesome-webfont")));
       return document.head.appendChild(styles);
     };
     prototype.loadApplication = function(){
-      var ref$;
       angular.module(AppInfo.displayname, []);
       DepMan.helper("Runtime");
-      DepMan.helper("Language");
-      DepMan.helper("DataTransfer");
-      ref$ = DepMan.helper("Notification"), window.Notifications = ref$[0], window.Toast = ref$[1];
-      DepMan.model("RecipeModel");
-      DepMan.controller("Modals");
-      DepMan.controller("Page");
-      DepMan.controller("Landing");
-      DepMan.controller("Help");
-      DepMan.controller("AppRouter");
-      DepMan.controller("AccountController");
-      DepMan.controller("RecipeController");
-      DepMan.controller("ApplicationsController");
-      DepMan.controller("DevicesController");
-      DepMan.model("UserModel");
+      window.Controller = DepMan.controller("Landing");
       return angular.bootstrap(document.body, [AppInfo.displayname]);
     };
     return Application;
@@ -302,1229 +288,31 @@
     return obj;
   }
 }).call(this);
-}, "classes/Object": function(exports, require, module) {(function() {
-  var BObject, _baseObj, _ref,
-    __slice = [].slice,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  _baseObj = {
-    echo: function() {
-      var args, owner, _d;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _d = new Date;
-      owner = "<not supported>";
-      if (this.__proto__ != null) {
-        owner = this.__proto__.constructor.name;
-      }
-      args[0] = "[" + (_d.getHours()) + ":" + (_d.getMinutes()) + ":" + (_d.getSeconds()) + "][" + (this.name || owner) + "]	" + args[0];
-      console.log(args);
-      return this;
-    },
-    log: function() {
-      var args;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      args.unshift("");
-      return this.echo.apply(this, args);
-    }
-  };
-
-  BObject = (function(_super) {
-    __extends(BObject, _super);
-
-    function BObject() {
-      _ref = BObject.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    BObject.extend(_baseObj);
-
-    BObject.include(_baseObj);
-
-    return BObject;
-
-  })(IS.Object);
-
-  module.exports = window.BaseObject = BObject;
-
-}).call(this);
-}, "classes/controllers/AccountController": function(exports, require, module) {(function(){
-  var AccountController;
-  AccountController = (function(superclass){
-    var prototype = extend$((import$(AccountController, superclass).displayName = 'AccountController', AccountController), superclass).prototype, constructor = AccountController;
-    function AccountController(scope, runtime, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.user = user;
-      this$.verifyNewPasswords = bind$(this$, 'verifyNewPasswords', prototype);
-      this$.changePassword = bind$(this$, 'changePassword', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      return this;
-    };
-    prototype.hookEvents = function(){
-      var this$ = this;
-      $('#account-name').change(function(){
-        return this$.user.send('name');
-      });
-      return $('#account-email').change(function(){
-        if (this$.user.verifyEmail()) {
-          return this$.user.send('email');
-        }
-      });
-    };
-    prototype.changePassword = function(){
-      if (this.user.verifyPassword(this.scope.currentpass) && this.verifyNewPasswords()) {
-        this.user.edit('password', this.scope.newpass);
-        Toast("Success", "Data is saved!");
-      } else {
-        Toast("Error", "Data was not saved! (check console for logs)");
-      }
-      return this.scope.currentpass = this.scope.newpass = this.scope.newpassverify = "";
-    };
-    prototype.verifyNewPasswords = function(){
-      return this.scope.newpass === this.scope.newpassverify;
-    };
-    return AccountController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("AccountController", ["$scope", "Runtime", "User", AccountController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/AngularBootstrap": function(exports, require, module) {(function(){
-  module.exports = {
-    Controller: Controller,
-    Bootstrap: function(cntr, name, args){
-      var Controller;
-      Controller = new cntr();
-      args.push(Controller.init);
-      angular.module("Revelation").controller(name, args);
-      return module.exports = Controller;
-    }
-  };
-}).call(this);
-}, "classes/controllers/AppRouter": function(exports, require, module) {(function(){
-  var TABS, Tabs, STATES, States, AppRouter;
-  TABS = ['account', 'applications', 'devices', 'develop'];
-  Tabs = new IS.Enum(TABS);
-  STATES = ['asideopen', 'asideclosed'];
-  States = new IS.Enum(STATES);
-  AppRouter = (function(superclass){
-    var prototype = extend$((import$(AppRouter, superclass).displayName = 'AppRouter', AppRouter), superclass).prototype, constructor = AppRouter;
-    function AppRouter(scope, runtime){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      window.AppRouter = this$;
-      this$.configScope().initRuntime().hookKeyboard();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.initRuntime = function(){
-      var this$ = this;
-      DBStorage.get("active-tab", function(tab){
-        tab == null && (tab = Tabs['account']);
-        this$.runtime.props['active-tab'] = this$.scope.activeTab = tab;
-        this$.runtime.subscribe('prop-active-tab-change', function(tab){
-          this$.scope.activeTab = tab;
-          DBStorage.set('active-tab', tab);
-          return this$.safeApply();
-        });
-        return this$.safeApply();
-      });
-      DBStorage.get('tab-state', function(tab){
-        tab == null && (tab = States['asideclosed']);
-        this$.runtime.props['tab-state'] = this$.scope.tabState = tab;
-        this$.runtime.subscribe('prop-tab-state-change', function(tab){
-          this$.scope.tabState = tab;
-          this$.runtime['tab-state'] = tab;
-          DBStorage.set('tab-state', tab);
-          return this$.safeApply();
-        });
-        return this$.safeApply();
-      });
-      return this;
-    };
-    prototype.hookKeyboard = function(){
-      var key, target, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      jwerty.key(key + "+1", function(e){
-        this$.runtime.set('active-tab', Tabs['account']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+2", function(e){
-        this$.runtime.set('active-tab', Tabs['applications']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+3", function(e){
-        this$.runtime.set('active-tab', Tabs['devices']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+4", function(e){
-        this$.runtime.set('active-tab', Tabs['develop']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+shift+v", function(e){
-        if (this$.runtime['tab-state'] === States['asideopen']) {
-          this$.runtime.set('tab-state', States['asideclosed']);
-        } else {
-          this$.runtime.set('tab-state', States['asideopen']);
-        }
-        return e.preventDefault();
-      });
-      return target = Hammer($('#approuter-container')[0]);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    return AppRouter;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("AppRouter", ["$scope", "Runtime", AppRouter]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/ApplicationsController": function(exports, require, module) {(function(){
-  var ApplicationsController;
-  ApplicationsController = (function(superclass){
-    var prototype = extend$((import$(ApplicationsController, superclass).displayName = 'ApplicationsController', ApplicationsController), superclass).prototype, constructor = ApplicationsController;
-    function ApplicationsController(scope, runtime, recipeModel, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.user = user;
-      this$.installApp = bind$(this$, 'installApp', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.info = {
-        device: null
-      };
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.installApp = function(recipe){
-      Client.post("devices/stack_app", {
-        uuid: this.info.device.uuid,
-        app_id: UserModel.data.mail + "$" + recipe._id
-      }, function(){
-        return Toast("Success", "App queued to install on device");
-      }, function(){
-        return Toast("Error", "Failed to queue app for install");
-      });
-      return this.info.device = null;
-    };
-    return ApplicationsController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("ApplicationsController", ["$scope", "Runtime", "Recipe", "User", ApplicationsController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/DevicesController": function(exports, require, module) {(function(){
-  var DevicesController;
-  DevicesController = (function(superclass){
-    var prototype = extend$((import$(DevicesController, superclass).displayName = 'DevicesController', DevicesController), superclass).prototype, constructor = DevicesController;
-    function DevicesController(scope, runtime, recipeModel, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.user = user;
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.hookEvents = function(){};
-    return DevicesController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("DevicesController", ["$scope", "Runtime", "Recipe", "User", DevicesController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Document": function(exports, require, module) {(function(){
-  var STATES, States, AUXSTATES, AuxStates, DocumentController, Controller, slice$ = [].slice;
-  STATES = ['outline', 'mindmap'];
-  States = new IS.Enum(STATES);
-  AUXSTATES = ['sidebaropen', 'sidebarclosed'];
-  AuxStates = new IS.Enum(AUXSTATES);
-  angular.module(AppInfo.displayname).directive("ngcFocus", [
-    '$parse', function($parse){
-      return function(scope, element, attr){
-        var fn;
-        fn = $parse(attr['ngcFocus']);
-        return element.bind('focus', function(e){
-          return scope.$apply(function(){
-            return fn(scope, {
-              $event: e
-            });
-          });
-        });
-      };
-    }
-  ]);
-  DocumentController = (function(superclass){
-    var prototype = extend$((import$(DocumentController, superclass).displayName = 'DocumentController', DocumentController), superclass).prototype, constructor = DocumentController;
-    function DocumentController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.modalEdit = bind$(this$, 'modalEdit', prototype);
-      this$.refresh = bind$(this$, 'refresh', prototype);
-      this$.propagateChange = bind$(this$, 'propagateChange', prototype);
-      this$.changeStatus = bind$(this$, 'changeStatus', prototype);
-      this$.getStyles = bind$(this$, 'getStyles', prototype);
-      this$.getActiveDocument = bind$(this$, 'getActiveDocument', prototype);
-      this$['switch'] = bind$(this$, 'switch', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookGestures = bind$(this$, 'hookGestures', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.renderDocumentTemplate = bind$(this$, 'renderDocumentTemplate', prototype);
-      this$.prep = bind$(this$, 'prep', prototype);
-      this$.passthrough = bind$(this$, 'passthrough', prototype);
-      this$.nodeRemove = bind$(this$, 'nodeRemove', prototype);
-      this$.nodeAddRoot = bind$(this$, 'nodeAddRoot', prototype);
-      this$.nodeAdd = bind$(this$, 'nodeAdd', prototype);
-      this$.fetchNode = bind$(this$, 'fetchNode', prototype);
-      this$.fetchDocument = bind$(this$, 'fetchDocument', prototype);
-      this$.remove = bind$(this$, 'remove', prototype);
-      this$.addRoot = bind$(this$, 'addRoot', prototype);
-      this$.add = bind$(this$, 'add', prototype);
-      this$.replicate = bind$(this$, 'replicate', prototype);
-      this$.nodeMove = bind$(this$, 'nodeMove', prototype);
-      this$.nodeChange = bind$(this$, 'nodeChange', prototype);
-      this$.log("Document Controller Online");
-      window.DocumentController = this$;
-      this$.STATES = STATES;
-      this$.States = States;
-      this$.AUXSTATES = STATES;
-      this$.AuxStates = AuxStates;
-      this$.renderDocumentTemplate();
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.events = {
-          "node.change": function(){
-            var args;
-            args = slice$.call(arguments);
-            return this$.passthrough(this$.nodeChange, args);
-          },
-          "node.add": this$.nodeAdd,
-          "node.add-root": this$.nodeAddRoot,
-          "node.remove": this$.nodeRemove,
-          "node.move": this$.nodeMove
-        };
-      }
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.loadEvents();
-      }
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.nodeChange = function(index, property, value){
-      var node, ref$;
-      this.log("Changing " + index + "'s " + property + " to " + value);
-      node = this.fetchNode(index);
-      node[property] = value;
-      if (property === 'status') {
-        this.propagateChange(node);
-      }
-      if (property === 'text') {
-        node.$renderer.sequence();
-      }
-      if (property === 'relation') {
-        if ((ref$ = node.$linerenderer) != null) {
-          ref$.sequence();
-        }
-      }
-      this.fetchDocument().refresh();
-      node.$renderer.sequence();
-      return this.safeApply();
-    };
-    prototype.nodeMove = function(index, x, y){
-      var node, ref$, i$, len$, kid, results$ = [];
-      node = this.fetchNode(index);
-      node.location.x = x;
-      node.location.y = y;
-      if ((ref$ = node.$linerenderer) != null) {
-        ref$.sequence();
-      }
-      if (node.children) {
-        for (i$ = 0, len$ = (ref$ = node.children).length; i$ < len$; ++i$) {
-          kid = ref$[i$];
-          results$.push(kid.$linerenderer.sequence());
-        }
-        return results$;
-      }
-    };
-    prototype.replicate = function(node, property){
-      return this.prep('node.change', node.$index, property, node[property]);
-    };
-    prototype.add = function(node){
-      return Client.publish('node.add', node.$index);
-    };
-    prototype.addRoot = function(){
-      return Client.publish("node.add-root", null);
-    };
-    prototype.remove = function(node){
-      return Client.publish('node.remove', node.$index);
-    };
-    prototype.fetchDocument = function(){
-      return this.models._reccords[this.runtime.props['active-document']];
-    };
-    prototype.fetchNode = function(index){
-      return this.fetchDocument().indexes[index];
-    };
-    prototype.nodeAdd = function(index){
-      var node;
-      this.log(index, this.fetchNode(index));
-      node = this.fetchNode(index);
-      node.children == null && (node.children = []);
-      node.children.push({
-        text: "New Node"
-      });
-      node.status = 'indeterminate';
-      this.fetchDocument().refresh();
-      this.safeApply();
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.nodeAddRoot = function(){
-      var doc;
-      doc = this.fetchDocument();
-      if (doc) {
-        this.log(doc.data);
-        doc.data.push({
-          text: "New Root Document"
-        });
-        this.log(doc.data);
-        doc.refresh();
-        this.safeApply();
-        setTimeout(LanguageHelper._translateAll, 50);
-      } else {
-        this.models['new']();
-      }
-      return this.safeApply();
-    };
-    prototype.nodeRemove = function(index){
-      var node, repo;
-      node = this.fetchNode(index);
-      repo = node.$parent.children || node.$parent.data;
-      repo.splice(repo.indexOf(node, 1));
-      if (repo.length === 0 && node.$parent.children) {
-        node.$parent.children = null;
-        node.$parent.status = 'unchecked';
-      }
-      this.fetchDocument().refresh();
-      return this.safeApply();
-    };
-    prototype.passthrough = function(fn, args){
-      var id;
-      id = args.pop();
-      if (id !== Client.id) {
-        return fn.apply(this, args);
-      }
-    };
-    prototype.prep = function(ev){
-      var data;
-      data = slice$.call(arguments, 1);
-      data.push(Client.id);
-      data.unshift(ev);
-      return Client.publish.apply(Client, data);
-    };
-    prototype.renderDocumentTemplate = function(){
-      var div;
-      div = document.createElement("div");
-      div.setAttribute("rel", "Main Document Placeholder");
-      div.setAttribute("id", "documentplaceholder");
-      div.innerHTML = DepMan.render(['document', 'index'], {
-        AuxStates: AuxStates
-      });
-      return $(div).insertBefore($('section#application').children()[0]);
-    };
-    prototype.initRuntime = function(){
-      var this$ = this;
-      this.runtime.init("document-state", 'number');
-      this.runtime.subscribe("prop-document-state-change", function(){
-        return this$.safeApply();
-      });
-      return this.runtime.subscribe("prop-document-state-change", function(){
-        if (this$.runtime.props['document-state'] === States.outline) {
-          this$.canvas.end();
-          return this$.scanvas.end();
-        } else {
-          this$.canvas.start();
-          return this$.scanvas.start();
-        }
-      });
-    };
-    prototype.init = function(scope, runtime, models, canvas, scanvas){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.models = models;
-      this.canvas = canvas;
-      this.scanvas = scanvas;
-      this.configScope();
-      this.initRuntime();
-      this.hookKeyboard();
-      this.hookGestures();
-      this.runtime.subscribe('prop-active-document-change', this.getActiveDocument);
-      return this.getActiveDocument();
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, way){
-        way == null && (way = null);
-        if (this$.runtime.props['app-state'] === 1) {
-          e.preventDefault();
-          if (way) {
-            return this$.runtime.set("document-state", States[way]);
-          } else if (this$.runtime.props['document-state'] === States.outline) {
-            return this$.runtime.set('document-state', States.mindmap);
-          } else {
-            return this$.runtime.set('document-state', States.outline);
-          }
-        }
-      };
-      jwerty.key(key + "+]", function(it){
-        return handle(it, 'mindmap');
-      });
-      jwerty.key(key + "+[", function(it){
-        return handle(it, 'outline');
-      });
-      return jwerty.key(key + "+alt+tab", function(it){
-        return handle(it);
-      });
-    };
-    prototype.hookGestures = function(){
-      var target, this$ = this;
-      target = Hammer($('#documentplaceholder #outline')[0]);
-      target.on("swipeleft", function(){
-        return this$.runtime.set('document-state', States.mindmap);
-      });
-      target.on("swiperight", function(){
-        return this$.runtime.set('sidebar-state', 1);
-      });
-      target.on("tap", function(){
-        return this$.runtime.set('sidebar-state', 0);
-      });
-      return this.log(target);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            fn();
-          }
-        } else {
-          this$.scope.$apply(fn);
-        }
-        return LanguageHelper._translateAll();
-      };
-      import$(this.scope, this);
-      this.canvas.edit = this.modalEdit;
-      return this.canvas.newRoot = this.addRoot;
-    };
-    prototype['switch'] = function(id){
-      return this.runtime.set('active-document', id);
-    };
-    prototype.getActiveDocument = function(){
-      this.scope.activeDocument = this.models._reccords[this.runtime.get('active-document')];
-      this.runtime.set('document-state', States.mindmap);
-      return this.safeApply();
-    };
-    prototype.getStyles = function(node){
-      var size;
-      size = 50;
-      if (window.innerWidth <= 320) {
-        size = 15;
-      }
-      return {
-        paddingLeft: node.$depth * size
-      };
-    };
-    prototype.changeStatus = function(node, preventBubble){
-      var oldstatus;
-      preventBubble == null && (preventBubble = false);
-      oldstatus = node.status;
-      (function(){
-        var det, i$, ref$, len$, kid, ref1$;
-        if (this.children && this.children.length > 0) {
-          det = 0;
-          for (i$ = 0, len$ = (ref$ = this.children).length; i$ < len$; ++i$) {
-            kid = ref$[i$];
-            if ((ref1$ = kid.status) == 'checked' || ref1$ == 'determinate') {
-              det++;
-            }
-          }
-          if (det === this.children.length) {
-            this.status = 'determinate';
-          } else {
-            this.status = 'indeterminate';
-          }
-        } else {
-          if (this.$status) {
-            this.status = 'checked';
-          } else {
-            this.status = 'unchecked';
-          }
-        }
-      }.call(node));
-      if (node.status !== oldstatus) {
-        node.$renderer.sequence();
-        if (!preventBubble) {
-          this.replicate(node, 'status');
-          this.propagateChange(node);
-          return this.safeApply();
-        }
-      }
-    };
-    prototype.propagateChange = function(node){
-      while (node) {
-        if (node.$parent) {
-          node = node.$parent;
-        } else {
-          break;
-        }
-        this.changeStatus(node, true);
-      }
-      return this.safeApply();
-    };
-    prototype.refresh = function(node){
-      this.replicate(node, '$folded');
-      return this.fetchDocument().refresh();
-    };
-    prototype.modalEdit = function(node){
-      var sub, this$ = this;
-      sub = this.runtime.subscribe('prop-modal-state-change', function(){
-        var form, oldvalues, ref$;
-        if (this$.runtime.props['modal-state'] === 0) {
-          form = $('#editform');
-          oldvalues = {
-            text: node.text,
-            relation: node.relation,
-            note: node.note,
-            folded: node.$folded,
-            checked: node.$status
-          };
-          node.text = form.find('#text').val();
-          node.relation = form.find('#relation').val();
-          node.note = form.find('#note').val();
-          if (node.children != null && node.children.length >= 0) {
-            node.$folded = form.find('#folded')[0].checked === true;
-          } else {
-            node.$status = form.find('#checked')[0].checked === true;
-          }
-          if (oldvalues.text !== node.text) {
-            this$.replicate(node, 'text');
-            node.$renderer.sequence();
-          }
-          if (oldvalues.relation !== node.relation) {
-            if ((ref$ = node.$linerenderer) != null) {
-              ref$.sequence();
-            }
-            this$.replicate(node, 'relation');
-          }
-          if (oldvalues.note !== node.note) {
-            this$.replicate(node, 'note');
-          }
-          if (oldvalues.$folded !== node.$folded) {
-            this$.refresh(node);
-          }
-          if (oldvalues.checked !== node.$status) {
-            this$.changeStatus(node);
-          }
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          return this$.safeApply();
-        }
-      });
-      Modal.show({
-        title: "Edit node",
-        content: DepMan.render(['document', 'editform'])
-      });
-      return setTimeout(function(){
-        var form;
-        form = $('#editform');
-        if (window.innerWidth <= 300) {
-          this$.runtime.set('modal-state', 2);
-        }
-        form.find('#checkcontainer').attr("checked", false).show();
-        form.find('#foldcontainer').attr("checked", false).show();
-        form.find('#text').val(node.text);
-        form.find('#relation').val(node.relation);
-        form.find('#note').val(node.note);
-        if (node.children != null && node.children.length >= 0) {
-          form.find('#checkcontainer').hide();
-          if (node.$folded) {
-            form.find('#folded').attr('checked', true);
-          }
-        } else {
-          form.find('#foldcontainer').hide();
-          if (node.$status) {
-            form.find('#checked').attr('checked', true);
-          }
-        }
-        form.find('#addnode').click(function(){
-          this$.add(node);
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          form.find('#addnode').unbind();
-          Modal.hide();
-          return this$.safeApply();
-        });
-        return form.find('#removenode').click(function(){
-          this$.remove(node);
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          form.find('#removenode').unbind();
-          Modal.hide();
-          return this$.safeApply();
-        });
-      }, 50);
-    };
-    return DocumentController;
-  }(IS.Object));
-  Controller = new DocumentController();
-  angular.module(AppInfo.displayname).controller("Document", ["$scope", "Runtime", "Documents", "Canvas", "ShadowCanvas", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/DocumentList": function(exports, require, module) {(function(){
-  var DocumentListController, Controller, slice$ = [].slice;
-  DocumentListController = (function(superclass){
-    var prototype = extend$((import$(DocumentListController, superclass).displayName = 'DocumentListController', DocumentListController), superclass).prototype, constructor = DocumentListController;
-    function DocumentListController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.uploadDocument = bind$(this$, 'uploadDocument', prototype);
-      this$.saveState = bind$(this$, 'saveState', prototype);
-      this$.duplicateDocument = bind$(this$, 'duplicateDocument', prototype);
-      this$.fetchDocument = bind$(this$, 'fetchDocument', prototype);
-      this$.downloadDocument = bind$(this$, 'downloadDocument', prototype);
-      this$.saveDocument = bind$(this$, 'saveDocument', prototype);
-      this$.deleteDocument = bind$(this$, 'deleteDocument', prototype);
-      this$.addDocument = bind$(this$, 'addDocument', prototype);
-      this$['switch'] = bind$(this$, 'switch', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.connectionBroadcast = bind$(this$, 'connectionBroadcast', prototype);
-      this$.connectionNew = bind$(this$, 'connectionNew', prototype);
-      this$.connectionRequest = bind$(this$, 'connectionRequest', prototype);
-      this$.prep = bind$(this$, 'prep', prototype);
-      this$.passthrough = bind$(this$, 'passthrough', prototype);
-      this$.documentChange = bind$(this$, 'documentChange', prototype);
-      this$.replicate = bind$(this$, 'replicate', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.renderListTemplate = bind$(this$, 'renderListTemplate', prototype);
-      this$.log("DocumentList Controller Online");
-      window.DocumentListController = this$;
-      this$.renderListTemplate();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.renderListTemplate = function(){
-      var div;
-      div = document.createElement("div");
-      div.setAttribute("rel", "Documents List Placeholder");
-      div.setAttribute("id", "documentlistplaceholder");
-      div.innerHTML = DepMan.render(['document', 'list']);
-      return $('#sidebar-container section section').children()[0].appendChild(div);
-    };
-    prototype.init = function(scope, runtime, models, dnd){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.models = models;
-      this.dnd = dnd;
-      this.configScope();
-      this.hookKeyboard();
-      return this.hookEvents();
-    };
-    prototype.hookEvents = function(){
-      var this$ = this;
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.events = {
-          "connection.new": this.connectionNew,
-          "connection.request": this.connectionRequest,
-          "connection.broadcast": this.connectionBroadcast,
-          "document.change": function(){
-            var args;
-            args = slice$.call(arguments);
-            return this$.passthrough(this$.documentChange, args);
-          }
-        };
-      }
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.loadEvents;
-      }
-      return this.runtime.subscribe("prop-active-document-change", this.saveState);
-    };
-    prototype.replicate = function(){
-      return this.prep('document.change', this.fetchDocument().title);
-    };
-    prototype.documentChange = function(newval){
-      this.fetchDocument().title = newval;
-      return this.safeApply();
-    };
-    prototype.passthrough = function(fn, args){
-      var id;
-      id = args.pop();
-      if (id !== Client.id) {
-        return fn.apply(this, args);
-      }
-    };
-    prototype.prep = function(ev){
-      var data;
-      data = slice$.call(arguments, 1);
-      data.push(Client.id);
-      data.unshift(ev);
-      return Client.publish.apply(Client, data);
-    };
-    prototype.connectionRequest = function(){
-      this.requested = true;
-      return this.log("Client connect requested! (should not send away data)");
-    };
-    prototype.connectionNew = function(id){
-      if (!this.requested) {
-        this.log("Sending data to the new connection! (should not appear on the requester)");
-        return Client.publish("connection.broadcast", id, this.fetchDocument()['export']());
-      }
-    };
-    prototype.connectionBroadcast = function(id, doc){
-      var ref$;
-      if (id == null || id === Client.id) {
-        this.log("Got data from the connectee! (should appear on the requester)");
-        Toast("Got Document", "Got incoming document from the network!", "The new document has been opened and synchronized between all clients!");
-        this.models.getDocument(doc);
-        return ref$ = this.requested, delete this.requested, ref$;
-      }
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, key){
-        var current;
-        e.preventDefault();
-        switch (key) {
-        case 'new':
-          return this$.addDocument();
-        case 'next':
-        case 'previous':
-          if (this$.runtime.props['sidebar-state'] === 0 || this$.runtime.props['sidebar-tab'] !== 0) {
-            return;
-          }
-          current = this$.models.documents.indexOf(this$.runtime.props['active-document']);
-          if (key === 'next' && current + 1 < this$.models.documents.length) {
-            current += 1;
-          }
-          if (key === 'previous' && current - 1 > 0) {
-            current -= 1;
-          }
-          return this$.runtime.set('active-document', this$.models.documents[current]);
-        default:
-          if (this$[key + "Document"]) {
-            return this$[key + "Document"]();
-          }
-        }
-      };
-      jwerty.key(key + "+alt+n", function(it){
-        this$.log("N");
-        return handle(it, 'new');
-      });
-      jwerty.key(key + "+arrow-down", function(it){
-        return handle(it, 'next');
-      });
-      jwerty.key(key + "+arrow-up", function(it){
-        return handle(it, 'previous');
-      });
-      jwerty.key(key + "+s", function(it){
-        return handle(it, 'save');
-      });
-      jwerty.key(key + "+d", function(it){
-        return handle(it, 'delete');
-      });
-      jwerty.key(key + "+shift+d", function(it){
-        return handle(it, 'download');
-      });
-      jwerty.key(key + "+shift+u", function(it){
-        return handle(it, 'upload');
-      });
-      jwerty.key(key + "+shift+c", function(it){
-        return handle(it, 'duplicate');
-      });
-      return this.log("Handled!");
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype['switch'] = function(it){
-      if (this.runtime.props['active-document'] !== it) {
-        this.runtime.set('active-document', it);
-        return Client.publish("connection.broadcast", null, this.fetchDocument()['export']());
-      }
-    };
-    prototype.addDocument = function(){
-      this.models['new']();
-      return Client.publish("connection.broadcast", null, this.fetchDocument()['export']());
-    };
-    prototype.deleteDocument = function(){
-      return this.models['delete'](this.runtime.props['active-document']);
-    };
-    prototype.saveDocument = function(doc){
-      return this.models.save(doc || this.runtime.props['active-document']);
-    };
-    prototype.downloadDocument = function(){
-      var content;
-      content = this.fetchDocument()['export']();
-      return window.open("data:application/xml," + content, "Download", "location=no,menubar=no,titlebar=no,toolbar=no");
-    };
-    prototype.fetchDocument = function(){
-      return this.models._reccords[this.runtime.props['active-document']];
-    };
-    prototype.duplicateDocument = function(){
-      var doc, content, ref$, f, l;
-      doc = this.fetchDocument();
-      content = doc['export']();
-      content = content.replace(doc.title, doc.title + " Copy");
-      ref$ = [content.indexOf("<uuid>"), content.indexOf("</uuid>")], f = ref$[0], l = ref$[1];
-      content = content.replace(content.substr(f, l - f + 9), "");
-      return this.models.getDocument(content);
-    };
-    prototype.saveState = function(){
-      var i$, ref$, len$, doc, results$ = [];
-      for (i$ = 0, len$ = (ref$ = this.models.documents).length; i$ < len$; ++i$) {
-        doc = ref$[i$];
-        results$.push(this.saveDocument(doc));
-      }
-      return results$;
-    };
-    prototype.uploadDocument = function(){
-      var input, this$ = this;
-      input = document.createElement("input");
-      input.type = 'file';
-      document.body.appendChild(input);
-      return $(input).click().change(function(it){
-        var i$, ref$, len$, file, results$ = [];
-        for (i$ = 0, len$ = (ref$ = it.target.files).length; i$ < len$; ++i$) {
-          file = ref$[i$];
-          results$.push((fn$.call(this$, file, file)));
-        }
-        return results$;
-        function fn$(f, file){
-          var type, reader, this$ = this;
-          type = f.name.substr(f.name.lastIndexOf(".") + 1);
-          if (type == 'opml' || type == 'xml') {
-            reader = new FileReader();
-            reader.onload = function(it){
-              return this$.models.getDocument(it.target.result);
-            };
-            return reader.readAsText(f);
-          }
-        }
-      });
-    };
-    return DocumentListController;
-  }(IS.Object));
-  Controller = new DocumentListController();
-  angular.module(AppInfo.displayname).controller("DocumentList", ["$scope", "Runtime", "Documents", "DND", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Help": function(exports, require, module) {(function(){
-  var STATES, States, HelpController, Controller;
-  STATES = ['tab1', 'tab2', 'tab3'];
-  States = new IS.Enum(STATES);
-  HelpController = (function(superclass){
-    var prototype = extend$((import$(HelpController, superclass).displayName = 'HelpController', HelpController), superclass).prototype, constructor = HelpController;
-    function HelpController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.verifyState = bind$(this$, 'verifyState', prototype);
-      this$.changeState = bind$(this$, 'changeState', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.getStates = bind$(this$, 'getStates', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      window.HelpController = this$;
-      this$.getStates();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.initRuntime = function(){
-      return this.runtime.init("help-state", 'number');
-    };
-    prototype.getStates = function(){
-      var i$, ref$, len$, state, results$ = [];
-      this.articles = [];
-      for (i$ = 0, len$ = (ref$ = STATES).length; i$ < len$; ++i$) {
-        state = ref$[i$];
-        results$.push(this.articles.push(DepMan.render(['help', state])));
-      }
-      return results$;
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      return this.hookKeyboard();
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(it){
-        if (this$.runtime.props['app-state'] !== 2) {
-          return;
-        }
-        this$.changeState(it);
-        return this$.safeApply();
-      };
-      jwerty.key(key + "+[", function(it){
-        it.preventDefault();
-        return handle(-1);
-      });
-      return jwerty.key(key + "+]", function(it){
-        it.preventDefault();
-        return handle(1);
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.changeState = function(it){
-      var currentValue;
-      currentValue = this.runtime.get('help-state');
-      if (!(currentValue + it < 0 || currentValue + it >= this.articles.length)) {
-        currentValue += it;
-        return this.runtime.set('help-state', currentValue);
-      }
-    };
-    prototype.verifyState = function(it){
-      if (it.target.className.indexOf("wrapper") >= 0) {
-        return this.runtime.set("app-state", 1);
-      }
-    };
-    return HelpController;
-  }(IS.Object));
-  Controller = new HelpController();
-  angular.module(AppInfo.displayname).controller("Help", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
 }, "classes/controllers/Landing": function(exports, require, module) {(function(){
-  var SECTIONS, Sections, LandingController, Controller;
-  SECTIONS = ['rasp', 'about', 'linux', 'macos'];
-  Sections = new IS.Enum(SECTIONS);
+  var STATES, States, PAGES, Pages, LandingController, Controller;
+  STATES = ['open', 'closed'];
+  States = new IS.Enum(STATES);
+  PAGES = ['home', 'demo'];
+  Pages = new IS.Enum(PAGES);
   LandingController = (function(superclass){
     var prototype = extend$((import$(LandingController, superclass).displayName = 'LandingController', LandingController), superclass).prototype, constructor = LandingController;
     function LandingController(){
       var this$ = this instanceof ctor$ ? this : new ctor$;
       this$.height = bind$(this$, 'height', prototype);
+      this$.move = bind$(this$, 'move', prototype);
+      this$.changeActiveTab = bind$(this$, 'changeActiveTab', prototype);
+      this$.toggle = bind$(this$, 'toggle', prototype);
+      this$.render = bind$(this$, 'render', prototype);
       this$.readMore = bind$(this$, 'readMore', prototype);
       this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
       this$.init = bind$(this$, 'init', prototype);
+      this$.render();
       return this$;
     } function ctor$(){} ctor$.prototype = prototype;
     prototype.init = function(scope, runtime){
       this.scope = scope;
       this.runtime = runtime;
-      this.configScope();
-      return this.initRuntime();
-    };
-    prototype.initRuntime = function(){
-      var i$, ref$, len$, section, this$ = this;
-      this.scope.sections = {};
-      for (i$ = 0, len$ = (ref$ = SECTIONS).length; i$ < len$; ++i$) {
-        section = ref$[i$];
-        this.scope.sections[section] = DepMan.render(['pages', 'landing', section].join("/"));
-      }
-      return window.addEventListener("resize", function(){
-        return typeof this$.safeApply === 'function' ? this$.safeApply() : void 8;
-      });
+      return this.configScope();
     };
     prototype.configScope = function(){
       var this$ = this;
@@ -1544,6 +332,47 @@
     prototype.readMore = function(){
       if (!(window.location.toString().indexOf('#about') >= 0)) {
         return window.location = window.location + '#about';
+      }
+    };
+    prototype.render = function(){
+      (function(body){
+        this.sidebarStatus = States.closed;
+        this.activeTab = Pages.home;
+        body.setAttribute("ng-controller", "Landing");
+        body.setAttribute("ng-class", "sidebarStatus");
+        body.innerHTML = DepMan.render("index", {
+          States: States,
+          Pages: PAGES
+        });
+      }.call(this, document.body));
+      window.addEventListener("mousemove", this.move);
+      return window.addEventListener("touchmove", this.move);
+    };
+    prototype.toggle = function(){
+      this.scope.sidebarStatus = (function(){
+        switch (this.scope.sidebarStatus) {
+        case 0:
+          return 1;
+        case 1:
+          return 0;
+        }
+      }.call(this));
+      return this.safeApply();
+    };
+    prototype.changeActiveTab = function(it){
+      this.scope.activeTab = it;
+      this.scope.sidebarStatus = States.closed;
+      return this.safeApply();
+    };
+    prototype.move = function(it){
+      var point, ref$;
+      point = ((ref$ = it.touches) != null ? ref$[0].clientX : void 8) || it.clientX;
+      if (point < 50) {
+        this.scope.sidebarStatus = States.open;
+        return this.safeApply();
+      } else if (point >= window.innerHeight / 2 && this.scope.sidebarStatus === States.open) {
+        this.scope.sidebarStatus = States.closed;
+        return this.safeApply();
       }
     };
     prototype.height = function(style){
@@ -1577,997 +406,6 @@
     for (var key in src) if (own.call(src, key)) obj[key] = src[key];
     return obj;
   }
-}).call(this);
-}, "classes/controllers/Modals": function(exports, require, module) {(function(){
-  var STATES, States, ModalController, Controller;
-  STATES = ['closed', 'normal', 'fullscreen'];
-  States = new IS.Enum(STATES);
-  ModalController = (function(superclass){
-    var prototype = extend$((import$(ModalController, superclass).displayName = 'ModalController', ModalController), superclass).prototype, constructor = ModalController;
-    function ModalController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.set = bind$(this$, 'set', prototype);
-      this$.hide = bind$(this$, 'hide', prototype);
-      this$.show = bind$(this$, 'show', prototype);
-      this$.toggle = bind$(this$, 'toggle', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.setAttributes = bind$(this$, 'setAttributes', prototype);
-      this$.renderModal = bind$(this$, 'renderModal', prototype);
-      this$.setAttributes();
-      this$.renderModal();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.renderModal = function(){
-      var div;
-      div = document.createElement('div');
-      div.innerHTML = DepMan.render("modal", {
-        States: States,
-        STATES: STATES
-      });
-      div.setAttribute('rel', "Modal Container");
-      div.setAttribute('id', 'modal-container');
-      return document.body.appendChild(div);
-    };
-    prototype.setAttributes = function(){
-      this.title = "Modal Window";
-      return this.content = "Test Content";
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      return this.hookKeyboard();
-    };
-    prototype.hookKeyboard = function(){
-      var this$ = this;
-      return jwerty.key("esc", function(){
-        return this$.hide();
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.initRuntime = function(){
-      return this.runtime.init('modal-state', 'number');
-    };
-    prototype.toggle = function(){
-      if (this.runtime.get('modal-state') === States.normal) {
-        this.runtime.set('modal-state', States.fullscreen);
-      } else {
-        this.runtime.set('modal-state', States.normal);
-      }
-      return this.log(this.runtime.get('modal-state'));
-    };
-    prototype.show = function(data, timeout){
-      data == null && (data = {
-        title: "No Title",
-        content: "No Content"
-      });
-      this.scope.title = data.title || this.scope.title;
-      this.scope.content = data.content || this.scope.content;
-      if (window.innerWidth <= 320) {
-        this.runtime.set('modal-state', States.fullscreen);
-      } else {
-        this.runtime.set('modal-state', States.normal);
-      }
-      if (timeout) {
-        setTimeout(this.hide, timeout);
-      }
-      return this.safeApply();
-    };
-    prototype.hide = function(){
-      this.runtime.set('modal-state', States.closed);
-      return this.safeApply();
-    };
-    prototype.set = function(key, value){
-      if (key == 'title' || key == 'content') {
-        this[key] = value;
-        return this.safeApply();
-      }
-    };
-    return ModalController;
-  }(IS.Object));
-  Controller = new ModalController();
-  angular.module(AppInfo.displayname).controller("Modal", ["$scope", "Runtime", Controller.init]);
-  window.Modal = {
-    set: function(){
-      return Controller.edit.apply(Controller, arguments);
-    },
-    show: function(){
-      return Controller.show.apply(Controller, arguments);
-    },
-    hide: function(){
-      return Controller.hide.apply(Controller, arguments);
-    }
-  };
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Page": function(exports, require, module) {(function(){
-  var STATES, States, MODALS, Modals, PageController, Controller;
-  STATES = ['landing', 'application', 'help'];
-  States = new IS.Enum(STATES);
-  MODALS = ['modal-inactive', 'modal-active', 'modal-active'];
-  Modals = new IS.Enum(MODALS);
-  PageController = (function(superclass){
-    var prototype = extend$((import$(PageController, superclass).displayName = 'PageController', PageController), superclass).prototype, constructor = PageController;
-    function PageController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.computeClass = bind$(this$, 'computeClass', prototype);
-      this$.getBodyState = bind$(this$, 'getBodyState', prototype);
-      this$.getStored = bind$(this$, 'getStored', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.renderIndex = bind$(this$, 'renderIndex', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.setAttributes = bind$(this$, 'setAttributes', prototype);
-      this$.setAttributes();
-      this$.renderIndex();
-      this$.log("PageController Initialized");
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setAttributes = function(){
-      document.body.setAttribute("ng-csp", true);
-      document.body.setAttribute("ng-controller", "Page");
-      return window.PageController = this;
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      this.getStored();
-      this.hookKeyboard();
-      return this;
-    };
-    prototype.hookKeyboard = function(){
-      var key, handler, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handler = function(e, key){
-        if (UserModel.data != null) {
-          e.preventDefault();
-          key = (function(){
-            switch (key) {
-            case 'l':
-              return States.landing;
-            case 'p':
-              return States.application;
-            case '?':
-              return States.help;
-            }
-          }());
-          this$.runtime.set('app-state', key);
-          return this$.safeApply();
-        }
-      };
-      jwerty.key(key + "+l", function(it){
-        return handler(it, 'l');
-      });
-      jwerty.key(key + "+p", function(it){
-        return handler(it, 'p');
-      });
-      jwerty.key(key + "+shift+/", function(it){
-        return handler(it, '?');
-      });
-      return jwerty.key("esc", function(){
-        if (this$.runtime.get('app-state') === States.help) {
-          this$.runtime.set('app-state', States.application);
-          return this$.safeApply();
-        }
-      });
-    };
-    prototype.renderIndex = function(){
-      var d;
-      d = document.createElement("div");
-      d.setAttribute("id", "appwrapper");
-      d.setAttribute("class", "{{computeClass()}}");
-      d.setAttribute("rel", "Document Wrapper");
-      d.innerHTML = DepMan.render("index", {
-        States: States
-      });
-      return document.body.insertBefore(d, document.body.children[0]);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.initRuntime = function(){
-      this.runtime.init("app-state", 'number');
-      return this.runtime.subscribe("prop-app-state-change", this.safeApply);
-    };
-    prototype.getStored = function(){
-      this.runtime.set("app-state", States.landing);
-      return this.safeApply();
-    };
-    prototype.getBodyState = function(){
-      return STATES[this.runtime.get("app-state")];
-    };
-    prototype.computeClass = function(){
-      return [STATES[this.runtime.get('app-state')], MODALS[this.runtime.get("modal-state")]].join(" ");
-    };
-    return PageController;
-  }(IS.Object));
-  Controller = new PageController();
-  angular.module(AppInfo.displayname).controller("Page", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/RecipeController": function(exports, require, module) {(function(){
-  var RecipeController;
-  RecipeController = (function(superclass){
-    var prototype = extend$((import$(RecipeController, superclass).displayName = 'RecipeController', RecipeController), superclass).prototype, constructor = RecipeController;
-    function RecipeController(scope, runtime, recipeModel){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.removeStub = bind$(this$, 'removeStub', prototype);
-      this$.removeInstruction = bind$(this$, 'removeInstruction', prototype);
-      this$.addInstruction = bind$(this$, 'addInstruction', prototype);
-      this$.addStub = bind$(this$, 'addStub', prototype);
-      this$.addRecipe = bind$(this$, 'addRecipe', prototype);
-      this$.remove = bind$(this$, 'remove', prototype);
-      this$.toggleEditing = bind$(this$, 'toggleEditing', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.hookEvents = function(){};
-    prototype.toggleEditing = function(recipe){
-      recipe.editing = !recipe.editing;
-      recipe.getData();
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.remove = function(recipe){
-      Client.post("apps/remove", {
-        id: UserModel.data.mail + "$" + recipe.data.name
-      }, function(){
-        return Toast("Success", "Removed Successfuly");
-      }, function(){
-        return Toast("Error", "Something went wrong");
-      });
-      delete this.recipes[recipe._uuid];
-      return this.safeApply();
-    };
-    prototype.addRecipe = function(recipe){
-      return this.recipeModel['new']();
-    };
-    prototype.addStub = function(to){
-      to.stubs == null && (to.stubs = []);
-      to.stubs.push({
-        url: "http://github.com/rasberries/",
-        instructions: []
-      });
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.addInstruction = function(to){
-      to.push({
-        command: "New Instruction"
-      });
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.removeInstruction = function(whom, fr){
-      return fr.splice(fr.indexOf(whom), 1);
-    };
-    prototype.removeStub = function(whom, fr){
-      return fr.splice(fr.indexOf(whom), 1);
-    };
-    return RecipeController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("RecipeController", ["$scope", "Runtime", "Recipe", RecipeController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Sidebar": function(exports, require, module) {(function(){
-  var STATES, States, TABS, Tabs, ICONS, SidebarController, Controller;
-  STATES = ['closed', 'open'];
-  States = new IS.Enum(STATES);
-  TABS = ['list', 'server', 'general', 'experimental'];
-  Tabs = new IS.Enum(TABS);
-  ICONS = ['icon-list', 'icon-signal', 'icon-gear', 'icon-code'];
-  SidebarController = (function(superclass){
-    var prototype = extend$((import$(SidebarController, superclass).displayName = 'SidebarController', SidebarController), superclass).prototype, constructor = SidebarController;
-    function SidebarController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.verifyAndConnect = bind$(this$, 'verifyAndConnect', prototype);
-      this$.toggleState = bind$(this$, 'toggleState', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookGestures = bind$(this$, 'hookGestures', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.renderAside = bind$(this$, 'renderAside', prototype);
-      this$.getTabs = bind$(this$, 'getTabs', prototype);
-      this$.generateImage = bind$(this$, 'generateImage', prototype);
-      this$.hookImage = bind$(this$, 'hookImage', prototype);
-      this$.getDeps = bind$(this$, 'getDeps', prototype);
-      this$.STATES = STATES;
-      this$.States = States;
-      this$.ICONS = ICONS;
-      this$.TABS = TABS;
-      this$.Tabs = Tabs;
-      this$.getDeps();
-      this$.getTabs();
-      this$.renderAside();
-      window.SidebarController = this$;
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.getDeps = function(){
-      var this$ = this;
-      DepMan.lib("qrcode");
-      DepMan.lib("qrcapacitytable");
-      DepMan.lib("excanvas");
-      this.Client = DepMan.helper("DataTransfer");
-      return this.Client.subscribe("CONNECTED", function(){
-        this$.hookImage();
-        return this$.generateImage();
-      });
-    };
-    prototype.hookImage = function(){
-      this.image = $('.qrcode')[0];
-      return this.canvas = document.createElement("canvas");
-    };
-    prototype.generateImage = function(){
-      this.draw == null && (this.draw = new QRCodeDraw());
-      this.draw.draw(this.canvas, this.Client.id, function(){});
-      return this.image.setAttribute("src", this.canvas.toDataURL());
-    };
-    prototype.getTabs = function(){
-      var tab;
-      return this.tabs = (function(){
-        var i$, ref$, len$, results$ = [];
-        for (i$ = 0, len$ = (ref$ = TABS).length; i$ < len$; ++i$) {
-          tab = ref$[i$];
-          results$.push(DepMan.render(['sidebar', 'tabs', tab]));
-        }
-        return results$;
-      }());
-    };
-    prototype.renderAside = function(){
-      var div, x$, y$, this$ = this;
-      div = document.createElement("div");
-      div.setAttribute('rel', "Sidebar Container");
-      div.setAttribute('id', 'sidebar-container');
-      div.innerHTML = DepMan.render(['sidebar', 'index'], {
-        TABS: TABS,
-        Tabs: Tabs,
-        States: States
-      });
-      x$ = $('section#application');
-      x$.append(div);
-      y$ = x$[0];
-      y$.addEventListener("contextmenu", function(){
-        if (this$.runtime.props['sidebar-state'] !== States.closed) {
-          return;
-        }
-        this$.runtime.set('sidebar-state', States.open);
-        return this$.safeApply();
-      });
-      y$.addEventListener("click", function(e){
-        if ($(e.target).parents('#sidebar-container')[0]) {
-          return;
-        }
-        if (this$.runtime.props['sidebar-state'] !== States.open) {
-          return;
-        }
-        this$.runtime.set('sidebar-state', States.closed);
-        return this$.safeApply();
-      });
-      return $('#remote-client-id').change(function(e){
-        return Client.connect(this$.scope.clientid);
-      });
-    };
-    prototype.initRuntime = function(){
-      var this$ = this;
-      this.runtime.init("sidebar-state", 'number');
-      this.runtime.init("sidebar-tab", 'number');
-      this.runtime.subscribe("prop-sidebar-state-change", function(){
-        return this$.safeApply();
-      });
-      this.runtime.subscribe("prop-sidebar-tab-change", function(){
-        return this$.safeApply();
-      });
-      return DBStorage.get("sidebar-tab", function(tab){
-        tab == null && (tab = 0);
-        this$.runtime.set("sidebar-tab", tab);
-        return this$.runtime.subscribe("prop-sidebar-tab-change", function(){
-          return DBStorage.set("sidebar-tab", this$.runtime.get("sidebar-tab"));
-        });
-      });
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      this.hookKeyboard();
-      this.hookGestures();
-      this.scope.clientid = "";
-      return this.scope.language = this.runtime.get('language');
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, i$, ref$, len$, tab, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, tab){
-        e.preventDefault();
-        if (this$.runtime.get("sidebar-state") === States.closed) {
-          this$.runtime.set("sidebar-state", States.open);
-        }
-        this$.runtime.set("sidebar-tab", Tabs[tab]);
-        return this$.safeApply();
-      };
-      for (i$ = 0, len$ = (ref$ = TABS).length; i$ < len$; ++i$) {
-        tab = ref$[i$];
-        (fn$.call(this, tab, tab));
-      }
-      return jwerty.key("esc", function(){
-        if (this$.runtime.get("sidebar-state") === States.open) {
-          this$.runtime.set('sidebar-state', States.closed);
-          return this$.safeApply();
-        }
-      });
-      function fn$(currentTab, tab){
-        jwerty.key(key + "+" + (Tabs[currentTab] + 1), function(it){
-          return handle(it, currentTab);
-        });
-      }
-    };
-    prototype.hookGestures = function(){
-      var target, this$ = this;
-      target = Hammer($('#sidebar-container section section')[0]);
-      target.on("swiperight", function(){
-        if (this$.runtime.props['sidebar-tab'] !== Tabs.list) {
-          return this$.runtime.set('sidebar-tab', this$.runtime.props['sidebar-tab'] - 1);
-        }
-      });
-      target.on("swipeleft", function(){
-        if (this$.runtime.props['sidebar-tab'] !== Tabs.experimental) {
-          return this$.runtime.set('sidebar-tab', this$.runtime.props['sidebar-tab'] + 1);
-        }
-      });
-      return target.on("swipedown", function(){
-        if (this$.runtime.props['sidebar-tab'] === Tabs.server) {
-          return Client.reconnect();
-        }
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.toggleState = function(){
-      this.log("Toggleing state");
-      if (this.runtime.props['sidebar-state'] === States.open) {
-        return this.runtime.set('sidebar-state', States.closed);
-      } else {
-        return this.runtime.set("sidebar-state", States.open);
-      }
-    };
-    prototype.verifyAndConnect = function(){
-      if (this.scope.clientid) {
-        return Client.connect(this.scope.clientid);
-      }
-    };
-    return SidebarController;
-  }(IS.Object));
-  Controller = new SidebarController();
-  angular.module(AppInfo.displayname).controller("Sidebar", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/gestures/swypeleft": function(exports, require, module) {(function() {
-  var SwypeleftGesture, _prefixes, _tolerance,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  SwypeleftGesture = (function(_super) {
-    __extends(SwypeleftGesture, _super);
-
-    function SwypeleftGesture(init) {
-      this.init = init;
-      this.end = __bind(this.end, this);
-      this.move = __bind(this.move, this);
-      window.addEventListener("touchmove", this.move);
-      window.addEventListener("touchend", this.end);
-      this.event = null;
-    }
-
-    SwypeleftGesture.prototype.move = function(e) {
-      var appscope, delta, docscope, percent, pos, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r;
-      if (this.breakup != null) {
-        return;
-      }
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      pos = Swype.getParams(e);
-      if (pos.x - this.init.x > _tolerance) {
-        delta = pos.x - this.init.x;
-        percent = delta / 2.5;
-        if (appscope.sidebarstatus === "open") {
-          this.event = "tabs";
-          if (this.lastpos) {
-            if (pos.x < this.lastpos.x) {
-              this.event = null;
-            } else {
-              this.event = "tabs";
-            }
-          }
-          if (this.currentTab == null) {
-            this.currentTab = jQuery("body > aside article.active");
-          }
-          if (this.prevTab == null) {
-            this.prevTab = this.currentTab.prev();
-          }
-          for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-            prefix = _prefixes[_i];
-            this.currentTab.css("" + prefix + "transition", "none");
-          }
-          for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-            prefix = _prefixes[_j];
-            this.currentTab.css("" + prefix + "transform", "translateX(" + delta + "px)");
-          }
-          this.currentTab.css("opacity", "" + ((100 - percent) / 100));
-          for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-            prefix = _prefixes[_k];
-            this.prevTab.css("" + prefix + "transition", "none");
-          }
-          for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-            prefix = _prefixes[_l];
-            this.prevTab.css("" + prefix + "transform", "translateX(-" + (275 - delta) + "px)");
-          }
-          this.prevTab.css("opacity", "" + (percent / 100));
-          this.lastpos = pos;
-        } else {
-          if (docscope.view === "mindmap") {
-            return;
-          }
-          if (docscope.sidebarstatus) {
-            if (docscope.view === "mindmap") {
-              return;
-            }
-            this.event = "docsidebar";
-            if (this.lastpos) {
-              if (pos.x < this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "docsidebar";
-              }
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article article > div");
-            }
-            this.log(delta);
-            if (delta < 100) {
-              for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-                prefix = _prefixes[_m];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-                prefix = _prefixes[_n];
-                this.content.css("" + prefix + "transform", "translateX(-" + (100 - delta) + "px)");
-              }
-            }
-          } else {
-            this.event = "appsidebar";
-            if (this.lastpos) {
-              if (pos.x < this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "appsidebar";
-              }
-            }
-            if (this.sidebar == null) {
-              this.sidebar = jQuery("body > aside");
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article");
-            }
-            if (delta < 250) {
-              for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-                prefix = _prefixes[_o];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-                prefix = _prefixes[_p];
-                this.content.css("" + prefix + "transform", "translateX(" + delta + "px)");
-              }
-              for (_q = 0, _len8 = _prefixes.length; _q < _len8; _q++) {
-                prefix = _prefixes[_q];
-                this.sidebar.css("" + prefix + "transition", "none");
-              }
-              for (_r = 0, _len9 = _prefixes.length; _r < _len9; _r++) {
-                prefix = _prefixes[_r];
-                this.sidebar.css("" + prefix + "transform", "translateX(" + ((-250 + delta) / 2) + "px)");
-              }
-              this.sidebar.css("opacity", "" + (percent / 100));
-            }
-            this.lastpos = pos;
-          }
-        }
-        return appscope.safeApply();
-      }
-    };
-
-    SwypeleftGesture.prototype.end = function(e) {
-      var appscope, docscope, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _m, _n, _o, _p;
-      this.breakup = true;
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      if (this.sidebar) {
-        for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-          prefix = _prefixes[_i];
-          this.sidebar.css("" + prefix + "transition", "");
-        }
-        for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-          prefix = _prefixes[_j];
-          this.sidebar.css("" + prefix + "transform", "");
-        }
-        this.sidebar.css("opacity", "");
-      }
-      if (this.content) {
-        for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-          prefix = _prefixes[_k];
-          this.content.css("" + prefix + "transition", "");
-        }
-        for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-          prefix = _prefixes[_l];
-          this.content.css("" + prefix + "transform", "");
-        }
-      }
-      if (this.currentTab) {
-        for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-          prefix = _prefixes[_m];
-          this.currentTab.css("" + prefix + "transition", "");
-        }
-        for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-          prefix = _prefixes[_n];
-          this.currentTab.css("" + prefix + "transform", "");
-        }
-        this.currentTab.css("opacity", "");
-        for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-          prefix = _prefixes[_o];
-          this.prevTab.css("" + prefix + "transition", "");
-        }
-        for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-          prefix = _prefixes[_p];
-          this.prevTab.css("" + prefix + "transform", "");
-        }
-        this.prevTab.css("opacity", "");
-      }
-      switch (this.event) {
-        case "tabs":
-          appscope.asidetab(null, -1);
-          break;
-        case "appsidebar":
-          appscope.togglesidebar();
-      }
-      window.removeEventListener("touchmove", this.move);
-      return window.removeEventListener("touchend", this.end);
-    };
-
-    return SwypeleftGesture;
-
-  })(BaseObject);
-
-  _prefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
-
-  _tolerance = 50;
-
-  module.exports = SwypeleftGesture;
-
-}).call(this);
-}, "classes/gestures/swyperight": function(exports, require, module) {(function() {
-  var SwyperightGesture, _prefixes, _tolerance,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  SwyperightGesture = (function(_super) {
-    __extends(SwyperightGesture, _super);
-
-    function SwyperightGesture(init) {
-      this.init = init;
-      this.end = __bind(this.end, this);
-      this.move = __bind(this.move, this);
-      window.addEventListener("touchmove", this.move);
-      window.addEventListener("touchend", this.end);
-    }
-
-    SwyperightGesture.prototype.move = function(e) {
-      var appscope, delta, docscope, percent, pos, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r;
-      if (this.breakup != null) {
-        return;
-      }
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      pos = Swype.getParams(e);
-      if (this.init.x - pos.x > _tolerance) {
-        delta = this.init.x - pos.x;
-        percent = delta / 2.5;
-        if (appscope.sidebarstatus === "open") {
-          if (this.init.x <= 250) {
-            this.event = "tabs";
-            this.log(delta, percent);
-            if (this.lastpos) {
-              if (pos.x > this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "tabs";
-              }
-            }
-            if (this.currentTab == null) {
-              this.currentTab = jQuery("body > aside article.active");
-            }
-            if (this.prevTab == null) {
-              this.prevTab = this.currentTab.next();
-            }
-            for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-              prefix = _prefixes[_i];
-              this.currentTab.css("" + prefix + "transition", "none");
-            }
-            for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-              prefix = _prefixes[_j];
-              this.currentTab.css("" + prefix + "transform", "translateX(-" + delta + "px)");
-            }
-            this.currentTab.css("opacity", "" + ((100 - percent) / 100));
-            for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-              prefix = _prefixes[_k];
-              this.prevTab.css("" + prefix + "transition", "none");
-            }
-            for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-              prefix = _prefixes[_l];
-              this.prevTab.css("" + prefix + "transform", "translateX(" + (275 - delta) + "px)");
-            }
-            this.prevTab.css("opacity", "" + (percent / 100));
-          } else {
-            this.event = "appsidebar";
-            if (this.lastpos) {
-              if (pos.x > this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "appsidebar";
-              }
-            }
-            if (this.sidebar == null) {
-              this.sidebar = jQuery("body > aside");
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article");
-            }
-            if (delta < 250) {
-              for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-                prefix = _prefixes[_m];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-                prefix = _prefixes[_n];
-                this.content.css("" + prefix + "transform", "translateX(" + (250 - delta) + "px)");
-              }
-              for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-                prefix = _prefixes[_o];
-                this.sidebar.css("" + prefix + "transition", "none");
-              }
-              for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-                prefix = _prefixes[_p];
-                this.sidebar.css("" + prefix + "transform", "translateX(-" + (delta / 2) + "px)");
-              }
-              this.sidebar.css("opacity", "" + ((100 - percent) / 100));
-            }
-          }
-        } else {
-          if (docscope.view === "mindmap") {
-            return;
-          }
-          this.event = "docsidebar";
-          if (this.lastpos) {
-            if (pos.x > this.lastpos.x) {
-              this.event = null;
-            } else {
-              this.event = "docsidebar";
-            }
-          }
-          if (this.content == null) {
-            this.content = jQuery("body > article article > div");
-          }
-          this.log(delta);
-          if (delta < 100) {
-            for (_q = 0, _len8 = _prefixes.length; _q < _len8; _q++) {
-              prefix = _prefixes[_q];
-              this.content.css("" + prefix + "transition", "none");
-            }
-            for (_r = 0, _len9 = _prefixes.length; _r < _len9; _r++) {
-              prefix = _prefixes[_r];
-              this.content.css("" + prefix + "transform", "translateX(-" + (delta - 50) + "px)");
-            }
-          }
-        }
-        return this.lastpos = pos;
-      }
-    };
-
-    SwyperightGesture.prototype.end = function(e) {
-      var appscope, docscope, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _m, _n, _o, _p;
-      this.breakup = true;
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      if (this.content) {
-        for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-          prefix = _prefixes[_i];
-          this.content.css("" + prefix + "transition", "");
-        }
-        for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-          prefix = _prefixes[_j];
-          this.content.css("" + prefix + "transform", "");
-        }
-      }
-      if (this.sidebar) {
-        for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-          prefix = _prefixes[_k];
-          this.sidebar.css("" + prefix + "transition", "");
-        }
-        for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-          prefix = _prefixes[_l];
-          this.sidebar.css("" + prefix + "transform", "");
-        }
-        this.sidebar.css("opacity", "");
-      }
-      if (this.currentTab) {
-        for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-          prefix = _prefixes[_m];
-          this.currentTab.css("" + prefix + "transition", "");
-        }
-        for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-          prefix = _prefixes[_n];
-          this.currentTab.css("" + prefix + "transform", "");
-        }
-        this.currentTab.css("opacity", "");
-        for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-          prefix = _prefixes[_o];
-          this.prevTab.css("" + prefix + "transition", "");
-        }
-        for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-          prefix = _prefixes[_p];
-          this.prevTab.css("" + prefix + "transform", "");
-        }
-        this.prevTab.css("opacity", "");
-      }
-      switch (this.event) {
-        case "tabs":
-          appscope.asidetab(null, 1);
-          break;
-        case "appsidebar":
-          appscope.togglesidebar();
-          break;
-        case "docsidebar":
-          docscope.toggleSidebar();
-      }
-      window.removeEventListener("touchmove", this.move);
-      return window.removeEventListener("touchend", this.end);
-    };
-
-    return SwyperightGesture;
-
-  })(BaseObject);
-
-  _prefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
-
-  _tolerance = 50;
-
-  module.exports = SwyperightGesture;
-
 }).call(this);
 }, "classes/helpers/Canvas": function(exports, require, module) {(function(){
   var CanvasService, DECEL_FACTOR, ACCEL_FACTOR;
@@ -18696,1073 +16534,7 @@ QRBitBuffer.prototype = {
 
         this.length++;
     }
-};}, "classes/models/AppModel": function(exports, require, module) {(function(){
-  var __blankData__, RecipeModel;
-  __blankData__ = {
-    description: "something",
-    stubs: []
-  };
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(runtime){
-      RecipeModel.runtime = runtime;
-      window.RecipeRepo = RecipeModel;
-      RecipeModel.runtime.subscribe("prop-active-tab-change", function(){
-        if (RecipeModel.runtime.props['active-tab'] === 3) {
-          return RecipeModel.refresh();
-        }
-      });
-      RecipeModel.runtime.subscribe("prop-app-state-change", function(){
-        if (RecipeModel.runtime.props['app-state'] === 1) {
-          return RecipeModel.refresh();
-        }
-      });
-      RecipeModel.refresh();
-      return RecipeModel;
-    };
-    RecipeModel.refresh = function(){
-      var onsuccess, onerror;
-      onsuccess = function(list){
-        var ref$, i$, len$, item;
-        RecipeModel.list = list;
-        RecipeModel.log(RecipeModel.list);
-        RecipeModel._reccords = {};
-        if ((ref$ = RecipeModel.controller) != null) {
-          ref$.recipes = RecipeModel._reccords;
-        }
-        for (i$ = 0, len$ = (ref$ = RecipeModel.list).length; i$ < len$; ++i$) {
-          item = ref$[i$];
-          (fn$.call(RecipeModel, item, item));
-        }
-        RecipeModel.log(RecipeModel.controller);
-        return (ref$ = RecipeModel.controller) != null ? ref$.safeApply() : void 8;
-        function fn$(i, item){
-          var x, ref$;
-          if (i._id) {
-            delete i._id;
-          }
-          x = this.create(i.name, item);
-          x._id = i.name;
-          (ref$ = x.data).stubs == null && (ref$.stubs = []);
-        }
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the list of stuff!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("users/" + UserModel.data.mail + "/apps", onsuccess, onerror);
-      }
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.data.name = this._id;
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.getData = function(){
-      var onsuccess, onerror, this$ = this;
-      onsuccess = function(data){
-        this$.data = data;
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the full recipe!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("apps/" + this.data.id, onsuccess, onerror);
-      }
-    };
-    prototype.save = function(){
-      var onsuccess, onerror, data, this$ = this;
-      onsuccess = function(){
-        return Toast("Success", "The data was saved!");
-      };
-      onerror = function(){
-        return Toast("Error", "Could not save the data!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        data = {};
-        import$(data, this.data);
-        data.author = UserModel.data.mail;
-        data.id = UserModel.data.mail + ":" + data.name;
-        if (data._id) {
-          delete data._id;
-        }
-        return Client.post("apps/update/", data, onsuccess, onerror);
-      }
-    };
-    RecipeModel['new'] = function(){
-      var x;
-      x = RecipeModel.reuse("New Recipe", __blankData__);
-      return x._id = "New Recipe";
-    };
-    function RecipeModel(){
-      this.save = bind$(this, 'save', prototype);
-      this.getData = bind$(this, 'getData', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory("Recipe", ["Runtime", RecipeModel.init]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/Document": function(exports, require, module) {(function(){
-  var DocumentModel;
-  DocumentModel = (function(superclass){
-    var prototype = extend$((import$(DocumentModel, superclass).displayName = 'DocumentModel', DocumentModel), superclass).prototype, constructor = DocumentModel;
-    DocumentModel.extend(IS.Modules.ORM);
-    prototype.init = function(data){
-      this.data = data.element;
-      this.parent = this.constructor;
-      this.title = this.data.title;
-      this._id = this._uuid;
-      if (this.data.uuid) {
-        this.parent.relocate(this._uuid, this.data.uuid);
-      } else {
-        this._id = this._uuid;
-      }
-      this.data = this.data.json.data;
-      this.parent.documents.push(this._id);
-      this.refresh();
-      this.parent.runtime.set("active-document", this._id);
-      return this.log("New Document: [" + this.title + "|" + this._id + "]");
-    };
-    prototype.refresh = function(){
-      this.initIndex();
-      return this.refreshIndex(this.data, 0, this);
-    };
-    prototype.initIndex = function(){
-      this.index = 0;
-      this.indexes = [];
-      return this.levels = [];
-    };
-    prototype.refreshIndex = function(list, depth, parent){
-      var ref$, i$, len$, node, yOffset, results$ = [];
-      (ref$ = this.levels)[depth] == null && (ref$[depth] = []);
-      for (i$ = 0, len$ = list.length; i$ < len$; ++i$) {
-        node = list[i$];
-        node.$index = this.index++;
-        node.$depth = depth;
-        node.$parent = parent;
-        node.$status == null && (node.$status = false);
-        node.$viewmore == null && (node.$viewmore = false);
-        node.$folded == null && (node.$folded = false);
-        node.$hidden = parent.$folded;
-        node.relation == null && (node.relation = "");
-        node.note == null && (node.note = "");
-        if (!node.status) {
-          if (node.children && node.children.length) {
-            node.status = "indeterminate";
-          } else {
-            node.status = "unchecked";
-          }
-        }
-        if (!node.$renderer) {
-          node.$renderer = new (DepMan.renderer("Node"))(node);
-        }
-        if (!node.location) {
-          yOffset = this.levels[depth].length;
-          if (yOffset) {
-            yOffset = this.levels[depth][yOffset - 1].location.y + 70;
-          }
-          if (parent.location) {
-            node.location = {
-              x: parent.location.x + 350,
-              y: parent.location.y + yOffset
-            };
-          } else {
-            node.location = {
-              x: 20,
-              y: 20 + yOffset
-            };
-          }
-        }
-        if (depth && !node.$linerenderer) {
-          node.$linerenderer = new (DepMan.renderer("Line"))(node);
-        }
-        this.indexes.push(node);
-        this.levels[depth].push(node);
-        if (node.children) {
-          results$.push(this.refreshIndex(node.children, depth + 1, node));
-        }
-      }
-      return results$;
-    };
-    prototype.save = function(){
-      return this.parent.save(this._id);
-    };
-    prototype['delete'] = function(){
-      return this.parent['delete'](this._id);
-    };
-    prototype['export'] = function(){
-      this.log(this);
-      return this.parent.reader.read({
-        title: this.title,
-        data: this.data,
-        uuid: this._id
-      }).opml;
-    };
-    DocumentModel.inject = function(runtime, reader){
-      DocumentModel.runtime = runtime;
-      DocumentModel.reader = reader;
-      DocumentModel.documents = [];
-      DocumentModel.getInitialState();
-      return DocumentModel;
-    };
-    DocumentModel.relocate = function(init, final){
-      DocumentModel.log("Relocating " + init + " to " + final);
-      DocumentModel._reccords[final] = DocumentModel._reccords[init];
-      DocumentModel.documents.splice(DocumentModel.documents.indexOf(init, 1, final));
-      if (DocumentModel.runtime.props['active-document'] === init) {
-        DocumentModel.runtime.set('active-document', final);
-      }
-      delete DocumentModel._reccords[init];
-      return DocumentModel._reccords[final]._id = DocumentModel._reccords[final]._uuid = final;
-    };
-    DocumentModel.getInitialState = function(){
-      return DBStorage.get("documents", function(docs){
-        var i$, len$, doc, results$ = [];
-        docs == null && (docs = []);
-        if (docs.substr != null) {
-          docs = JSON.parse(docs);
-        }
-        for (i$ = 0, len$ = docs.length; i$ < len$; ++i$) {
-          doc = docs[i$];
-          results$.push(DBStorage.get(doc, fn$));
-        }
-        return results$;
-        function fn$(content){
-          return DocumentModel.getDocument(content);
-        }
-      });
-    };
-    DocumentModel.getDocument = function(data){
-      var kid;
-      data = DocumentModel.reader.read(data);
-      kid = DocumentModel.reuse(null, {
-        element: data
-      });
-      return kid;
-    };
-    DocumentModel['new'] = function(){
-      return DocumentModel.getDocument({
-        title: "New Document",
-        data: [
-          {
-            text: "Parent Node",
-            children: [
-              {
-                text: "Child Node"
-              }, {
-                text: "Second Child Node"
-              }
-            ]
-          }, {
-            text: "Sibling"
-          }
-        ]
-      });
-    };
-    DocumentModel['delete'] = function(item){
-      var index;
-      DocumentModel.deleteLink(item);
-      delete DocumentModel._reccords[item];
-      DBStorage.remove(item);
-      index = DocumentModel.documents.indexOf(item);
-      DocumentModel.documents = DocumentModel.documents.splice(index, 1);
-      DocumentModel.runtime.set('active-document', DocumentModel.documents[index - 1]) || null;
-      return Toast("Document Status", "The document has been successfuly deleted!");
-    };
-    DocumentModel.deleteLink = function(item){
-      return DBStorage.get("documents", function(items){
-        items == null && (items = []);
-        if (items.substr != null) {
-          items = JSON.parse(items);
-        }
-        if (items.indexOf(item >= 0)) {
-          items.splice(items.indexOf(item), 1);
-          return DBStorage.set("documents", JSON.stringify(items));
-        }
-      });
-    };
-    DocumentModel.save = function(item){
-      DocumentModel.saveLink(item);
-      if (DocumentModel._reccords[item]) {
-        DBStorage.set(item, DocumentModel._reccords[item]['export']());
-      }
-      return Toast("Document Status", "The document has been successfuly saved!");
-    };
-    DocumentModel.saveLink = function(item){
-      return DBStorage.get("documents", function(items){
-        items == null && (items = []);
-        if (items.substr != null) {
-          items = JSON.parse(items);
-        }
-        if (!(items.indexOf(item) >= 0)) {
-          items.push(item);
-          return DBStorage.set("documents", JSON.stringify(items));
-        }
-      });
-    };
-    function DocumentModel(){
-      this['export'] = bind$(this, 'export', prototype);
-      this['delete'] = bind$(this, 'delete', prototype);
-      this.save = bind$(this, 'save', prototype);
-      this.refreshIndex = bind$(this, 'refreshIndex', prototype);
-      this.initIndex = bind$(this, 'initIndex', prototype);
-      this.refresh = bind$(this, 'refresh', prototype);
-      this.init = bind$(this, 'init', prototype);
-      DocumentModel.superclass.apply(this, arguments);
-    }
-    return DocumentModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory('Documents', ["Runtime", 'OPMLReader', DocumentModel.inject]);
-  module.exports = window.Documents = DocumentModel;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/ReceipeModel": function(exports, require, module) {(function(){
-  var __dummyData__, RecipeModel;
-  __dummyData__ = [
-    {
-      name: "NPM",
-      description: "Install NPM",
-      stubs: [{
-        url: "http://npmjs.org/install.sh",
-        instructions: ["sh install.sh"]
-      }]
-    }, {
-      name: "Node",
-      description: "Install Node.JS",
-      stubs: [
-        {
-          url: "http://nodejs.org/install.tar.gz",
-          instructions: ["tar -xvzf install.tar.gz", "cd install", "./configure", "make", "make install"]
-        }, {
-          url: "http://npmjs.org/install.sh",
-          instructions: ["sh install.sh"]
-        }
-      ]
-    }
-  ];
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(data){
-      var i$, ref$, len$, item, results$ = [];
-      RecipeModel.data = data != null ? data : __dummyData__;
-      window.RecipeRepo = RecipeModel;
-      delete RecipeModel._reccords;
-      RecipeModel._reccords = {};
-      for (i$ = 0, len$ = (ref$ = RecipeModel.data).length; i$ < len$; ++i$) {
-        item = ref$[i$];
-        results$.push(RecipeModel.reuse(null, item));
-      }
-      return results$;
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.log("Should go for the remote data");
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.verifyPassword = function(it){
-      return it === this.data.password;
-    };
-    prototype.verifyEmail = function(){
-      return /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/.test(this.data.email);
-    };
-    function RecipeModel(){
-      this.verifyEmail = bind$(this, 'verifyEmail', prototype);
-      this.verifyPassword = bind$(this, 'verifyPassword', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  RecipeModel.init();
-  angular.module(AppInfo.displayname).factory("Recipe", function(){
-    return RecipeModel;
-  });
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/RecipeModel": function(exports, require, module) {(function(){
-  var __blankData__, RecipeModel;
-  __blankData__ = {
-    description: "something",
-    stubs: []
-  };
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(runtime){
-      var all;
-      RecipeModel.runtime = runtime;
-      window.RecipeRepo = RecipeModel;
-      all = true;
-      RecipeModel.runtime.subscribe("prop-active-tab-change", function(){
-        switch (RecipeModel.runtime.props['active-tab']) {
-        case 3:
-          return RecipeModel.refresh();
-        case 1:
-          return RecipeModel.refresh(all);
-        }
-      });
-      RecipeModel.runtime.subscribe("prop-app-state-change", function(){
-        if (RecipeModel.runtime.props['app-state'] === 1) {
-          switch (RecipeModel.runtime.props['active-tab']) {
-          case 3:
-            return RecipeModel.refresh();
-          case 1:
-            return RecipeModel.refresh(all);
-          }
-        }
-      });
-      return RecipeModel;
-    };
-    RecipeModel.refresh = function(all){
-      var onsuccess, onerror;
-      all == null && (all = false);
-      onsuccess = function(list){
-        var ref$, i$, len$, item;
-        RecipeModel.list = list;
-        RecipeModel.log(RecipeModel.list);
-        RecipeModel._reccords = {};
-        if ((ref$ = RecipeModel.controller) != null) {
-          ref$.recipes = RecipeModel._reccords;
-        }
-        RecipeModel.recipes = [];
-        for (i$ = 0, len$ = (ref$ = RecipeModel.list).length; i$ < len$; ++i$) {
-          item = ref$[i$];
-          (fn$.call(RecipeModel, item, item));
-        }
-        return (ref$ = RecipeModel.controller) != null ? ref$.safeApply() : void 8;
-        function fn$(i, item){
-          var x, ref$;
-          if (i._id) {
-            delete i._id;
-          }
-          x = this.create(i.name, item);
-          x._id = i.name;
-          (ref$ = x.data).stubs == null && (ref$.stubs = []);
-          this.recipes.push(x);
-        }
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the list of stuff!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        if (all) {
-          return Client.request("apps", onsuccess, onerror);
-        } else {
-          return Client.request("users/" + UserModel.data.mail + "/apps", onsuccess, onerror);
-        }
-      }
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.data.name = this._id;
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.getData = function(){
-      var onsuccess, onerror, this$ = this;
-      onsuccess = function(data){
-        this$.data = data;
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the full recipe!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("apps/" + this.data.id, onsuccess, onerror);
-      }
-    };
-    prototype.save = function(){
-      var onsuccess, onerror, data, this$ = this;
-      onsuccess = function(){
-        return Toast("Success", "The data was saved!");
-      };
-      onerror = function(){
-        return Toast("Error", "Could not save the data!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        data = {};
-        import$(data, this.data);
-        data.author = UserModel.data.mail;
-        data.id = UserModel.data.mail + "$" + data.name;
-        if (data._id) {
-          delete data._id;
-        }
-        return Client.post("apps/update/", data, onsuccess, onerror);
-      }
-    };
-    RecipeModel['new'] = function(){
-      var x;
-      x = RecipeModel.create("New Recipe", __blankData__);
-      x._id = "New Recipe";
-      RecipeModel.recipes == null && (RecipeModel.recipes = []);
-      return RecipeModel.recipes.push(x);
-    };
-    function RecipeModel(){
-      this.save = bind$(this, 'save', prototype);
-      this.getData = bind$(this, 'getData', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory("Recipe", ["Runtime", RecipeModel.init]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/UserModel": function(exports, require, module) {(function(){
-  var UserModel;
-  UserModel = (function(superclass){
-    var prototype = extend$((import$(UserModel, superclass).displayName = 'UserModel', UserModel), superclass).prototype, constructor = UserModel;
-    function UserModel(runtime){
-      var form, loginFunc, regform, registerFunc, this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.runtime = runtime;
-      this$.verifyEmail = bind$(this$, 'verifyEmail', prototype);
-      this$.verifyPassword = bind$(this$, 'verifyPassword', prototype);
-      this$.send = bind$(this$, 'send', prototype);
-      this$.edit = bind$(this$, 'edit', prototype);
-      window.UserModel = this$;
-      form = $('#login-form');
-      loginFunc = function(){
-        var data;
-        data = {
-          mail: form.find('#login-email').val(),
-          pass: form.find('#login-password').val()
-        };
-        if (data.mail !== "" && data.pass !== "") {
-          return Client.login(data, function(){
-            var onsuccess, onerror;
-            this$.data = data;
-            this$.runtime.set('app-state', 1);
-            form.find('#login-email').val("");
-            form.find('#login-password').val("");
-            onsuccess = function(list){
-              var i$, ref$, len$, device, results$ = [];
-              this$.data.devices = list[0].user_devices.filter(function(e, pos, self){
-                return self.indexOf(e) === pos;
-              });
-              this$.devices = {};
-              for (i$ = 0, len$ = (ref$ = this$.data.devices).length; i$ < len$; ++i$) {
-                device = ref$[i$];
-                results$.push((fn$.call(this$, device, device)));
-              }
-              return results$;
-              function fn$(d, device){
-                var this$ = this;
-                return Client.request("devices/" + d, function(it){
-                  return this$.devices[d] = it;
-                }, function(){
-                  return Toast("Error", "Could not get info about " + d + " device");
-                });
-              }
-            };
-            onerror = function(){
-              return Toast("Error", "Could not grab the devices list.");
-            };
-            return Client.request("users/devices/" + this$.data.mail, onsuccess, onerror);
-          });
-        }
-      };
-      regform = $('#register-form');
-      registerFunc = function(){
-        var data;
-        data = {
-          mail: regform.find('#register-email').val(),
-          pass: regform.find('#register-pass').val(),
-          verpass: regform.find('#register-pass-verify').val()
-        };
-        this$.log(data);
-        if (data.mail !== "" && data.pass !== "" && data.verpass !== "") {
-          if (data.pass !== data.verpass) {
-            return Toast("Error", "The two passwords were different");
-          } else {
-            return Client.register(data, function(){
-              regform.find('#register-email').val("");
-              regform.find('#register-pass').val("");
-              return regform.find('#register-pass-verify').val("");
-            });
-          }
-        }
-      };
-      form.find('#submit-button').click(loginFunc);
-      form.find('#login-email').change(loginFunc);
-      form.find('#login-password').change(loginFunc);
-      regform.find('#submit-button').click(registerFunc);
-      regform.find('#register-email').change(registerFunc);
-      regform.find('#register-pass').change(registerFunc);
-      regform.find('#register-pass-verify').change(registerFunc);
-      this$;
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.edit = function(something, into){
-      if (!(this.data == null || !this.data[something])) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.verifyPassword = function(it){
-      return it === this.data.password;
-    };
-    prototype.verifyEmail = function(){
-      return /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/.test(this.data.email);
-    };
-    return UserModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).service("User", ["Runtime", UserModel]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Base": function(exports, require, module) {(function(){
-  var BaseFrameBuffer;
-  Object.getPrototypeOf(document.createElement("canvas").getContext("2d")).fillRectR = function(x, y, w, h, r){
-    if (typeof r === "undefined") {
-      r = 5;
-    }
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.lineTo(x + w - r, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r);
-    this.lineTo(x + w, y + h - r);
-    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this.lineTo(x + r, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r);
-    this.lineTo(x, y + r);
-    this.quadraticCurveTo(x, y, x + r, y);
-    this.closePath();
-    return this.fill();
-  };
-  Object.getPrototypeOf(document.createElement("canvas").getContext("2d")).strokeRectR = function(x, y, w, h, r){
-    if (typeof r === "undefined") {
-      r = 5;
-    }
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.lineTo(x + w - r, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r);
-    this.lineTo(x + w, y + h - r);
-    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this.lineTo(x + r, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r);
-    this.lineTo(x, y + r);
-    this.quadraticCurveTo(x, y, x + r, y);
-    this.closePath();
-    return this.stroke();
-  };
-  BaseFrameBuffer = (function(superclass){
-    var prototype = extend$((import$(BaseFrameBuffer, superclass).displayName = 'BaseFrameBuffer', BaseFrameBuffer), superclass).prototype, constructor = BaseFrameBuffer;
-    function BaseFrameBuffer(buffer){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.buffer = buffer;
-      this$.endResize = bind$(this$, 'endResize', prototype);
-      this$.startResize = bind$(this$, 'startResize', prototype);
-      this$.endDraw = bind$(this$, 'endDraw', prototype);
-      this$.startDraw = bind$(this$, 'startDraw', prototype);
-      this$.scan = bind$(this$, 'scan', prototype);
-      this$.getShadowColor = bind$(this$, 'getShadowColor', prototype);
-      this$.drawShadow = bind$(this$, 'drawShadow', prototype);
-      this$.reset = bind$(this$, 'reset', prototype);
-      if (!this$.buffer) {
-        this$.buffer = document.createElement("canvas");
-      }
-      this$.sbuffer = document.createElement("canvas");
-      this$.context = this$.buffer.getContext("2d");
-      this$.scontext = this$.sbuffer.getContext("2d");
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.reset = function(){
-      return this.buffer.width = this.buffer.width;
-    };
-    prototype.drawShadow = function(){
-      this.sbuffer.width = this.sbuffer.width;
-      this.getShadowColor();
-      this.scontext.fillStyle = this.scolor;
-      return this.scontext.fillRect(0, 0, this.sbuffer.width, this.sbuffer.height);
-    };
-    prototype.getShadowColor = function(){
-      var r, g, b, ref$, rest;
-      r = 0;
-      g = 0;
-      b = (((ref$ = this.node) != null ? ref$.$index : void 8) + 1) % 255;
-      rest = r / 255;
-      if (rest) {
-        g = rest % 255;
-        rest = rest / 255;
-        if (rest) {
-          r = rest % 255;
-        }
-      }
-      return this.scolor = "rgb(" + r + ", " + g + ", " + b + ")";
-    };
-    prototype.scan = function(it){
-      var rgb;
-      rgb = this.context.getImageData(it.x, it.y, 1, 1).data;
-      return rgb[0] * 255 * 255 + rgb[1] * 255 + rgb[2];
-    };
-    prototype.startDraw = function(){
-      return this.drawing = true;
-    };
-    prototype.endDraw = function(){
-      var ref$;
-      return ref$ = this.drawing, delete this.drawing, ref$;
-    };
-    prototype.startResize = function(){
-      return this.resizing = true;
-    };
-    prototype.endResize = function(){
-      var ref$;
-      return ref$ = this.resizing, delete this.resizing, ref$;
-    };
-    return BaseFrameBuffer;
-  }(IS.Object));
-  module.exports = BaseFrameBuffer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Line": function(exports, require, module) {(function(){
-  var LineRenderer;
-  LineRenderer = (function(superclass){
-    var prototype = extend$((import$(LineRenderer, superclass).displayName = 'LineRenderer', LineRenderer), superclass).prototype, constructor = LineRenderer;
-    function LineRenderer(node){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.node = node;
-      this$.drawText = bind$(this$, 'drawText', prototype);
-      this$.rotate = bind$(this$, 'rotate', prototype);
-      this$.setTextPoints = bind$(this$, 'setTextPoints', prototype);
-      this$.drawLine = bind$(this$, 'drawLine', prototype);
-      this$.setPoints = bind$(this$, 'setPoints', prototype);
-      this$.sequence = bind$(this$, 'sequence', prototype);
-      this$.setupSize = bind$(this$, 'setupSize', prototype);
-      LineRenderer.superclass.call(this$);
-      this$.setupSize();
-      this$.sequence();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setupSize = function(){
-      this.startResize();
-      this.deltas = {
-        x: this.node.location.x - this.node.$parent.location.x,
-        y: this.node.location.y - this.node.$parent.location.y
-      };
-      this.buffer.width = Math.abs(this.deltas.x) + 1;
-      this.buffer.height = Math.abs(this.deltas.y) + 1;
-      return this.endResize();
-    };
-    prototype.sequence = function(){
-      this.setupSize();
-      this.reset();
-      this.setPoints();
-      this.drawLine();
-      this.setTextPoints();
-      if (this.node.relation !== "") {
-        this.rotate();
-        return this.drawText();
-      }
-    };
-    prototype.setPoints = function(){
-      this.points = {
-        first: {
-          x: 0,
-          y: 0
-        },
-        second: {
-          x: 0,
-          y: 0
-        }
-      };
-      this.rpoints = {
-        first: {
-          x: 0,
-          y: 0
-        },
-        second: {
-          x: 0,
-          y: 0
-        }
-      };
-      if (this.deltas.x > 0) {
-        this.points.first.x = this.node.$parent.location.x;
-        this.points.second.x = this.node.location.x;
-        this.rpoints.first.x = 0;
-        this.rpoints.second.x = this.buffer.width;
-      } else {
-        this.points.first.x = this.node.location.x;
-        this.points.second.x = this.node.$parent.location.x;
-        this.rpoints.first.x = this.buffer.width;
-        this.rpoints.second.x = 0;
-      }
-      if (this.deltas.y > 0) {
-        this.points.first.y = this.node.$parent.location.y;
-        this.points.second.y = this.node.location.y;
-        this.rpoints.first.y = 0;
-        return this.rpoints.second.y = this.buffer.height;
-      } else {
-        this.points.first.y = this.node.location.y;
-        this.points.second.y = this.node.$parent.location.y;
-        this.rpoints.first.y = this.buffer.height;
-        return this.rpoints.second.y = 0;
-      }
-    };
-    prototype.drawLine = function(){
-      this.context.strokeStyle = "rgb(100, 100, 100)";
-      this.context.beginPath();
-      this.context.moveTo(this.rpoints.first.x, this.rpoints.first.y);
-      this.context.bezierCurveTo(this.rpoints.first.x + this.deltas.x / 3, this.rpoints.first.y + this.deltas.y, this.rpoints.second.x - this.deltas.x / 3, this.rpoints.second.y - this.deltas.y, this.rpoints.second.x, this.rpoints.second.y);
-      return this.context.stroke();
-    };
-    prototype.setTextPoints = function(){
-      this.context.font = "normal 12px Verdana";
-      this.rpoints = this.context.measureText(this.node.relation);
-      return this.log(this.rpoints);
-    };
-    prototype.rotate = function(){
-      this.log(this.buffer.width / 2 - this.rpoints.width / 2, this.buffer.height / 2 - 20);
-      this.context.translate(this.buffer.width / 2, this.buffer.height / 2);
-      return this.context.rotate(Math.atan(this.buffer.height / this.buffer.width / 8));
-    };
-    prototype.drawText = function(){
-      this.context.fillStyle = 'rgba(256, 256, 256, 0.9)';
-      this.context.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      this.context.fillRectR(this.rpoints.width / -2, -20, this.rpoints.width * 2, 30, 4);
-      this.context.strokeRectR(this.rpoints.width / -2, -20, this.rpoints.width * 2, 30, 4);
-      this.context.fillStyle = "black";
-      return this.context.fillText(this.node.relation, 0, 0);
-    };
-    return LineRenderer;
-  }(DepMan.renderer("Base")));
-  module.exports = LineRenderer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Node": function(exports, require, module) {(function(){
-  var NodeRenderer;
-  NodeRenderer = (function(superclass){
-    var prototype = extend$((import$(NodeRenderer, superclass).displayName = 'NodeRenderer', NodeRenderer), superclass).prototype, constructor = NodeRenderer;
-    function NodeRenderer(node){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.node = node;
-      this$.drawText = bind$(this$, 'drawText', prototype);
-      this$.drawShape = bind$(this$, 'drawShape', prototype);
-      this$.genGradient = bind$(this$, 'genGradient', prototype);
-      this$.setStyles = bind$(this$, 'setStyles', prototype);
-      this$.sequence = bind$(this$, 'sequence', prototype);
-      this$.setupSize = bind$(this$, 'setupSize', prototype);
-      NodeRenderer.superclass.call(this$);
-      this$.setupSize();
-      this$.sequence();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setupSize = function(){
-      this.buffer.width = this.sbuffer.width = 300;
-      return this.buffer.height = this.sbuffer.height = 50;
-    };
-    prototype.sequence = function(){
-      this.reset();
-      this.setStyles();
-      this.genGradient();
-      this.drawShape();
-      this.drawText();
-      return this.drawShadow();
-    };
-    prototype.setStyles = function(){
-      return this.colors = (function(){
-        switch (this.node.status) {
-        case "indeterminate":
-          return {
-            first: "rgb(0, 0, 0)",
-            second: "rgb(50, 50, 50)",
-            border: "rgb(100, 100, 100)",
-            text: "rgb(256, 256, 256)"
-          };
-        case "determinate":
-          return {
-            first: "rgb(256, 256, 256)",
-            second: "rgb(230 , 230 , 230 )",
-            border: "rgb(150, 150, 150)",
-            text: "rgb(40, 40, 40)"
-          };
-        case "checked":
-          return {
-            first: "rgb(0, 135, 255)",
-            second: "rgb(0, 100, 220)",
-            border: "rgb(40, 40, 40)",
-            text: "rgb(256, 256, 256)"
-          };
-        default:
-          return {
-            first: "rgb(255, 67, 16)",
-            second: "rgb(220, 30, 0)",
-            border: "rgb(40, 40, 40)",
-            text: "rgb(256, 256, 256)"
-          };
-        }
-      }.call(this));
-    };
-    prototype.genGradient = function(){
-      this.grad = this.context.createLinearGradient(0, 0, 0, this.buffer.height);
-      this.grad.addColorStop(0, this.colors.first);
-      this.grad.addColorStop(0.5, this.colors.first);
-      return this.grad.addColorStop(1, this.colors.second);
-    };
-    prototype.drawShape = function(){
-      this.context.fillStyle = this.grad;
-      this.context.strokeStyle = "rgb(0, 0, 0)";
-      this.context.lineHeight = 1;
-      this.context.fillRectR(0, 0, this.buffer.width, this.buffer.height, 4);
-      return this.context.strokeRectR(0, 0, this.buffer.width, this.buffer.height, 4);
-    };
-    prototype.drawText = function(){
-      var text;
-      this.context.fillStyle = this.colors.text;
-      this.context.strokeStyle = this.colors.border;
-      this.context.font = "normal 15px Verdana";
-      text = this.node.text;
-      if (text.length > 28) {
-        text = text.substr(0, 25) + "...";
-      }
-      this.context.strokeText(text, 20, 30);
-      return this.context.fillText(text, 20, 30);
-    };
-    return NodeRenderer;
-  }(DepMan.renderer("Base")));
-  module.exports = NodeRenderer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "data/fonts/eot/fontawesome-webfont": function(exports, require, module) {if (!window.imagePackage) window.imagePackage = function() { return "data:" + this.mime + ";base64," + this.content };
+};}, "data/fonts/eot/fontawesome-webfont": function(exports, require, module) {if (!window.imagePackage) window.imagePackage = function() { return "data:" + this.mime + ";base64," + this.content };
 if (!window.otherImports) window.otherImports = {}; 
 var item = {
 	mime: 'application/vnd.ms-fontobject', 
@@ -19836,7 +16608,7 @@ return window.otherImports['logo'] = module.exports = item; }, "data/languages/e
 var item = JSON.parse("{\n}", function(key, value) { var v; try { v = eval(value) } catch(e) { v = value } return v;}); 
 return window.JSONImport['en-US'] = module.exports = item;}, "data/languages/ro-RO": function(exports, require, module) {if (!window.JSONImport) window.JSONImport = {}; 
 var item = JSON.parse("{\"English\":\"Engleză\",\"Romanian\":\"Română\",\"Document List\":\"Lista de Documente\",\"Connection Manager\":\"Manager de Conexiuni\",\"Your Client ID\":\"ID-ul Tău de Client\",\"Client ID to connect to\":\"ID-ul de Client la care să te conectezi\",\"General Application Settings\":\"Setări Generale ale Aplicației\",\"Activate the landing page\":\"Activează pagina de sosire\",\"Activate the help page\":\"Activează pagina de ajutor\",\"Select your language of choice\":\"Alege limba\",\"Experimental Features\":\"Lucruri Experimentale\",\"Activate a Toast\":\"Activează un mesaj\",\"Activate a Toast (Modal Override)\":\"Activează un mesaj (modal)\",\"Open a modal window\":\"Activează o fereastră modală\",\"Launch Application\":\"Lansează Aplicația\",\"Install application in Chrome\":\"Instalează aplicația în Chrome\",\"Install application in Firefox\":\"Instalează aplicația în Firefox\",\"Install application in Windows 8\":\"Instalează aplicația în Windows 8\",\"Install application in Opera New\":\"Instalează aplicația în Opera New\",\"Relation between this node and the previous.\":\"Relația dintre acest nod și cel anterior\",\"Notes associated\":\"Notițe asociate\",\"Node Text\":\"Textul Nodului\",\"The text of the node\":\"Textul Nodului\",\"Is this node checked?\":\"Este acest nod bifat?\",\"Relation with its parent\":\"Relația cu părintele său\",\"Add a new node\":\"Adaugă un nod nou\",\"Remove this node\":\"Sterge acest nod\",\"Read More\":\"Citește mai mult\",\"Reconnect\":\"Reconectează-te\",\"Open the Loading Screen\":\"Deschide ecranul de încărcare\"}", function(key, value) { var v; try { v = eval(value) } catch(e) { v = value } return v;}); 
-return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/font-awesome": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = "/*!\n *  Font Awesome 3.2.1\n *  the iconic font designed for Bootstrap\n *  ------------------------------------------------------------------------------\n *  The full suite of pictographic icons, examples, and documentation can be\n *  found at http://fontawesome.io.  Stay up to date on Twitter at\n *  http://twitter.com/fontawesome.\n *\n *  License\n *  ------------------------------------------------------------------------------\n *  - The Font Awesome font is licensed under SIL OFL 1.1 -\n *    http://scripts.sil.org/OFL\n *  - Font Awesome CSS, LESS, and SASS files are licensed under MIT License -\n *    http://opensource.org/licenses/mit-license.html\n *  - Font Awesome documentation licensed under CC BY 3.0 -\n *    http://creativecommons.org/licenses/by/3.0/\n *  - Attribution is no longer required in Font Awesome 3.0, but much appreciated:\n *    \"Font Awesome by Dave Gandy - http://fontawesome.io\"\n *\n *  Author - Dave Gandy\n *  ------------------------------------------------------------------------------\n *  Email: dave@fontawesome.io\n *  Twitter: http://twitter.com/davegandy\n *  Work: Lead Product Designer @ Kyruus - http://kyruus.com\n */\n/* FONT PATH\n * -------------------------- */\n@font-face {\n  font-family: 'FontAwesome';\n  src: url('<<INSERT FONTAWESOME EOT HERE>>');\n  src: url('<<INSERT FONTAWESOME EOT HERE>>?#iefix') format('embedded-opentype'), url('<<INSERT FONTAWESOME WOFF HERE>>') format('woff'), url('<<INSERT FONTAWESOME TTF HERE>>') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n}\n/* FONT AWESOME CORE\n * -------------------------- */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  font-family: FontAwesome;\n  font-weight: normal;\n  font-style: normal;\n  text-decoration: inherit;\n  -webkit-font-smoothing: antialiased;\n  *margin-right: .3em;\n}\n[class^=\"icon-\"]:before,\n[class*=\" icon-\"]:before {\n  text-decoration: inherit;\n  display: inline-block;\n  speak: none;\n}\n/* makes the font 33% larger relative to the icon container */\n.icon-large:before {\n  vertical-align: -10%;\n  font-size: 1.3333333333333333em;\n}\n/* makes sure icons active on rollover in links */\na [class^=\"icon-\"],\na [class*=\" icon-\"] {\n  display: inline;\n}\n/* increased font size for icon-large */\n[class^=\"icon-\"].icon-fixed-width,\n[class*=\" icon-\"].icon-fixed-width {\n  display: inline-block;\n  width: 1.1428571428571428em;\n  text-align: right;\n  padding-right: 0.2857142857142857em;\n}\n[class^=\"icon-\"].icon-fixed-width.icon-large,\n[class*=\" icon-\"].icon-fixed-width.icon-large {\n  width: 1.4285714285714286em;\n}\n.icons-ul {\n  margin-left: 2.142857142857143em;\n  list-style-type: none;\n}\n.icons-ul > li {\n  position: relative;\n}\n.icons-ul .icon-li {\n  position: absolute;\n  left: -2.142857142857143em;\n  width: 2.142857142857143em;\n  text-align: center;\n  line-height: inherit;\n}\n[class^=\"icon-\"].hide,\n[class*=\" icon-\"].hide {\n  display: none;\n}\n.icon-muted {\n  color: #eeeeee;\n}\n.icon-light {\n  color: #ffffff;\n}\n.icon-dark {\n  color: #333333;\n}\n.icon-border {\n  border: solid 1px #eeeeee;\n  padding: .2em .25em .15em;\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.icon-2x {\n  font-size: 2em;\n}\n.icon-2x.icon-border {\n  border-width: 2px;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.icon-3x {\n  font-size: 3em;\n}\n.icon-3x.icon-border {\n  border-width: 3px;\n  -webkit-border-radius: 5px;\n  -moz-border-radius: 5px;\n  border-radius: 5px;\n}\n.icon-4x {\n  font-size: 4em;\n}\n.icon-4x.icon-border {\n  border-width: 4px;\n  -webkit-border-radius: 6px;\n  -moz-border-radius: 6px;\n  border-radius: 6px;\n}\n.icon-5x {\n  font-size: 5em;\n}\n.icon-5x.icon-border {\n  border-width: 5px;\n  -webkit-border-radius: 7px;\n  -moz-border-radius: 7px;\n  border-radius: 7px;\n}\n.pull-right {\n  float: right;\n}\n.pull-left {\n  float: left;\n}\n[class^=\"icon-\"].pull-left,\n[class*=\" icon-\"].pull-left {\n  margin-right: .3em;\n}\n[class^=\"icon-\"].pull-right,\n[class*=\" icon-\"].pull-right {\n  margin-left: .3em;\n}\n/* BOOTSTRAP SPECIFIC CLASSES\n * -------------------------- */\n/* Bootstrap 2.0 sprites.less reset */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  display: inline;\n  width: auto;\n  height: auto;\n  line-height: normal;\n  vertical-align: baseline;\n  background-image: none;\n  background-position: 0% 0%;\n  background-repeat: repeat;\n  margin-top: 0;\n}\n/* more sprites.less reset */\n.icon-white,\n.nav-pills > .active > a > [class^=\"icon-\"],\n.nav-pills > .active > a > [class*=\" icon-\"],\n.nav-list > .active > a > [class^=\"icon-\"],\n.nav-list > .active > a > [class*=\" icon-\"],\n.navbar-inverse .nav > .active > a > [class^=\"icon-\"],\n.navbar-inverse .nav > .active > a > [class*=\" icon-\"],\n.dropdown-menu > li > a:hover > [class^=\"icon-\"],\n.dropdown-menu > li > a:hover > [class*=\" icon-\"],\n.dropdown-menu > .active > a > [class^=\"icon-\"],\n.dropdown-menu > .active > a > [class*=\" icon-\"],\n.dropdown-submenu:hover > a > [class^=\"icon-\"],\n.dropdown-submenu:hover > a > [class*=\" icon-\"] {\n  background-image: none;\n}\n/* keeps Bootstrap styles with and without icons the same */\n.btn [class^=\"icon-\"].icon-large,\n.nav [class^=\"icon-\"].icon-large,\n.btn [class*=\" icon-\"].icon-large,\n.nav [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].icon-spin,\n.nav [class^=\"icon-\"].icon-spin,\n.btn [class*=\" icon-\"].icon-spin,\n.nav [class*=\" icon-\"].icon-spin {\n  display: inline-block;\n}\n.nav-tabs [class^=\"icon-\"],\n.nav-pills [class^=\"icon-\"],\n.nav-tabs [class*=\" icon-\"],\n.nav-pills [class*=\" icon-\"],\n.nav-tabs [class^=\"icon-\"].icon-large,\n.nav-pills [class^=\"icon-\"].icon-large,\n.nav-tabs [class*=\" icon-\"].icon-large,\n.nav-pills [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].pull-left.icon-2x,\n.btn [class*=\" icon-\"].pull-left.icon-2x,\n.btn [class^=\"icon-\"].pull-right.icon-2x,\n.btn [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .18em;\n}\n.btn [class^=\"icon-\"].icon-spin.icon-large,\n.btn [class*=\" icon-\"].icon-spin.icon-large {\n  line-height: .8em;\n}\n.btn.btn-small [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-small [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .25em;\n}\n.btn.btn-large [class^=\"icon-\"],\n.btn.btn-large [class*=\" icon-\"] {\n  margin-top: 0;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .05em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x {\n  margin-right: .2em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-left: .2em;\n}\n/* Fixes alignment in nav lists */\n.nav-list [class^=\"icon-\"],\n.nav-list [class*=\" icon-\"] {\n  line-height: inherit;\n}\n/* EXTRAS\n * -------------------------- */\n/* Stacked and layered icon */\n.icon-stack {\n  position: relative;\n  display: inline-block;\n  width: 2em;\n  height: 2em;\n  line-height: 2em;\n  vertical-align: -35%;\n}\n.icon-stack [class^=\"icon-\"],\n.icon-stack [class*=\" icon-\"] {\n  display: block;\n  text-align: center;\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  font-size: 1em;\n  line-height: inherit;\n  *line-height: 2em;\n}\n.icon-stack .icon-stack-base {\n  font-size: 2em;\n  *line-height: 1em;\n}\n/* Animated rotating icon */\n.icon-spin {\n  display: inline-block;\n  -moz-animation: spin 2s infinite linear;\n  -o-animation: spin 2s infinite linear;\n  -webkit-animation: spin 2s infinite linear;\n  animation: spin 2s infinite linear;\n}\n/* Prevent stack and spinners from being taken inline when inside a link */\na .icon-stack,\na .icon-spin {\n  display: inline-block;\n  text-decoration: none;\n}\n@-moz-keyframes spin {\n  0% {\n    -moz-transform: rotate(0deg);\n  }\n  100% {\n    -moz-transform: rotate(359deg);\n  }\n}\n@-webkit-keyframes spin {\n  0% {\n    -webkit-transform: rotate(0deg);\n  }\n  100% {\n    -webkit-transform: rotate(359deg);\n  }\n}\n@-o-keyframes spin {\n  0% {\n    -o-transform: rotate(0deg);\n  }\n  100% {\n    -o-transform: rotate(359deg);\n  }\n}\n@-ms-keyframes spin {\n  0% {\n    -ms-transform: rotate(0deg);\n  }\n  100% {\n    -ms-transform: rotate(359deg);\n  }\n}\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(359deg);\n  }\n}\n/* Icon rotations and mirroring */\n.icon-rotate-90:before {\n  -webkit-transform: rotate(90deg);\n  -moz-transform: rotate(90deg);\n  -ms-transform: rotate(90deg);\n  -o-transform: rotate(90deg);\n  transform: rotate(90deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);\n}\n.icon-rotate-180:before {\n  -webkit-transform: rotate(180deg);\n  -moz-transform: rotate(180deg);\n  -ms-transform: rotate(180deg);\n  -o-transform: rotate(180deg);\n  transform: rotate(180deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);\n}\n.icon-rotate-270:before {\n  -webkit-transform: rotate(270deg);\n  -moz-transform: rotate(270deg);\n  -ms-transform: rotate(270deg);\n  -o-transform: rotate(270deg);\n  transform: rotate(270deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);\n}\n.icon-flip-horizontal:before {\n  -webkit-transform: scale(-1, 1);\n  -moz-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n.icon-flip-vertical:before {\n  -webkit-transform: scale(1, -1);\n  -moz-transform: scale(1, -1);\n  -ms-transform: scale(1, -1);\n  -o-transform: scale(1, -1);\n  transform: scale(1, -1);\n}\n/* ensure rotation occurs inside anchor tags */\na .icon-rotate-90:before,\na .icon-rotate-180:before,\na .icon-rotate-270:before,\na .icon-flip-horizontal:before,\na .icon-flip-vertical:before {\n  display: inline-block;\n}\n/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen\n   readers do not read off random characters that represent icons */\n.icon-glass:before {\n  content: \"\\f000\";\n}\n.icon-music:before {\n  content: \"\\f001\";\n}\n.icon-search:before {\n  content: \"\\f002\";\n}\n.icon-envelope-alt:before {\n  content: \"\\f003\";\n}\n.icon-heart:before {\n  content: \"\\f004\";\n}\n.icon-star:before {\n  content: \"\\f005\";\n}\n.icon-star-empty:before {\n  content: \"\\f006\";\n}\n.icon-user:before {\n  content: \"\\f007\";\n}\n.icon-film:before {\n  content: \"\\f008\";\n}\n.icon-th-large:before {\n  content: \"\\f009\";\n}\n.icon-th:before {\n  content: \"\\f00a\";\n}\n.icon-th-list:before {\n  content: \"\\f00b\";\n}\n.icon-ok:before {\n  content: \"\\f00c\";\n}\n.icon-remove:before {\n  content: \"\\f00d\";\n}\n.icon-zoom-in:before {\n  content: \"\\f00e\";\n}\n.icon-zoom-out:before {\n  content: \"\\f010\";\n}\n.icon-power-off:before,\n.icon-off:before {\n  content: \"\\f011\";\n}\n.icon-signal:before {\n  content: \"\\f012\";\n}\n.icon-gear:before,\n.icon-cog:before {\n  content: \"\\f013\";\n}\n.icon-trash:before {\n  content: \"\\f014\";\n}\n.icon-home:before {\n  content: \"\\f015\";\n}\n.icon-file-alt:before {\n  content: \"\\f016\";\n}\n.icon-time:before {\n  content: \"\\f017\";\n}\n.icon-road:before {\n  content: \"\\f018\";\n}\n.icon-download-alt:before {\n  content: \"\\f019\";\n}\n.icon-download:before {\n  content: \"\\f01a\";\n}\n.icon-upload:before {\n  content: \"\\f01b\";\n}\n.icon-inbox:before {\n  content: \"\\f01c\";\n}\n.icon-play-circle:before {\n  content: \"\\f01d\";\n}\n.icon-rotate-right:before,\n.icon-repeat:before {\n  content: \"\\f01e\";\n}\n.icon-refresh:before {\n  content: \"\\f021\";\n}\n.icon-list-alt:before {\n  content: \"\\f022\";\n}\n.icon-lock:before {\n  content: \"\\f023\";\n}\n.icon-flag:before {\n  content: \"\\f024\";\n}\n.icon-headphones:before {\n  content: \"\\f025\";\n}\n.icon-volume-off:before {\n  content: \"\\f026\";\n}\n.icon-volume-down:before {\n  content: \"\\f027\";\n}\n.icon-volume-up:before {\n  content: \"\\f028\";\n}\n.icon-qrcode:before {\n  content: \"\\f029\";\n}\n.icon-barcode:before {\n  content: \"\\f02a\";\n}\n.icon-tag:before {\n  content: \"\\f02b\";\n}\n.icon-tags:before {\n  content: \"\\f02c\";\n}\n.icon-book:before {\n  content: \"\\f02d\";\n}\n.icon-bookmark:before {\n  content: \"\\f02e\";\n}\n.icon-print:before {\n  content: \"\\f02f\";\n}\n.icon-camera:before {\n  content: \"\\f030\";\n}\n.icon-font:before {\n  content: \"\\f031\";\n}\n.icon-bold:before {\n  content: \"\\f032\";\n}\n.icon-italic:before {\n  content: \"\\f033\";\n}\n.icon-text-height:before {\n  content: \"\\f034\";\n}\n.icon-text-width:before {\n  content: \"\\f035\";\n}\n.icon-align-left:before {\n  content: \"\\f036\";\n}\n.icon-align-center:before {\n  content: \"\\f037\";\n}\n.icon-align-right:before {\n  content: \"\\f038\";\n}\n.icon-align-justify:before {\n  content: \"\\f039\";\n}\n.icon-list:before {\n  content: \"\\f03a\";\n}\n.icon-indent-left:before {\n  content: \"\\f03b\";\n}\n.icon-indent-right:before {\n  content: \"\\f03c\";\n}\n.icon-facetime-video:before {\n  content: \"\\f03d\";\n}\n.icon-picture:before {\n  content: \"\\f03e\";\n}\n.icon-pencil:before {\n  content: \"\\f040\";\n}\n.icon-map-marker:before {\n  content: \"\\f041\";\n}\n.icon-adjust:before {\n  content: \"\\f042\";\n}\n.icon-tint:before {\n  content: \"\\f043\";\n}\n.icon-edit:before {\n  content: \"\\f044\";\n}\n.icon-share:before {\n  content: \"\\f045\";\n}\n.icon-check:before {\n  content: \"\\f046\";\n}\n.icon-move:before {\n  content: \"\\f047\";\n}\n.icon-step-backward:before {\n  content: \"\\f048\";\n}\n.icon-fast-backward:before {\n  content: \"\\f049\";\n}\n.icon-backward:before {\n  content: \"\\f04a\";\n}\n.icon-play:before {\n  content: \"\\f04b\";\n}\n.icon-pause:before {\n  content: \"\\f04c\";\n}\n.icon-stop:before {\n  content: \"\\f04d\";\n}\n.icon-forward:before {\n  content: \"\\f04e\";\n}\n.icon-fast-forward:before {\n  content: \"\\f050\";\n}\n.icon-step-forward:before {\n  content: \"\\f051\";\n}\n.icon-eject:before {\n  content: \"\\f052\";\n}\n.icon-chevron-left:before {\n  content: \"\\f053\";\n}\n.icon-chevron-right:before {\n  content: \"\\f054\";\n}\n.icon-plus-sign:before {\n  content: \"\\f055\";\n}\n.icon-minus-sign:before {\n  content: \"\\f056\";\n}\n.icon-remove-sign:before {\n  content: \"\\f057\";\n}\n.icon-ok-sign:before {\n  content: \"\\f058\";\n}\n.icon-question-sign:before {\n  content: \"\\f059\";\n}\n.icon-info-sign:before {\n  content: \"\\f05a\";\n}\n.icon-screenshot:before {\n  content: \"\\f05b\";\n}\n.icon-remove-circle:before {\n  content: \"\\f05c\";\n}\n.icon-ok-circle:before {\n  content: \"\\f05d\";\n}\n.icon-ban-circle:before {\n  content: \"\\f05e\";\n}\n.icon-arrow-left:before {\n  content: \"\\f060\";\n}\n.icon-arrow-right:before {\n  content: \"\\f061\";\n}\n.icon-arrow-up:before {\n  content: \"\\f062\";\n}\n.icon-arrow-down:before {\n  content: \"\\f063\";\n}\n.icon-mail-forward:before,\n.icon-share-alt:before {\n  content: \"\\f064\";\n}\n.icon-resize-full:before {\n  content: \"\\f065\";\n}\n.icon-resize-small:before {\n  content: \"\\f066\";\n}\n.icon-plus:before {\n  content: \"\\f067\";\n}\n.icon-minus:before {\n  content: \"\\f068\";\n}\n.icon-asterisk:before {\n  content: \"\\f069\";\n}\n.icon-exclamation-sign:before {\n  content: \"\\f06a\";\n}\n.icon-gift:before {\n  content: \"\\f06b\";\n}\n.icon-leaf:before {\n  content: \"\\f06c\";\n}\n.icon-fire:before {\n  content: \"\\f06d\";\n}\n.icon-eye-open:before {\n  content: \"\\f06e\";\n}\n.icon-eye-close:before {\n  content: \"\\f070\";\n}\n.icon-warning-sign:before {\n  content: \"\\f071\";\n}\n.icon-plane:before {\n  content: \"\\f072\";\n}\n.icon-calendar:before {\n  content: \"\\f073\";\n}\n.icon-random:before {\n  content: \"\\f074\";\n}\n.icon-comment:before {\n  content: \"\\f075\";\n}\n.icon-magnet:before {\n  content: \"\\f076\";\n}\n.icon-chevron-up:before {\n  content: \"\\f077\";\n}\n.icon-chevron-down:before {\n  content: \"\\f078\";\n}\n.icon-retweet:before {\n  content: \"\\f079\";\n}\n.icon-shopping-cart:before {\n  content: \"\\f07a\";\n}\n.icon-folder-close:before {\n  content: \"\\f07b\";\n}\n.icon-folder-open:before {\n  content: \"\\f07c\";\n}\n.icon-resize-vertical:before {\n  content: \"\\f07d\";\n}\n.icon-resize-horizontal:before {\n  content: \"\\f07e\";\n}\n.icon-bar-chart:before {\n  content: \"\\f080\";\n}\n.icon-twitter-sign:before {\n  content: \"\\f081\";\n}\n.icon-facebook-sign:before {\n  content: \"\\f082\";\n}\n.icon-camera-retro:before {\n  content: \"\\f083\";\n}\n.icon-key:before {\n  content: \"\\f084\";\n}\n.icon-gears:before,\n.icon-cogs:before {\n  content: \"\\f085\";\n}\n.icon-comments:before {\n  content: \"\\f086\";\n}\n.icon-thumbs-up-alt:before {\n  content: \"\\f087\";\n}\n.icon-thumbs-down-alt:before {\n  content: \"\\f088\";\n}\n.icon-star-half:before {\n  content: \"\\f089\";\n}\n.icon-heart-empty:before {\n  content: \"\\f08a\";\n}\n.icon-signout:before {\n  content: \"\\f08b\";\n}\n.icon-linkedin-sign:before {\n  content: \"\\f08c\";\n}\n.icon-pushpin:before {\n  content: \"\\f08d\";\n}\n.icon-external-link:before {\n  content: \"\\f08e\";\n}\n.icon-signin:before {\n  content: \"\\f090\";\n}\n.icon-trophy:before {\n  content: \"\\f091\";\n}\n.icon-github-sign:before {\n  content: \"\\f092\";\n}\n.icon-upload-alt:before {\n  content: \"\\f093\";\n}\n.icon-lemon:before {\n  content: \"\\f094\";\n}\n.icon-phone:before {\n  content: \"\\f095\";\n}\n.icon-unchecked:before,\n.icon-check-empty:before {\n  content: \"\\f096\";\n}\n.icon-bookmark-empty:before {\n  content: \"\\f097\";\n}\n.icon-phone-sign:before {\n  content: \"\\f098\";\n}\n.icon-twitter:before {\n  content: \"\\f099\";\n}\n.icon-facebook:before {\n  content: \"\\f09a\";\n}\n.icon-github:before {\n  content: \"\\f09b\";\n}\n.icon-unlock:before {\n  content: \"\\f09c\";\n}\n.icon-credit-card:before {\n  content: \"\\f09d\";\n}\n.icon-rss:before {\n  content: \"\\f09e\";\n}\n.icon-hdd:before {\n  content: \"\\f0a0\";\n}\n.icon-bullhorn:before {\n  content: \"\\f0a1\";\n}\n.icon-bell:before {\n  content: \"\\f0a2\";\n}\n.icon-certificate:before {\n  content: \"\\f0a3\";\n}\n.icon-hand-right:before {\n  content: \"\\f0a4\";\n}\n.icon-hand-left:before {\n  content: \"\\f0a5\";\n}\n.icon-hand-up:before {\n  content: \"\\f0a6\";\n}\n.icon-hand-down:before {\n  content: \"\\f0a7\";\n}\n.icon-circle-arrow-left:before {\n  content: \"\\f0a8\";\n}\n.icon-circle-arrow-right:before {\n  content: \"\\f0a9\";\n}\n.icon-circle-arrow-up:before {\n  content: \"\\f0aa\";\n}\n.icon-circle-arrow-down:before {\n  content: \"\\f0ab\";\n}\n.icon-globe:before {\n  content: \"\\f0ac\";\n}\n.icon-wrench:before {\n  content: \"\\f0ad\";\n}\n.icon-tasks:before {\n  content: \"\\f0ae\";\n}\n.icon-filter:before {\n  content: \"\\f0b0\";\n}\n.icon-briefcase:before {\n  content: \"\\f0b1\";\n}\n.icon-fullscreen:before {\n  content: \"\\f0b2\";\n}\n.icon-group:before {\n  content: \"\\f0c0\";\n}\n.icon-link:before {\n  content: \"\\f0c1\";\n}\n.icon-cloud:before {\n  content: \"\\f0c2\";\n}\n.icon-beaker:before {\n  content: \"\\f0c3\";\n}\n.icon-cut:before {\n  content: \"\\f0c4\";\n}\n.icon-copy:before {\n  content: \"\\f0c5\";\n}\n.icon-paperclip:before,\n.icon-paper-clip:before {\n  content: \"\\f0c6\";\n}\n.icon-save:before {\n  content: \"\\f0c7\";\n}\n.icon-sign-blank:before {\n  content: \"\\f0c8\";\n}\n.icon-reorder:before {\n  content: \"\\f0c9\";\n}\n.icon-list-ul:before {\n  content: \"\\f0ca\";\n}\n.icon-list-ol:before {\n  content: \"\\f0cb\";\n}\n.icon-strikethrough:before {\n  content: \"\\f0cc\";\n}\n.icon-underline:before {\n  content: \"\\f0cd\";\n}\n.icon-table:before {\n  content: \"\\f0ce\";\n}\n.icon-magic:before {\n  content: \"\\f0d0\";\n}\n.icon-truck:before {\n  content: \"\\f0d1\";\n}\n.icon-pinterest:before {\n  content: \"\\f0d2\";\n}\n.icon-pinterest-sign:before {\n  content: \"\\f0d3\";\n}\n.icon-google-plus-sign:before {\n  content: \"\\f0d4\";\n}\n.icon-google-plus:before {\n  content: \"\\f0d5\";\n}\n.icon-money:before {\n  content: \"\\f0d6\";\n}\n.icon-caret-down:before {\n  content: \"\\f0d7\";\n}\n.icon-caret-up:before {\n  content: \"\\f0d8\";\n}\n.icon-caret-left:before {\n  content: \"\\f0d9\";\n}\n.icon-caret-right:before {\n  content: \"\\f0da\";\n}\n.icon-columns:before {\n  content: \"\\f0db\";\n}\n.icon-sort:before {\n  content: \"\\f0dc\";\n}\n.icon-sort-down:before {\n  content: \"\\f0dd\";\n}\n.icon-sort-up:before {\n  content: \"\\f0de\";\n}\n.icon-envelope:before {\n  content: \"\\f0e0\";\n}\n.icon-linkedin:before {\n  content: \"\\f0e1\";\n}\n.icon-rotate-left:before,\n.icon-undo:before {\n  content: \"\\f0e2\";\n}\n.icon-legal:before {\n  content: \"\\f0e3\";\n}\n.icon-dashboard:before {\n  content: \"\\f0e4\";\n}\n.icon-comment-alt:before {\n  content: \"\\f0e5\";\n}\n.icon-comments-alt:before {\n  content: \"\\f0e6\";\n}\n.icon-bolt:before {\n  content: \"\\f0e7\";\n}\n.icon-sitemap:before {\n  content: \"\\f0e8\";\n}\n.icon-umbrella:before {\n  content: \"\\f0e9\";\n}\n.icon-paste:before {\n  content: \"\\f0ea\";\n}\n.icon-lightbulb:before {\n  content: \"\\f0eb\";\n}\n.icon-exchange:before {\n  content: \"\\f0ec\";\n}\n.icon-cloud-download:before {\n  content: \"\\f0ed\";\n}\n.icon-cloud-upload:before {\n  content: \"\\f0ee\";\n}\n.icon-user-md:before {\n  content: \"\\f0f0\";\n}\n.icon-stethoscope:before {\n  content: \"\\f0f1\";\n}\n.icon-suitcase:before {\n  content: \"\\f0f2\";\n}\n.icon-bell-alt:before {\n  content: \"\\f0f3\";\n}\n.icon-coffee:before {\n  content: \"\\f0f4\";\n}\n.icon-food:before {\n  content: \"\\f0f5\";\n}\n.icon-file-text-alt:before {\n  content: \"\\f0f6\";\n}\n.icon-building:before {\n  content: \"\\f0f7\";\n}\n.icon-hospital:before {\n  content: \"\\f0f8\";\n}\n.icon-ambulance:before {\n  content: \"\\f0f9\";\n}\n.icon-medkit:before {\n  content: \"\\f0fa\";\n}\n.icon-fighter-jet:before {\n  content: \"\\f0fb\";\n}\n.icon-beer:before {\n  content: \"\\f0fc\";\n}\n.icon-h-sign:before {\n  content: \"\\f0fd\";\n}\n.icon-plus-sign-alt:before {\n  content: \"\\f0fe\";\n}\n.icon-double-angle-left:before {\n  content: \"\\f100\";\n}\n.icon-double-angle-right:before {\n  content: \"\\f101\";\n}\n.icon-double-angle-up:before {\n  content: \"\\f102\";\n}\n.icon-double-angle-down:before {\n  content: \"\\f103\";\n}\n.icon-angle-left:before {\n  content: \"\\f104\";\n}\n.icon-angle-right:before {\n  content: \"\\f105\";\n}\n.icon-angle-up:before {\n  content: \"\\f106\";\n}\n.icon-angle-down:before {\n  content: \"\\f107\";\n}\n.icon-desktop:before {\n  content: \"\\f108\";\n}\n.icon-laptop:before {\n  content: \"\\f109\";\n}\n.icon-tablet:before {\n  content: \"\\f10a\";\n}\n.icon-mobile-phone:before {\n  content: \"\\f10b\";\n}\n.icon-circle-blank:before {\n  content: \"\\f10c\";\n}\n.icon-quote-left:before {\n  content: \"\\f10d\";\n}\n.icon-quote-right:before {\n  content: \"\\f10e\";\n}\n.icon-spinner:before {\n  content: \"\\f110\";\n}\n.icon-circle:before {\n  content: \"\\f111\";\n}\n.icon-mail-reply:before,\n.icon-reply:before {\n  content: \"\\f112\";\n}\n.icon-github-alt:before {\n  content: \"\\f113\";\n}\n.icon-folder-close-alt:before {\n  content: \"\\f114\";\n}\n.icon-folder-open-alt:before {\n  content: \"\\f115\";\n}\n.icon-expand-alt:before {\n  content: \"\\f116\";\n}\n.icon-collapse-alt:before {\n  content: \"\\f117\";\n}\n.icon-smile:before {\n  content: \"\\f118\";\n}\n.icon-frown:before {\n  content: \"\\f119\";\n}\n.icon-meh:before {\n  content: \"\\f11a\";\n}\n.icon-gamepad:before {\n  content: \"\\f11b\";\n}\n.icon-keyboard:before {\n  content: \"\\f11c\";\n}\n.icon-flag-alt:before {\n  content: \"\\f11d\";\n}\n.icon-flag-checkered:before {\n  content: \"\\f11e\";\n}\n.icon-terminal:before {\n  content: \"\\f120\";\n}\n.icon-code:before {\n  content: \"\\f121\";\n}\n.icon-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-mail-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-star-half-full:before,\n.icon-star-half-empty:before {\n  content: \"\\f123\";\n}\n.icon-location-arrow:before {\n  content: \"\\f124\";\n}\n.icon-crop:before {\n  content: \"\\f125\";\n}\n.icon-code-fork:before {\n  content: \"\\f126\";\n}\n.icon-unlink:before {\n  content: \"\\f127\";\n}\n.icon-question:before {\n  content: \"\\f128\";\n}\n.icon-info:before {\n  content: \"\\f129\";\n}\n.icon-exclamation:before {\n  content: \"\\f12a\";\n}\n.icon-superscript:before {\n  content: \"\\f12b\";\n}\n.icon-subscript:before {\n  content: \"\\f12c\";\n}\n.icon-eraser:before {\n  content: \"\\f12d\";\n}\n.icon-puzzle-piece:before {\n  content: \"\\f12e\";\n}\n.icon-microphone:before {\n  content: \"\\f130\";\n}\n.icon-microphone-off:before {\n  content: \"\\f131\";\n}\n.icon-shield:before {\n  content: \"\\f132\";\n}\n.icon-calendar-empty:before {\n  content: \"\\f133\";\n}\n.icon-fire-extinguisher:before {\n  content: \"\\f134\";\n}\n.icon-rocket:before {\n  content: \"\\f135\";\n}\n.icon-maxcdn:before {\n  content: \"\\f136\";\n}\n.icon-chevron-sign-left:before {\n  content: \"\\f137\";\n}\n.icon-chevron-sign-right:before {\n  content: \"\\f138\";\n}\n.icon-chevron-sign-up:before {\n  content: \"\\f139\";\n}\n.icon-chevron-sign-down:before {\n  content: \"\\f13a\";\n}\n.icon-html5:before {\n  content: \"\\f13b\";\n}\n.icon-css3:before {\n  content: \"\\f13c\";\n}\n.icon-anchor:before {\n  content: \"\\f13d\";\n}\n.icon-unlock-alt:before {\n  content: \"\\f13e\";\n}\n.icon-bullseye:before {\n  content: \"\\f140\";\n}\n.icon-ellipsis-horizontal:before {\n  content: \"\\f141\";\n}\n.icon-ellipsis-vertical:before {\n  content: \"\\f142\";\n}\n.icon-rss-sign:before {\n  content: \"\\f143\";\n}\n.icon-play-sign:before {\n  content: \"\\f144\";\n}\n.icon-ticket:before {\n  content: \"\\f145\";\n}\n.icon-minus-sign-alt:before {\n  content: \"\\f146\";\n}\n.icon-check-minus:before {\n  content: \"\\f147\";\n}\n.icon-level-up:before {\n  content: \"\\f148\";\n}\n.icon-level-down:before {\n  content: \"\\f149\";\n}\n.icon-check-sign:before {\n  content: \"\\f14a\";\n}\n.icon-edit-sign:before {\n  content: \"\\f14b\";\n}\n.icon-external-link-sign:before {\n  content: \"\\f14c\";\n}\n.icon-share-sign:before {\n  content: \"\\f14d\";\n}\n.icon-compass:before {\n  content: \"\\f14e\";\n}\n.icon-collapse:before {\n  content: \"\\f150\";\n}\n.icon-collapse-top:before {\n  content: \"\\f151\";\n}\n.icon-expand:before {\n  content: \"\\f152\";\n}\n.icon-euro:before,\n.icon-eur:before {\n  content: \"\\f153\";\n}\n.icon-gbp:before {\n  content: \"\\f154\";\n}\n.icon-dollar:before,\n.icon-usd:before {\n  content: \"\\f155\";\n}\n.icon-rupee:before,\n.icon-inr:before {\n  content: \"\\f156\";\n}\n.icon-yen:before,\n.icon-jpy:before {\n  content: \"\\f157\";\n}\n.icon-renminbi:before,\n.icon-cny:before {\n  content: \"\\f158\";\n}\n.icon-won:before,\n.icon-krw:before {\n  content: \"\\f159\";\n}\n.icon-bitcoin:before,\n.icon-btc:before {\n  content: \"\\f15a\";\n}\n.icon-file:before {\n  content: \"\\f15b\";\n}\n.icon-file-text:before {\n  content: \"\\f15c\";\n}\n.icon-sort-by-alphabet:before {\n  content: \"\\f15d\";\n}\n.icon-sort-by-alphabet-alt:before {\n  content: \"\\f15e\";\n}\n.icon-sort-by-attributes:before {\n  content: \"\\f160\";\n}\n.icon-sort-by-attributes-alt:before {\n  content: \"\\f161\";\n}\n.icon-sort-by-order:before {\n  content: \"\\f162\";\n}\n.icon-sort-by-order-alt:before {\n  content: \"\\f163\";\n}\n.icon-thumbs-up:before {\n  content: \"\\f164\";\n}\n.icon-thumbs-down:before {\n  content: \"\\f165\";\n}\n.icon-youtube-sign:before {\n  content: \"\\f166\";\n}\n.icon-youtube:before {\n  content: \"\\f167\";\n}\n.icon-xing:before {\n  content: \"\\f168\";\n}\n.icon-xing-sign:before {\n  content: \"\\f169\";\n}\n.icon-youtube-play:before {\n  content: \"\\f16a\";\n}\n.icon-dropbox:before {\n  content: \"\\f16b\";\n}\n.icon-stackexchange:before {\n  content: \"\\f16c\";\n}\n.icon-instagram:before {\n  content: \"\\f16d\";\n}\n.icon-flickr:before {\n  content: \"\\f16e\";\n}\n.icon-adn:before {\n  content: \"\\f170\";\n}\n.icon-bitbucket:before {\n  content: \"\\f171\";\n}\n.icon-bitbucket-sign:before {\n  content: \"\\f172\";\n}\n.icon-tumblr:before {\n  content: \"\\f173\";\n}\n.icon-tumblr-sign:before {\n  content: \"\\f174\";\n}\n.icon-long-arrow-down:before {\n  content: \"\\f175\";\n}\n.icon-long-arrow-up:before {\n  content: \"\\f176\";\n}\n.icon-long-arrow-left:before {\n  content: \"\\f177\";\n}\n.icon-long-arrow-right:before {\n  content: \"\\f178\";\n}\n.icon-apple:before {\n  content: \"\\f179\";\n}\n.icon-windows:before {\n  content: \"\\f17a\";\n}\n.icon-android:before {\n  content: \"\\f17b\";\n}\n.icon-linux:before {\n  content: \"\\f17c\";\n}\n.icon-dribbble:before {\n  content: \"\\f17d\";\n}\n.icon-skype:before {\n  content: \"\\f17e\";\n}\n.icon-foursquare:before {\n  content: \"\\f180\";\n}\n.icon-trello:before {\n  content: \"\\f181\";\n}\n.icon-female:before {\n  content: \"\\f182\";\n}\n.icon-male:before {\n  content: \"\\f183\";\n}\n.icon-gittip:before {\n  content: \"\\f184\";\n}\n.icon-sun:before {\n  content: \"\\f185\";\n}\n.icon-moon:before {\n  content: \"\\f186\";\n}\n.icon-archive:before {\n  content: \"\\f187\";\n}\n.icon-bug:before {\n  content: \"\\f188\";\n}\n.icon-vk:before {\n  content: \"\\f189\";\n}\n.icon-weibo:before {\n  content: \"\\f18a\";\n}\n.icon-renren:before {\n  content: \"\\f18b\";\n}\n"; s.id = "css-font-awesome"; document.head.appendChild(s);}, "data/stylesheets/introjs": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = ".introjs-overlay {\n  position: absolute;\n  z-index: 999999;\n  background-color: #000;\n  opacity: 0;\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-showElement {\n  z-index: 9999999;\n}\n\n.introjs-relativePosition {\n  position: relative;\n}\n\n.introjs-helperLayer {\n  position: absolute;\n  z-index: 9999998;\n  background-color: rgba(255,255,255,.9);\n  border: 1px solid rgba(0,0,0,.5);\n  border-radius: 4px;\n  box-shadow: 0 2px 15px rgba(0,0,0,.4);\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-helperNumberLayer {\n  position: absolute;\n  top: -16px;\n  left: -16px;\n  z-index: 9999999999 !important;\n  padding: 2px;\n  font-family: Arial, verdana, tahoma;\n  font-size: 13px;\n  font-weight: bold;\n  color: white;\n  text-align: center;\n  text-shadow: 1px 1px 1px rgba(0,0,0,.3);\n  background: #ff3019; /* Old browsers */\n  background: -webkit-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Chrome10+,Safari5.1+ */\n  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ff3019), color-stop(100%, #cf0404)); /* Chrome,Safari4+ */\n  background:    -moz-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* FF3.6+ */\n  background:     -ms-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* IE10+ */\n  background:      -o-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Opera 11.10+ */\n  background:         linear-gradient(to bottom, #ff3019 0%, #cf0404 100%);  /* W3C */\n  width: 20px;\n  height:20px;\n  line-height: 20px;\n  border: 3px solid white;\n  border-radius: 50%;\n  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff3019', endColorstr='#cf0404', GradientType=0); /* IE6-9 */ \n  filter: progid:DXImageTransform.Microsoft.Shadow(direction=135, strength=2, color=ff0000); /* IE10 text shadows */\n  box-shadow: 0 2px 5px rgba(0,0,0,.4);\n}\n\n.introjs-arrow {\n  border: 5px solid white;\n  content:'';\n  position: absolute;\n}\n.introjs-arrow.top {\n  top: -10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:white;\n  border-left-color:transparent;\n}\n.introjs-arrow.right {\n  right: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:white;\n}\n.introjs-arrow.bottom {\n  bottom: -10px;\n  border-top-color:white;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n.introjs-arrow.left {\n  left: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:white;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n\n.introjs-tooltip {\n  position: absolute;\n  padding: 10px;\n  background-color: white;\n  min-width: 200px;\n  border-radius: 3px;\n  box-shadow: 0 1px 10px rgba(0,0,0,.4);\n  -webkit-transition: opacity 0.1s ease-out;\n     -moz-transition: opacity 0.1s ease-out;\n      -ms-transition: opacity 0.1s ease-out;\n       -o-transition: opacity 0.1s ease-out;\n          transition: opacity 0.1s ease-out;\n}\n\n.introjs-tooltipbuttons {\n  text-align: right;\n}\n\n/* \n Buttons style by http://nicolasgallagher.com/lab/css3-github-buttons/ \n Changed by Afshin Mehrabani\n*/\n.introjs-button {\n  position: relative;\n  overflow: visible;\n  display: inline-block;\n  padding: 0.3em 0.8em;\n  border: 1px solid #d4d4d4;\n  margin: 0;\n  text-decoration: none;\n  text-shadow: 1px 1px 0 #fff;\n  font: 11px/normal sans-serif;\n  color: #333;\n  white-space: nowrap;\n  cursor: pointer;\n  outline: none;\n  background-color: #ececec;\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));\n  background-image: -moz-linear-gradient(#f4f4f4, #ececec);\n  background-image: -o-linear-gradient(#f4f4f4, #ececec);\n  background-image: linear-gradient(#f4f4f4, #ececec);\n  -webkit-background-clip: padding;\n  -moz-background-clip: padding;\n  -o-background-clip: padding-box;\n  /*background-clip: padding-box;*/ /* commented out due to Opera 11.10 bug */\n  -webkit-border-radius: 0.2em;\n  -moz-border-radius: 0.2em;\n  border-radius: 0.2em;\n  /* IE hacks */\n  zoom: 1;\n  *display: inline;\n  margin-top: 10px;\n}\n\n.introjs-button:hover {\n  border-color: #bcbcbc;\n  text-decoration: none; \n  box-shadow: 0px 1px 1px #e3e3e3;\n}\n\n.introjs-button:focus,\n.introjs-button:active {\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ececec), to(#f4f4f4));\n  background-image: -moz-linear-gradient(#ececec, #f4f4f4);\n  background-image: -o-linear-gradient(#ececec, #f4f4f4);\n  background-image: linear-gradient(#ececec, #f4f4f4);\n}\n\n/* overrides extra padding on button elements in Firefox */\n.introjs-button::-moz-focus-inner {\n  padding: 0;\n  border: 0;\n}\n\n.introjs-skipbutton {\n  margin-right: 5px;\n  color: #7a7a7a;\n}\n\n.introjs-prevbutton {\n  -webkit-border-radius: 0.2em 0 0 0.2em;\n  -moz-border-radius: 0.2em 0 0 0.2em;\n  border-radius: 0.2em 0 0 0.2em;\n  border-right: none;\n}\n\n.introjs-nextbutton {\n  -webkit-border-radius: 0 0.2em 0.2em 0;\n  -moz-border-radius: 0 0.2em 0.2em 0;\n  border-radius: 0 0.2em 0.2em 0;\n}\n\n.introjs-disabled, .introjs-disabled:hover {\n  color: #9a9a9a;\n  border-color: #d4d4d4;\n  box-shadow: none;\n  cursor: default;\n  background-color: #f4f4f4;\n  background-image: none;\n}"; s.id = "css-introjs"; document.head.appendChild(s);}, "data/views/app/account": function(exports, require, module) {module.exports = function(__obj) {
+return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/font-awesome": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = "/*!\n *  Font Awesome 3.2.1\n *  the iconic font designed for Bootstrap\n *  ------------------------------------------------------------------------------\n *  The full suite of pictographic icons, examples, and documentation can be\n *  found at http://fontawesome.io.  Stay up to date on Twitter at\n *  http://twitter.com/fontawesome.\n *\n *  License\n *  ------------------------------------------------------------------------------\n *  - The Font Awesome font is licensed under SIL OFL 1.1 -\n *    http://scripts.sil.org/OFL\n *  - Font Awesome CSS, LESS, and SASS files are licensed under MIT License -\n *    http://opensource.org/licenses/mit-license.html\n *  - Font Awesome documentation licensed under CC BY 3.0 -\n *    http://creativecommons.org/licenses/by/3.0/\n *  - Attribution is no longer required in Font Awesome 3.0, but much appreciated:\n *    \"Font Awesome by Dave Gandy - http://fontawesome.io\"\n *\n *  Author - Dave Gandy\n *  ------------------------------------------------------------------------------\n *  Email: dave@fontawesome.io\n *  Twitter: http://twitter.com/davegandy\n *  Work: Lead Product Designer @ Kyruus - http://kyruus.com\n */\n/* FONT PATH\n * -------------------------- */\n@font-face {\n  font-family: 'FontAwesome';\n  src: url('<<INSERT FONTAWESOME EOT HERE>>');\n  src: url('<<INSERT FONTAWESOME EOT HERE>>?#iefix') format('embedded-opentype'), url('<<INSERT FONTAWESOME WOFF HERE>>') format('woff'), url('<<INSERT FONTAWESOME TTF HERE>>') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n}\n/* FONT AWESOME CORE\n * -------------------------- */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  font-family: FontAwesome;\n  font-weight: normal;\n  font-style: normal;\n  text-decoration: inherit;\n  -webkit-font-smoothing: antialiased;\n  *margin-right: .3em;\n}\n[class^=\"icon-\"]:before,\n[class*=\" icon-\"]:before {\n  text-decoration: inherit;\n  display: inline-block;\n  speak: none;\n}\n/* makes the font 33% larger relative to the icon container */\n.icon-large:before {\n  vertical-align: -10%;\n  font-size: 1.3333333333333333em;\n}\n/* makes sure icons active on rollover in links */\na [class^=\"icon-\"],\na [class*=\" icon-\"] {\n  display: inline;\n}\n/* increased font size for icon-large */\n[class^=\"icon-\"].icon-fixed-width,\n[class*=\" icon-\"].icon-fixed-width {\n  display: inline-block;\n  width: 1.1428571428571428em;\n  text-align: right;\n  padding-right: 0.2857142857142857em;\n}\n[class^=\"icon-\"].icon-fixed-width.icon-large,\n[class*=\" icon-\"].icon-fixed-width.icon-large {\n  width: 1.4285714285714286em;\n}\n.icons-ul {\n  margin-left: 2.142857142857143em;\n  list-style-type: none;\n}\n.icons-ul > li {\n  position: relative;\n}\n.icons-ul .icon-li {\n  position: absolute;\n  left: -2.142857142857143em;\n  width: 2.142857142857143em;\n  text-align: center;\n  line-height: inherit;\n}\n[class^=\"icon-\"].hide,\n[class*=\" icon-\"].hide {\n  display: none;\n}\n.icon-muted {\n  color: #eeeeee;\n}\n.icon-light {\n  color: #ffffff;\n}\n.icon-dark {\n  color: #333333;\n}\n.icon-border {\n  border: solid 1px #eeeeee;\n  padding: .2em .25em .15em;\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.icon-2x {\n  font-size: 2em;\n}\n.icon-2x.icon-border {\n  border-width: 2px;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.icon-3x {\n  font-size: 3em;\n}\n.icon-3x.icon-border {\n  border-width: 3px;\n  -webkit-border-radius: 5px;\n  -moz-border-radius: 5px;\n  border-radius: 5px;\n}\n.icon-4x {\n  font-size: 4em;\n}\n.icon-4x.icon-border {\n  border-width: 4px;\n  -webkit-border-radius: 6px;\n  -moz-border-radius: 6px;\n  border-radius: 6px;\n}\n.icon-5x {\n  font-size: 5em;\n}\n.icon-5x.icon-border {\n  border-width: 5px;\n  -webkit-border-radius: 7px;\n  -moz-border-radius: 7px;\n  border-radius: 7px;\n}\n.pull-right {\n  float: right;\n}\n.pull-left {\n  float: left;\n}\n[class^=\"icon-\"].pull-left,\n[class*=\" icon-\"].pull-left {\n  margin-right: .3em;\n}\n[class^=\"icon-\"].pull-right,\n[class*=\" icon-\"].pull-right {\n  margin-left: .3em;\n}\n/* BOOTSTRAP SPECIFIC CLASSES\n * -------------------------- */\n/* Bootstrap 2.0 sprites.less reset */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  display: inline;\n  width: auto;\n  height: auto;\n  line-height: normal;\n  vertical-align: baseline;\n  background-image: none;\n  background-position: 0% 0%;\n  background-repeat: repeat;\n  margin-top: 0;\n}\n/* more sprites.less reset */\n.icon-white,\n.nav-pills > .active > a > [class^=\"icon-\"],\n.nav-pills > .active > a > [class*=\" icon-\"],\n.nav-list > .active > a > [class^=\"icon-\"],\n.nav-list > .active > a > [class*=\" icon-\"],\n.navbar-inverse .nav > .active > a > [class^=\"icon-\"],\n.navbar-inverse .nav > .active > a > [class*=\" icon-\"],\n.dropdown-menu > li > a:hover > [class^=\"icon-\"],\n.dropdown-menu > li > a:hover > [class*=\" icon-\"],\n.dropdown-menu > .active > a > [class^=\"icon-\"],\n.dropdown-menu > .active > a > [class*=\" icon-\"],\n.dropdown-submenu:hover > a > [class^=\"icon-\"],\n.dropdown-submenu:hover > a > [class*=\" icon-\"] {\n  background-image: none;\n}\n/* keeps Bootstrap styles with and without icons the same */\n.btn [class^=\"icon-\"].icon-large,\n.nav [class^=\"icon-\"].icon-large,\n.btn [class*=\" icon-\"].icon-large,\n.nav [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].icon-spin,\n.nav [class^=\"icon-\"].icon-spin,\n.btn [class*=\" icon-\"].icon-spin,\n.nav [class*=\" icon-\"].icon-spin {\n  display: inline-block;\n}\n.nav-tabs [class^=\"icon-\"],\n.nav-pills [class^=\"icon-\"],\n.nav-tabs [class*=\" icon-\"],\n.nav-pills [class*=\" icon-\"],\n.nav-tabs [class^=\"icon-\"].icon-large,\n.nav-pills [class^=\"icon-\"].icon-large,\n.nav-tabs [class*=\" icon-\"].icon-large,\n.nav-pills [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].pull-left.icon-2x,\n.btn [class*=\" icon-\"].pull-left.icon-2x,\n.btn [class^=\"icon-\"].pull-right.icon-2x,\n.btn [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .18em;\n}\n.btn [class^=\"icon-\"].icon-spin.icon-large,\n.btn [class*=\" icon-\"].icon-spin.icon-large {\n  line-height: .8em;\n}\n.btn.btn-small [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-small [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .25em;\n}\n.btn.btn-large [class^=\"icon-\"],\n.btn.btn-large [class*=\" icon-\"] {\n  margin-top: 0;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .05em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x {\n  margin-right: .2em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-left: .2em;\n}\n/* Fixes alignment in nav lists */\n.nav-list [class^=\"icon-\"],\n.nav-list [class*=\" icon-\"] {\n  line-height: inherit;\n}\n/* EXTRAS\n * -------------------------- */\n/* Stacked and layered icon */\n.icon-stack {\n  position: relative;\n  display: inline-block;\n  width: 2em;\n  height: 2em;\n  line-height: 2em;\n  vertical-align: -35%;\n}\n.icon-stack [class^=\"icon-\"],\n.icon-stack [class*=\" icon-\"] {\n  display: block;\n  text-align: center;\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  font-size: 1em;\n  line-height: inherit;\n  *line-height: 2em;\n}\n.icon-stack .icon-stack-base {\n  font-size: 2em;\n  *line-height: 1em;\n}\n/* Animated rotating icon */\n.icon-spin {\n  display: inline-block;\n  -moz-animation: spin 2s infinite linear;\n  -o-animation: spin 2s infinite linear;\n  -webkit-animation: spin 2s infinite linear;\n  animation: spin 2s infinite linear;\n}\n/* Prevent stack and spinners from being taken inline when inside a link */\na .icon-stack,\na .icon-spin {\n  display: inline-block;\n  text-decoration: none;\n}\n@-moz-keyframes spin {\n  0% {\n    -moz-transform: rotate(0deg);\n  }\n  100% {\n    -moz-transform: rotate(359deg);\n  }\n}\n@-webkit-keyframes spin {\n  0% {\n    -webkit-transform: rotate(0deg);\n  }\n  100% {\n    -webkit-transform: rotate(359deg);\n  }\n}\n@-o-keyframes spin {\n  0% {\n    -o-transform: rotate(0deg);\n  }\n  100% {\n    -o-transform: rotate(359deg);\n  }\n}\n@-ms-keyframes spin {\n  0% {\n    -ms-transform: rotate(0deg);\n  }\n  100% {\n    -ms-transform: rotate(359deg);\n  }\n}\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(359deg);\n  }\n}\n/* Icon rotations and mirroring */\n.icon-rotate-90:before {\n  -webkit-transform: rotate(90deg);\n  -moz-transform: rotate(90deg);\n  -ms-transform: rotate(90deg);\n  -o-transform: rotate(90deg);\n  transform: rotate(90deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);\n}\n.icon-rotate-180:before {\n  -webkit-transform: rotate(180deg);\n  -moz-transform: rotate(180deg);\n  -ms-transform: rotate(180deg);\n  -o-transform: rotate(180deg);\n  transform: rotate(180deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);\n}\n.icon-rotate-270:before {\n  -webkit-transform: rotate(270deg);\n  -moz-transform: rotate(270deg);\n  -ms-transform: rotate(270deg);\n  -o-transform: rotate(270deg);\n  transform: rotate(270deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);\n}\n.icon-flip-horizontal:before {\n  -webkit-transform: scale(-1, 1);\n  -moz-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n.icon-flip-vertical:before {\n  -webkit-transform: scale(1, -1);\n  -moz-transform: scale(1, -1);\n  -ms-transform: scale(1, -1);\n  -o-transform: scale(1, -1);\n  transform: scale(1, -1);\n}\n/* ensure rotation occurs inside anchor tags */\na .icon-rotate-90:before,\na .icon-rotate-180:before,\na .icon-rotate-270:before,\na .icon-flip-horizontal:before,\na .icon-flip-vertical:before {\n  display: inline-block;\n}\n/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen\n   readers do not read off random characters that represent icons */\n.icon-glass:before {\n  content: \"\\f000\";\n}\n.icon-music:before {\n  content: \"\\f001\";\n}\n.icon-search:before {\n  content: \"\\f002\";\n}\n.icon-envelope-alt:before {\n  content: \"\\f003\";\n}\n.icon-heart:before {\n  content: \"\\f004\";\n}\n.icon-star:before {\n  content: \"\\f005\";\n}\n.icon-star-empty:before {\n  content: \"\\f006\";\n}\n.icon-user:before {\n  content: \"\\f007\";\n}\n.icon-film:before {\n  content: \"\\f008\";\n}\n.icon-th-large:before {\n  content: \"\\f009\";\n}\n.icon-th:before {\n  content: \"\\f00a\";\n}\n.icon-th-list:before {\n  content: \"\\f00b\";\n}\n.icon-ok:before {\n  content: \"\\f00c\";\n}\n.icon-remove:before {\n  content: \"\\f00d\";\n}\n.icon-zoom-in:before {\n  content: \"\\f00e\";\n}\n.icon-zoom-out:before {\n  content: \"\\f010\";\n}\n.icon-power-off:before,\n.icon-off:before {\n  content: \"\\f011\";\n}\n.icon-signal:before {\n  content: \"\\f012\";\n}\n.icon-gear:before,\n.icon-cog:before {\n  content: \"\\f013\";\n}\n.icon-trash:before {\n  content: \"\\f014\";\n}\n.icon-home:before {\n  content: \"\\f015\";\n}\n.icon-file-alt:before {\n  content: \"\\f016\";\n}\n.icon-time:before {\n  content: \"\\f017\";\n}\n.icon-road:before {\n  content: \"\\f018\";\n}\n.icon-download-alt:before {\n  content: \"\\f019\";\n}\n.icon-download:before {\n  content: \"\\f01a\";\n}\n.icon-upload:before {\n  content: \"\\f01b\";\n}\n.icon-inbox:before {\n  content: \"\\f01c\";\n}\n.icon-play-circle:before {\n  content: \"\\f01d\";\n}\n.icon-rotate-right:before,\n.icon-repeat:before {\n  content: \"\\f01e\";\n}\n.icon-refresh:before {\n  content: \"\\f021\";\n}\n.icon-list-alt:before {\n  content: \"\\f022\";\n}\n.icon-lock:before {\n  content: \"\\f023\";\n}\n.icon-flag:before {\n  content: \"\\f024\";\n}\n.icon-headphones:before {\n  content: \"\\f025\";\n}\n.icon-volume-off:before {\n  content: \"\\f026\";\n}\n.icon-volume-down:before {\n  content: \"\\f027\";\n}\n.icon-volume-up:before {\n  content: \"\\f028\";\n}\n.icon-qrcode:before {\n  content: \"\\f029\";\n}\n.icon-barcode:before {\n  content: \"\\f02a\";\n}\n.icon-tag:before {\n  content: \"\\f02b\";\n}\n.icon-tags:before {\n  content: \"\\f02c\";\n}\n.icon-book:before {\n  content: \"\\f02d\";\n}\n.icon-bookmark:before {\n  content: \"\\f02e\";\n}\n.icon-print:before {\n  content: \"\\f02f\";\n}\n.icon-camera:before {\n  content: \"\\f030\";\n}\n.icon-font:before {\n  content: \"\\f031\";\n}\n.icon-bold:before {\n  content: \"\\f032\";\n}\n.icon-italic:before {\n  content: \"\\f033\";\n}\n.icon-text-height:before {\n  content: \"\\f034\";\n}\n.icon-text-width:before {\n  content: \"\\f035\";\n}\n.icon-align-left:before {\n  content: \"\\f036\";\n}\n.icon-align-center:before {\n  content: \"\\f037\";\n}\n.icon-align-right:before {\n  content: \"\\f038\";\n}\n.icon-align-justify:before {\n  content: \"\\f039\";\n}\n.icon-list:before {\n  content: \"\\f03a\";\n}\n.icon-indent-left:before {\n  content: \"\\f03b\";\n}\n.icon-indent-right:before {\n  content: \"\\f03c\";\n}\n.icon-facetime-video:before {\n  content: \"\\f03d\";\n}\n.icon-picture:before {\n  content: \"\\f03e\";\n}\n.icon-pencil:before {\n  content: \"\\f040\";\n}\n.icon-map-marker:before {\n  content: \"\\f041\";\n}\n.icon-adjust:before {\n  content: \"\\f042\";\n}\n.icon-tint:before {\n  content: \"\\f043\";\n}\n.icon-edit:before {\n  content: \"\\f044\";\n}\n.icon-share:before {\n  content: \"\\f045\";\n}\n.icon-check:before {\n  content: \"\\f046\";\n}\n.icon-move:before {\n  content: \"\\f047\";\n}\n.icon-step-backward:before {\n  content: \"\\f048\";\n}\n.icon-fast-backward:before {\n  content: \"\\f049\";\n}\n.icon-backward:before {\n  content: \"\\f04a\";\n}\n.icon-play:before {\n  content: \"\\f04b\";\n}\n.icon-pause:before {\n  content: \"\\f04c\";\n}\n.icon-stop:before {\n  content: \"\\f04d\";\n}\n.icon-forward:before {\n  content: \"\\f04e\";\n}\n.icon-fast-forward:before {\n  content: \"\\f050\";\n}\n.icon-step-forward:before {\n  content: \"\\f051\";\n}\n.icon-eject:before {\n  content: \"\\f052\";\n}\n.icon-chevron-left:before {\n  content: \"\\f053\";\n}\n.icon-chevron-right:before {\n  content: \"\\f054\";\n}\n.icon-plus-sign:before {\n  content: \"\\f055\";\n}\n.icon-minus-sign:before {\n  content: \"\\f056\";\n}\n.icon-remove-sign:before {\n  content: \"\\f057\";\n}\n.icon-ok-sign:before {\n  content: \"\\f058\";\n}\n.icon-question-sign:before {\n  content: \"\\f059\";\n}\n.icon-info-sign:before {\n  content: \"\\f05a\";\n}\n.icon-screenshot:before {\n  content: \"\\f05b\";\n}\n.icon-remove-circle:before {\n  content: \"\\f05c\";\n}\n.icon-ok-circle:before {\n  content: \"\\f05d\";\n}\n.icon-ban-circle:before {\n  content: \"\\f05e\";\n}\n.icon-arrow-left:before {\n  content: \"\\f060\";\n}\n.icon-arrow-right:before {\n  content: \"\\f061\";\n}\n.icon-arrow-up:before {\n  content: \"\\f062\";\n}\n.icon-arrow-down:before {\n  content: \"\\f063\";\n}\n.icon-mail-forward:before,\n.icon-share-alt:before {\n  content: \"\\f064\";\n}\n.icon-resize-full:before {\n  content: \"\\f065\";\n}\n.icon-resize-small:before {\n  content: \"\\f066\";\n}\n.icon-plus:before {\n  content: \"\\f067\";\n}\n.icon-minus:before {\n  content: \"\\f068\";\n}\n.icon-asterisk:before {\n  content: \"\\f069\";\n}\n.icon-exclamation-sign:before {\n  content: \"\\f06a\";\n}\n.icon-gift:before {\n  content: \"\\f06b\";\n}\n.icon-leaf:before {\n  content: \"\\f06c\";\n}\n.icon-fire:before {\n  content: \"\\f06d\";\n}\n.icon-eye-open:before {\n  content: \"\\f06e\";\n}\n.icon-eye-close:before {\n  content: \"\\f070\";\n}\n.icon-warning-sign:before {\n  content: \"\\f071\";\n}\n.icon-plane:before {\n  content: \"\\f072\";\n}\n.icon-calendar:before {\n  content: \"\\f073\";\n}\n.icon-random:before {\n  content: \"\\f074\";\n}\n.icon-comment:before {\n  content: \"\\f075\";\n}\n.icon-magnet:before {\n  content: \"\\f076\";\n}\n.icon-chevron-up:before {\n  content: \"\\f077\";\n}\n.icon-chevron-down:before {\n  content: \"\\f078\";\n}\n.icon-retweet:before {\n  content: \"\\f079\";\n}\n.icon-shopping-cart:before {\n  content: \"\\f07a\";\n}\n.icon-folder-close:before {\n  content: \"\\f07b\";\n}\n.icon-folder-open:before {\n  content: \"\\f07c\";\n}\n.icon-resize-vertical:before {\n  content: \"\\f07d\";\n}\n.icon-resize-horizontal:before {\n  content: \"\\f07e\";\n}\n.icon-bar-chart:before {\n  content: \"\\f080\";\n}\n.icon-twitter-sign:before {\n  content: \"\\f081\";\n}\n.icon-facebook-sign:before {\n  content: \"\\f082\";\n}\n.icon-camera-retro:before {\n  content: \"\\f083\";\n}\n.icon-key:before {\n  content: \"\\f084\";\n}\n.icon-gears:before,\n.icon-cogs:before {\n  content: \"\\f085\";\n}\n.icon-comments:before {\n  content: \"\\f086\";\n}\n.icon-thumbs-up-alt:before {\n  content: \"\\f087\";\n}\n.icon-thumbs-down-alt:before {\n  content: \"\\f088\";\n}\n.icon-star-half:before {\n  content: \"\\f089\";\n}\n.icon-heart-empty:before {\n  content: \"\\f08a\";\n}\n.icon-signout:before {\n  content: \"\\f08b\";\n}\n.icon-linkedin-sign:before {\n  content: \"\\f08c\";\n}\n.icon-pushpin:before {\n  content: \"\\f08d\";\n}\n.icon-external-link:before {\n  content: \"\\f08e\";\n}\n.icon-signin:before {\n  content: \"\\f090\";\n}\n.icon-trophy:before {\n  content: \"\\f091\";\n}\n.icon-github-sign:before {\n  content: \"\\f092\";\n}\n.icon-upload-alt:before {\n  content: \"\\f093\";\n}\n.icon-lemon:before {\n  content: \"\\f094\";\n}\n.icon-phone:before {\n  content: \"\\f095\";\n}\n.icon-unchecked:before,\n.icon-check-empty:before {\n  content: \"\\f096\";\n}\n.icon-bookmark-empty:before {\n  content: \"\\f097\";\n}\n.icon-phone-sign:before {\n  content: \"\\f098\";\n}\n.icon-twitter:before {\n  content: \"\\f099\";\n}\n.icon-facebook:before {\n  content: \"\\f09a\";\n}\n.icon-github:before {\n  content: \"\\f09b\";\n}\n.icon-unlock:before {\n  content: \"\\f09c\";\n}\n.icon-credit-card:before {\n  content: \"\\f09d\";\n}\n.icon-rss:before {\n  content: \"\\f09e\";\n}\n.icon-hdd:before {\n  content: \"\\f0a0\";\n}\n.icon-bullhorn:before {\n  content: \"\\f0a1\";\n}\n.icon-bell:before {\n  content: \"\\f0a2\";\n}\n.icon-certificate:before {\n  content: \"\\f0a3\";\n}\n.icon-hand-right:before {\n  content: \"\\f0a4\";\n}\n.icon-hand-left:before {\n  content: \"\\f0a5\";\n}\n.icon-hand-up:before {\n  content: \"\\f0a6\";\n}\n.icon-hand-down:before {\n  content: \"\\f0a7\";\n}\n.icon-circle-arrow-left:before {\n  content: \"\\f0a8\";\n}\n.icon-circle-arrow-right:before {\n  content: \"\\f0a9\";\n}\n.icon-circle-arrow-up:before {\n  content: \"\\f0aa\";\n}\n.icon-circle-arrow-down:before {\n  content: \"\\f0ab\";\n}\n.icon-globe:before {\n  content: \"\\f0ac\";\n}\n.icon-wrench:before {\n  content: \"\\f0ad\";\n}\n.icon-tasks:before {\n  content: \"\\f0ae\";\n}\n.icon-filter:before {\n  content: \"\\f0b0\";\n}\n.icon-briefcase:before {\n  content: \"\\f0b1\";\n}\n.icon-fullscreen:before {\n  content: \"\\f0b2\";\n}\n.icon-group:before {\n  content: \"\\f0c0\";\n}\n.icon-link:before {\n  content: \"\\f0c1\";\n}\n.icon-cloud:before {\n  content: \"\\f0c2\";\n}\n.icon-beaker:before {\n  content: \"\\f0c3\";\n}\n.icon-cut:before {\n  content: \"\\f0c4\";\n}\n.icon-copy:before {\n  content: \"\\f0c5\";\n}\n.icon-paperclip:before,\n.icon-paper-clip:before {\n  content: \"\\f0c6\";\n}\n.icon-save:before {\n  content: \"\\f0c7\";\n}\n.icon-sign-blank:before {\n  content: \"\\f0c8\";\n}\n.icon-reorder:before {\n  content: \"\\f0c9\";\n}\n.icon-list-ul:before {\n  content: \"\\f0ca\";\n}\n.icon-list-ol:before {\n  content: \"\\f0cb\";\n}\n.icon-strikethrough:before {\n  content: \"\\f0cc\";\n}\n.icon-underline:before {\n  content: \"\\f0cd\";\n}\n.icon-table:before {\n  content: \"\\f0ce\";\n}\n.icon-magic:before {\n  content: \"\\f0d0\";\n}\n.icon-truck:before {\n  content: \"\\f0d1\";\n}\n.icon-pinterest:before {\n  content: \"\\f0d2\";\n}\n.icon-pinterest-sign:before {\n  content: \"\\f0d3\";\n}\n.icon-google-plus-sign:before {\n  content: \"\\f0d4\";\n}\n.icon-google-plus:before {\n  content: \"\\f0d5\";\n}\n.icon-money:before {\n  content: \"\\f0d6\";\n}\n.icon-caret-down:before {\n  content: \"\\f0d7\";\n}\n.icon-caret-up:before {\n  content: \"\\f0d8\";\n}\n.icon-caret-left:before {\n  content: \"\\f0d9\";\n}\n.icon-caret-right:before {\n  content: \"\\f0da\";\n}\n.icon-columns:before {\n  content: \"\\f0db\";\n}\n.icon-sort:before {\n  content: \"\\f0dc\";\n}\n.icon-sort-down:before {\n  content: \"\\f0dd\";\n}\n.icon-sort-up:before {\n  content: \"\\f0de\";\n}\n.icon-envelope:before {\n  content: \"\\f0e0\";\n}\n.icon-linkedin:before {\n  content: \"\\f0e1\";\n}\n.icon-rotate-left:before,\n.icon-undo:before {\n  content: \"\\f0e2\";\n}\n.icon-legal:before {\n  content: \"\\f0e3\";\n}\n.icon-dashboard:before {\n  content: \"\\f0e4\";\n}\n.icon-comment-alt:before {\n  content: \"\\f0e5\";\n}\n.icon-comments-alt:before {\n  content: \"\\f0e6\";\n}\n.icon-bolt:before {\n  content: \"\\f0e7\";\n}\n.icon-sitemap:before {\n  content: \"\\f0e8\";\n}\n.icon-umbrella:before {\n  content: \"\\f0e9\";\n}\n.icon-paste:before {\n  content: \"\\f0ea\";\n}\n.icon-lightbulb:before {\n  content: \"\\f0eb\";\n}\n.icon-exchange:before {\n  content: \"\\f0ec\";\n}\n.icon-cloud-download:before {\n  content: \"\\f0ed\";\n}\n.icon-cloud-upload:before {\n  content: \"\\f0ee\";\n}\n.icon-user-md:before {\n  content: \"\\f0f0\";\n}\n.icon-stethoscope:before {\n  content: \"\\f0f1\";\n}\n.icon-suitcase:before {\n  content: \"\\f0f2\";\n}\n.icon-bell-alt:before {\n  content: \"\\f0f3\";\n}\n.icon-coffee:before {\n  content: \"\\f0f4\";\n}\n.icon-food:before {\n  content: \"\\f0f5\";\n}\n.icon-file-text-alt:before {\n  content: \"\\f0f6\";\n}\n.icon-building:before {\n  content: \"\\f0f7\";\n}\n.icon-hospital:before {\n  content: \"\\f0f8\";\n}\n.icon-ambulance:before {\n  content: \"\\f0f9\";\n}\n.icon-medkit:before {\n  content: \"\\f0fa\";\n}\n.icon-fighter-jet:before {\n  content: \"\\f0fb\";\n}\n.icon-beer:before {\n  content: \"\\f0fc\";\n}\n.icon-h-sign:before {\n  content: \"\\f0fd\";\n}\n.icon-plus-sign-alt:before {\n  content: \"\\f0fe\";\n}\n.icon-double-angle-left:before {\n  content: \"\\f100\";\n}\n.icon-double-angle-right:before {\n  content: \"\\f101\";\n}\n.icon-double-angle-up:before {\n  content: \"\\f102\";\n}\n.icon-double-angle-down:before {\n  content: \"\\f103\";\n}\n.icon-angle-left:before {\n  content: \"\\f104\";\n}\n.icon-angle-right:before {\n  content: \"\\f105\";\n}\n.icon-angle-up:before {\n  content: \"\\f106\";\n}\n.icon-angle-down:before {\n  content: \"\\f107\";\n}\n.icon-desktop:before {\n  content: \"\\f108\";\n}\n.icon-laptop:before {\n  content: \"\\f109\";\n}\n.icon-tablet:before {\n  content: \"\\f10a\";\n}\n.icon-mobile-phone:before {\n  content: \"\\f10b\";\n}\n.icon-circle-blank:before {\n  content: \"\\f10c\";\n}\n.icon-quote-left:before {\n  content: \"\\f10d\";\n}\n.icon-quote-right:before {\n  content: \"\\f10e\";\n}\n.icon-spinner:before {\n  content: \"\\f110\";\n}\n.icon-circle:before {\n  content: \"\\f111\";\n}\n.icon-mail-reply:before,\n.icon-reply:before {\n  content: \"\\f112\";\n}\n.icon-github-alt:before {\n  content: \"\\f113\";\n}\n.icon-folder-close-alt:before {\n  content: \"\\f114\";\n}\n.icon-folder-open-alt:before {\n  content: \"\\f115\";\n}\n.icon-expand-alt:before {\n  content: \"\\f116\";\n}\n.icon-collapse-alt:before {\n  content: \"\\f117\";\n}\n.icon-smile:before {\n  content: \"\\f118\";\n}\n.icon-frown:before {\n  content: \"\\f119\";\n}\n.icon-meh:before {\n  content: \"\\f11a\";\n}\n.icon-gamepad:before {\n  content: \"\\f11b\";\n}\n.icon-keyboard:before {\n  content: \"\\f11c\";\n}\n.icon-flag-alt:before {\n  content: \"\\f11d\";\n}\n.icon-flag-checkered:before {\n  content: \"\\f11e\";\n}\n.icon-terminal:before {\n  content: \"\\f120\";\n}\n.icon-code:before {\n  content: \"\\f121\";\n}\n.icon-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-mail-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-star-half-full:before,\n.icon-star-half-empty:before {\n  content: \"\\f123\";\n}\n.icon-location-arrow:before {\n  content: \"\\f124\";\n}\n.icon-crop:before {\n  content: \"\\f125\";\n}\n.icon-code-fork:before {\n  content: \"\\f126\";\n}\n.icon-unlink:before {\n  content: \"\\f127\";\n}\n.icon-question:before {\n  content: \"\\f128\";\n}\n.icon-info:before {\n  content: \"\\f129\";\n}\n.icon-exclamation:before {\n  content: \"\\f12a\";\n}\n.icon-superscript:before {\n  content: \"\\f12b\";\n}\n.icon-subscript:before {\n  content: \"\\f12c\";\n}\n.icon-eraser:before {\n  content: \"\\f12d\";\n}\n.icon-puzzle-piece:before {\n  content: \"\\f12e\";\n}\n.icon-microphone:before {\n  content: \"\\f130\";\n}\n.icon-microphone-off:before {\n  content: \"\\f131\";\n}\n.icon-shield:before {\n  content: \"\\f132\";\n}\n.icon-calendar-empty:before {\n  content: \"\\f133\";\n}\n.icon-fire-extinguisher:before {\n  content: \"\\f134\";\n}\n.icon-rocket:before {\n  content: \"\\f135\";\n}\n.icon-maxcdn:before {\n  content: \"\\f136\";\n}\n.icon-chevron-sign-left:before {\n  content: \"\\f137\";\n}\n.icon-chevron-sign-right:before {\n  content: \"\\f138\";\n}\n.icon-chevron-sign-up:before {\n  content: \"\\f139\";\n}\n.icon-chevron-sign-down:before {\n  content: \"\\f13a\";\n}\n.icon-html5:before {\n  content: \"\\f13b\";\n}\n.icon-css3:before {\n  content: \"\\f13c\";\n}\n.icon-anchor:before {\n  content: \"\\f13d\";\n}\n.icon-unlock-alt:before {\n  content: \"\\f13e\";\n}\n.icon-bullseye:before {\n  content: \"\\f140\";\n}\n.icon-ellipsis-horizontal:before {\n  content: \"\\f141\";\n}\n.icon-ellipsis-vertical:before {\n  content: \"\\f142\";\n}\n.icon-rss-sign:before {\n  content: \"\\f143\";\n}\n.icon-play-sign:before {\n  content: \"\\f144\";\n}\n.icon-ticket:before {\n  content: \"\\f145\";\n}\n.icon-minus-sign-alt:before {\n  content: \"\\f146\";\n}\n.icon-check-minus:before {\n  content: \"\\f147\";\n}\n.icon-level-up:before {\n  content: \"\\f148\";\n}\n.icon-level-down:before {\n  content: \"\\f149\";\n}\n.icon-check-sign:before {\n  content: \"\\f14a\";\n}\n.icon-edit-sign:before {\n  content: \"\\f14b\";\n}\n.icon-external-link-sign:before {\n  content: \"\\f14c\";\n}\n.icon-share-sign:before {\n  content: \"\\f14d\";\n}\n.icon-compass:before {\n  content: \"\\f14e\";\n}\n.icon-collapse:before {\n  content: \"\\f150\";\n}\n.icon-collapse-top:before {\n  content: \"\\f151\";\n}\n.icon-expand:before {\n  content: \"\\f152\";\n}\n.icon-euro:before,\n.icon-eur:before {\n  content: \"\\f153\";\n}\n.icon-gbp:before {\n  content: \"\\f154\";\n}\n.icon-dollar:before,\n.icon-usd:before {\n  content: \"\\f155\";\n}\n.icon-rupee:before,\n.icon-inr:before {\n  content: \"\\f156\";\n}\n.icon-yen:before,\n.icon-jpy:before {\n  content: \"\\f157\";\n}\n.icon-renminbi:before,\n.icon-cny:before {\n  content: \"\\f158\";\n}\n.icon-won:before,\n.icon-krw:before {\n  content: \"\\f159\";\n}\n.icon-bitcoin:before,\n.icon-btc:before {\n  content: \"\\f15a\";\n}\n.icon-file:before {\n  content: \"\\f15b\";\n}\n.icon-file-text:before {\n  content: \"\\f15c\";\n}\n.icon-sort-by-alphabet:before {\n  content: \"\\f15d\";\n}\n.icon-sort-by-alphabet-alt:before {\n  content: \"\\f15e\";\n}\n.icon-sort-by-attributes:before {\n  content: \"\\f160\";\n}\n.icon-sort-by-attributes-alt:before {\n  content: \"\\f161\";\n}\n.icon-sort-by-order:before {\n  content: \"\\f162\";\n}\n.icon-sort-by-order-alt:before {\n  content: \"\\f163\";\n}\n.icon-thumbs-up:before {\n  content: \"\\f164\";\n}\n.icon-thumbs-down:before {\n  content: \"\\f165\";\n}\n.icon-youtube-sign:before {\n  content: \"\\f166\";\n}\n.icon-youtube:before {\n  content: \"\\f167\";\n}\n.icon-xing:before {\n  content: \"\\f168\";\n}\n.icon-xing-sign:before {\n  content: \"\\f169\";\n}\n.icon-youtube-play:before {\n  content: \"\\f16a\";\n}\n.icon-dropbox:before {\n  content: \"\\f16b\";\n}\n.icon-stackexchange:before {\n  content: \"\\f16c\";\n}\n.icon-instagram:before {\n  content: \"\\f16d\";\n}\n.icon-flickr:before {\n  content: \"\\f16e\";\n}\n.icon-adn:before {\n  content: \"\\f170\";\n}\n.icon-bitbucket:before {\n  content: \"\\f171\";\n}\n.icon-bitbucket-sign:before {\n  content: \"\\f172\";\n}\n.icon-tumblr:before {\n  content: \"\\f173\";\n}\n.icon-tumblr-sign:before {\n  content: \"\\f174\";\n}\n.icon-long-arrow-down:before {\n  content: \"\\f175\";\n}\n.icon-long-arrow-up:before {\n  content: \"\\f176\";\n}\n.icon-long-arrow-left:before {\n  content: \"\\f177\";\n}\n.icon-long-arrow-right:before {\n  content: \"\\f178\";\n}\n.icon-apple:before {\n  content: \"\\f179\";\n}\n.icon-windows:before {\n  content: \"\\f17a\";\n}\n.icon-android:before {\n  content: \"\\f17b\";\n}\n.icon-linux:before {\n  content: \"\\f17c\";\n}\n.icon-dribbble:before {\n  content: \"\\f17d\";\n}\n.icon-skype:before {\n  content: \"\\f17e\";\n}\n.icon-foursquare:before {\n  content: \"\\f180\";\n}\n.icon-trello:before {\n  content: \"\\f181\";\n}\n.icon-female:before {\n  content: \"\\f182\";\n}\n.icon-male:before {\n  content: \"\\f183\";\n}\n.icon-gittip:before {\n  content: \"\\f184\";\n}\n.icon-sun:before {\n  content: \"\\f185\";\n}\n.icon-moon:before {\n  content: \"\\f186\";\n}\n.icon-archive:before {\n  content: \"\\f187\";\n}\n.icon-bug:before {\n  content: \"\\f188\";\n}\n.icon-vk:before {\n  content: \"\\f189\";\n}\n.icon-weibo:before {\n  content: \"\\f18a\";\n}\n.icon-renren:before {\n  content: \"\\f18b\";\n}\n"; s.id = "css-font-awesome"; document.head.appendChild(s);}, "data/stylesheets/introjs": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = ".introjs-overlay {\n  position: absolute;\n  z-index: 999999;\n  background-color: #000;\n  opacity: 0;\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-showElement {\n  z-index: 9999999;\n}\n\n.introjs-relativePosition {\n  position: relative;\n}\n\n.introjs-helperLayer {\n  position: absolute;\n  z-index: 9999998;\n  background-color: rgba(255,255,255,.9);\n  border: 1px solid rgba(0,0,0,.5);\n  border-radius: 4px;\n  box-shadow: 0 2px 15px rgba(0,0,0,.4);\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-helperNumberLayer {\n  position: absolute;\n  top: -16px;\n  left: -16px;\n  z-index: 9999999999 !important;\n  padding: 2px;\n  font-family: Arial, verdana, tahoma;\n  font-size: 13px;\n  font-weight: bold;\n  color: white;\n  text-align: center;\n  text-shadow: 1px 1px 1px rgba(0,0,0,.3);\n  background: #ff3019; /* Old browsers */\n  background: -webkit-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Chrome10+,Safari5.1+ */\n  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ff3019), color-stop(100%, #cf0404)); /* Chrome,Safari4+ */\n  background:    -moz-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* FF3.6+ */\n  background:     -ms-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* IE10+ */\n  background:      -o-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Opera 11.10+ */\n  background:         linear-gradient(to bottom, #ff3019 0%, #cf0404 100%);  /* W3C */\n  width: 20px;\n  height:20px;\n  line-height: 20px;\n  border: 3px solid white;\n  border-radius: 50%;\n  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff3019', endColorstr='#cf0404', GradientType=0); /* IE6-9 */ \n  filter: progid:DXImageTransform.Microsoft.Shadow(direction=135, strength=2, color=ff0000); /* IE10 text shadows */\n  box-shadow: 0 2px 5px rgba(0,0,0,.4);\n}\n\n.introjs-arrow {\n  border: 5px solid white;\n  content:'';\n  position: absolute;\n}\n.introjs-arrow.top {\n  top: -10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:white;\n  border-left-color:transparent;\n}\n.introjs-arrow.right {\n  right: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:white;\n}\n.introjs-arrow.bottom {\n  bottom: -10px;\n  border-top-color:white;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n.introjs-arrow.left {\n  left: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:white;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n\n.introjs-tooltip {\n  position: absolute;\n  padding: 10px;\n  background-color: white;\n  min-width: 200px;\n  border-radius: 3px;\n  box-shadow: 0 1px 10px rgba(0,0,0,.4);\n  -webkit-transition: opacity 0.1s ease-out;\n     -moz-transition: opacity 0.1s ease-out;\n      -ms-transition: opacity 0.1s ease-out;\n       -o-transition: opacity 0.1s ease-out;\n          transition: opacity 0.1s ease-out;\n}\n\n.introjs-tooltipbuttons {\n  text-align: right;\n}\n\n/* \n Buttons style by http://nicolasgallagher.com/lab/css3-github-buttons/ \n Changed by Afshin Mehrabani\n*/\n.introjs-button {\n  position: relative;\n  overflow: visible;\n  display: inline-block;\n  padding: 0.3em 0.8em;\n  border: 1px solid #d4d4d4;\n  margin: 0;\n  text-decoration: none;\n  text-shadow: 1px 1px 0 #fff;\n  font: 11px/normal sans-serif;\n  color: #333;\n  white-space: nowrap;\n  cursor: pointer;\n  outline: none;\n  background-color: #ececec;\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));\n  background-image: -moz-linear-gradient(#f4f4f4, #ececec);\n  background-image: -o-linear-gradient(#f4f4f4, #ececec);\n  background-image: linear-gradient(#f4f4f4, #ececec);\n  -webkit-background-clip: padding;\n  -moz-background-clip: padding;\n  -o-background-clip: padding-box;\n  /*background-clip: padding-box;*/ /* commented out due to Opera 11.10 bug */\n  -webkit-border-radius: 0.2em;\n  -moz-border-radius: 0.2em;\n  border-radius: 0.2em;\n  /* IE hacks */\n  zoom: 1;\n  *display: inline;\n  margin-top: 10px;\n}\n\n.introjs-button:hover {\n  border-color: #bcbcbc;\n  text-decoration: none; \n  box-shadow: 0px 1px 1px #e3e3e3;\n}\n\n.introjs-button:focus,\n.introjs-button:active {\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ececec), to(#f4f4f4));\n  background-image: -moz-linear-gradient(#ececec, #f4f4f4);\n  background-image: -o-linear-gradient(#ececec, #f4f4f4);\n  background-image: linear-gradient(#ececec, #f4f4f4);\n}\n\n/* overrides extra padding on button elements in Firefox */\n.introjs-button::-moz-focus-inner {\n  padding: 0;\n  border: 0;\n}\n\n.introjs-skipbutton {\n  margin-right: 5px;\n  color: #7a7a7a;\n}\n\n.introjs-prevbutton {\n  -webkit-border-radius: 0.2em 0 0 0.2em;\n  -moz-border-radius: 0.2em 0 0 0.2em;\n  border-radius: 0.2em 0 0 0.2em;\n  border-right: none;\n}\n\n.introjs-nextbutton {\n  -webkit-border-radius: 0 0.2em 0.2em 0;\n  -moz-border-radius: 0 0.2em 0.2em 0;\n  border-radius: 0 0.2em 0.2em 0;\n}\n\n.introjs-disabled, .introjs-disabled:hover {\n  color: #9a9a9a;\n  border-color: #d4d4d4;\n  box-shadow: none;\n  cursor: default;\n  background-color: #f4f4f4;\n  background-image: none;\n}"; s.id = "css-introjs"; document.head.appendChild(s);}, "data/views/index": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -19875,903 +16647,33 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<div ng-controller="AccountController">\n\t<h1>Account Stuff</h1>\n\t<div class="form">\n\t\t<label for="account-name">\n\t\t\t<span ');
+      __out.push('<aside ng-class="{');
     
-      __out.push(__sanitize(_T("Name")));
+      __out.push(__sanitize(this.States.closed));
     
-      __out.push('></span>\n\t\t\t<input type="text" id="account-name" ng-model="user.data.name" ');
+      __out.push(': \'closed\', ');
     
-      __out.push(__sanitize(_T("Name", "placeholder")));
+      __out.push(__sanitize(this.States.open));
     
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<hr>\n\t\t<label for="account-email">\n\t\t\t<span ');
+      __out.push(': \'open\'}[sidebarStatus]">');
     
-      __out.push(__sanitize(_T("EMail")));
+      __out.push(DepMan.render("menu", {
+        Pages: this.Pages
+      }));
     
-      __out.push('></span>\n\t\t\t<input type="text" id="account-email" ng-model="user.data.email" ');
+      __out.push('</aside>\n<section ng-class="{');
     
-      __out.push(__sanitize(_T("EMail", "placeholder")));
+      __out.push(__sanitize(this.States.open));
     
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<hr>\n\t\t<label for="account-password">\n\t\t\t<span ');
+      __out.push(': \'closed\', ');
     
-      __out.push(__sanitize(_T("Current Password")));
+      __out.push(__sanitize(this.States.closed));
     
-      __out.push('></span>\n\t\t\t<input type="password" id="account-password" ng-model="currentpass" ');
+      __out.push(': \'open\'}[sidebarStatus]">\n\t<div class="triangle"></div>\n\t<div class="tip">There is a menu here. <br>Try to hover, I dare you!</div>\n\t');
     
-      __out.push(__sanitize(_T("Current Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<br>\n\t\t<label for="account-new-password">\n\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("New Password")));
-    
-      __out.push('></span>\n\t\t\t<input type="password" id="account-new-password" ng-model="newpass" ');
-    
-      __out.push(__sanitize(_T("New Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<br>\n\t\t<label for="account-new-password-verify">\n\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("Verify the New Password")));
-    
-      __out.push('></span>\n\t\t\t<input type="password" id="account-new-password-verify" ng-model="newpassverify" ');
-    
-      __out.push(__sanitize(_T("Verify the New Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<button ');
-    
-      __out.push(__sanitize(_T("Change Password")));
-    
-      __out.push(' ng-click="changePassword()"></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/applications": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="recipies-container" ng-controller="ApplicationsController">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Applications")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="recipe in recipeModel.recipes | filter:searchTerms" ng-show="runtime.props[\'active-tab\'] == 1">\n\t\t<h2 ng-bind="recipe._id"></h2>\n\t\t<select ng-change="installApp(recipe)" ng-model="info.device" ng-options="device.name for (key, device) in user.devices"></select>\n\t</article>\n</div>ac');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/develop": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div ng-controller="RecipeController" id="recipies-container">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Your Recipes")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="recipe in recipeModel.recipes | filter:searchTerms" ng-show="runtime.props[\'active-tab\'] == 3">\n\t\t<h2 ng-bind="recipe._id"></h2>\n\t\t<nav>\n\t\t\t<li ng-click="toggleEditing(recipe)"><i class="icon-wrench"></i></li>\n\t\t\t<li ng-click="remove(recipe)"><i class="icon-remove"></i></li>\n\t\t</nav>\n\t\t<div ng-class="{true: \'active\', false: \'inactive\', undefined: \'inactive\'}[recipe.editing]">\n\t\t\t<label for="recipe-name-{{recipe._uuid}}">\n\t\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("The name of the recipe")));
-    
-      __out.push('></span>\n\t\t\t\t<input type="text" id=\'recipe-name-{{recipe._uuid}}\' ng-model="recipe._id" ');
-    
-      __out.push(__sanitize(_T("Recipe Name", "placeholder")));
-    
-      __out.push(' ng-change="recipe.data.name = recipe._id" >\n\t\t\t</label>\n\t\t\t<article ng-repeat="stub in recipe.data.stubs">\n\t\t\t\t<label for="recipe-stub-{{recipe._uuid}}">\n\t\t\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("The URL of the dependency")));
-    
-      __out.push('></span>\n\t\t\t\t\t<input type="text" id="recipe-stub-{{recipe._uuid}}" ng-model="stub.url" ');
-    
-      __out.push(__sanitize(_T("URL", "placeholder")));
-    
-      __out.push('>\n\t\t\t\t</label>\n\t\t\t\t<div class="instructions container">\n\t\t\t\t\t<li ng-repeat="(index, instruction) in stub.instructions">\n\t\t\t\t\t\t<label for="recipe-name-{{recipe._uuid}}-{{index}}">\n\t\t\t\t\t\t\t<span><span ');
-    
-      __out.push(__sanitize(_T("Instruction number")));
-    
-      __out.push('></span> <span>{{index + 1}}</span></span>\n\t\t\t\t\t\t\t<input type="text" id="recipe-name-{{recipe._uuid}}-{{index}}" ng-model="instruction.command" ');
-    
-      __out.push(__sanitize(_T("Instruction", "placeholder")));
-    
-      __out.push('>\n\t\t\t\t\t\t</label>\n\t\t\t\t\t\t<nav>\n\t\t\t\t\t\t\t<li ng-click="removeInstruction(instruction, stub.instructions)"><i class="icon-remove"></i></li>\n\t\t\t\t\t\t</nav>\n\t\t\t\t\t</li>\n\t\t\t\t\t<nav class="add">\n\t\t\t\t\t\t<li ng-click="addInstruction(stub.instructions)"><i class="icon-plus"></i></li>\n\t\t\t\t\t</nav>\n\t\t\t\t</div>\n\t\t\t\t<nav>\n\t\t\t\t\t<li ng-click="removeStub(stub, recipe.data.stubs)"><i class="icon-remove"></i></li>\n\t\t\t\t</nav>\n\t\t\t</article>\n\t\t\t<nav class="add">\n\t\t\t\t<li ng-click="addStub(recipe.data)"><i class="icon-plus"></i></li>\n\t\t\t</nav>\n\t\t\t<button class="save" ng-click=\'recipe.save()\' ');
-    
-      __out.push(__sanitize(_T("Save")));
-    
-      __out.push('></button>\n\t\t</div>\n\t</article>\n\t<nav class="add">\n\t\t<li ng-click="addRecipe()"><i class="icon-plus"></i></li>\n\t</nav>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/devices": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="recipies-container" ng-controller="DevicesController">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Devices Management")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="(uuid, device) in user.devices | filter:searchTerms">\n\t\t<h2 ng-bind="device.name"></h2>\n\t\t<nav>\n\t\t\t<li ng-click="remove(uuid)"><i class=\'icon-remove\'></i></li>\n\t\t</nav>\n\t\t<textarea name="" id="">{{device.installed_apps.join("\\n")}}</textarea>\n\t\t<textarea name="" id="">{{device.app_stack.join("\\n")}}</textarea>\n\t</article>\n\t<nav class="add">\n\t\t<li ng-click="add()"><i class=\'icon-plus\'></i></li>\n\t</nav>\n\t<input type="text" ng-model="info.device" ng-change="add()" ');
-    
-      __out.push(__sanitize(_T("Add", "placeholder")));
-    
-      __out.push('>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      var ICONS, TABS, index, tab, _i, _j, _len, _len1;
-    
-      TABS = ["account", "applications", "devices", "develop"];
-    
-      __out.push('\n');
-    
-      ICONS = ["user", "list", "desktop", "code"];
-    
-      __out.push('\n<div ng-controller="AppRouter" id="approuter-container">\n\t<aside ng-class="{0: \'active\'}[tabState]">\n\t\t<h1>');
-    
-      __out.push(__sanitize(AppInfo.displayname));
-    
-      __out.push('</h1>\n\t\t');
-    
-      for (index = _i = 0, _len = TABS.length; _i < _len; index = ++_i) {
-        tab = TABS[index];
-        __out.push('\n\t\t\t<li id=\'');
-        __out.push(__sanitize(tab));
-        __out.push('\' ng-click=\'this.runtime.set("active-tab", ');
-        __out.push(__sanitize(index));
-        __out.push(')\' ng-class="{');
-        __out.push(__sanitize(index));
-        __out.push(': \'active\'}[activeTab]"><i class="icon-');
-        __out.push(__sanitize(ICONS[index]));
-        __out.push('"></i>');
-        __out.push(__sanitize(tab[0].toUpperCase() + tab.substr(1)));
-        __out.push('</li>\n\t\t');
-      }
-    
-      __out.push('\n\t</aside>\n\t<section ng-class="{1: \'active\'}[tabState]">\n\t\t');
-    
-      for (index = _j = 0, _len1 = TABS.length; _j < _len1; index = ++_j) {
-        tab = TABS[index];
-        __out.push('\n\t\t<article ng-class="{');
-        __out.push(__sanitize(index));
-        __out.push(': \'active\'}[activeTab]">');
-        __out.push(DepMan.render(["app", tab]));
-        __out.push('</article>\n\t\t');
-      }
-    
-      __out.push('\n\t</section>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_alt": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<aside id="secondary" ng-class="{false: \'inactive\', true: \'active\'}[node.$viewmore]">\n\t<label for="relation{{node.$index}}" id="relationplaceholder">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Relation between this node and the previous.")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<input type="text" ng-model="node.relation" ng-change="replicate(node, \'relation\')" id="relation{{node.$index}}">\n\t\t</div>\n\t</label>\n\t<label for="node{{node.$index}}" id="noteplacehoder">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Notes associated")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<textarea id="node{{node.$index}}" ng-model="node.note" ng-change="replicate(node, \'note\')"></textarea>\n\t\t</div>\n\t</label>\n</aside>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_main": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<aside id="primary">\n\t<nav>\n\t');
-    
-      __out.push(DepMan.render(["document", "_misc"]));
-    
-      __out.push('\n\t</nav>\t\t\t\t\n\t<label for="text{{node.$index}}">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Node Text")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<input type="text" ng-model="node.text" ng-change="replicate(node, \'text\')"/>\n\t\t</div>\n\t</label>\n\t<nav id="primary">\n\t');
-    
-      __out.push(DepMan.render(["document", "_nav"]));
-    
-      __out.push('\n\t</nav>\n</aside>\t\t\t\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_misc": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<label for="folding{{node.$index}}" ng-class="{\'determinate\': \'active\', \'indeterminate\': \'active\', \'checked\': \'inactive\', \'unchecked\': \'inactive\'}[node.status]">\n\t<input type="checkbox" id="folding{{node.$index}}" ng-model="node.$folded" ng-change="refresh(node)"/>\n\t<i ng-class="{true: \'icon-chevron-right\', false: \'icon-chevron-down\'}[node.$folded]"></i>\n</label>\n<label for="status{{node.$index}}">\n\t<input type="checkbox" id="status{{node.$index}}" ng-model="node.$status" ng-change="changeStatus(node)">\n\t<i ng-class="{\'checked\': \'icon-check\', \'unchecked\': \'icon-check-empty\', \'determinate\': \'icon-circle\', \'indeterminate\': \'icon-adjust\'}[node.status]"></i>\n</label>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_nav": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<li ng-click="add(node)" class="add button"><i class="icon-plus"></i></li>\n<li ng-click="remove(node)" class="remove button"><i class="icon-remove"></i></li>\n<li ng-click="modalEdit(node)" class="modal button"><i class="icon-gear"></i></li>\n<li class="button showhide">\n\t<label for="showhide{{node.$index}}"><input type="checkbox" ng-model="node.$viewmore" id="showhide{{node.$index}}"><i ng-class="{true: \'icon-eye-open\', false: \'icon-eye-close\'}[node.$viewmore]"></i></label>\n</li>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/editform": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="editform">\n\t<div id="textcontainer"><label for="text" ');
-    
-      __out.push(__sanitize(_T("The text of the node")));
-    
-      __out.push('></label><input type="text" id="text"></div>\n\t<div id="checkcontainer"><label for="checked" ');
-    
-      __out.push(__sanitize(_T("Is this node checked?")));
-    
-      __out.push('></label><input type="checkbox"  id="checked"></div>\n\t<div id="foldcontainer"><label for="folded" ');
-    
-      __out.push(__sanitize(_T("Is this node folded?")));
-    
-      __out.push('></label><input type="checkbox" id="folded"></div>\n\t<div id="relationcontainer"><label for="relation" ');
-    
-      __out.push(__sanitize(_T("Relation with its parent")));
-    
-      __out.push('></label><input type="text" id="relation"></div>\n\t<div id="notecontainer"><label for="note" ');
-    
-      __out.push(__sanitize(_T("Notes attached")));
-    
-      __out.push('></label><textarea id="note"></textarea></div>\n\t<br>\n\t<div id="buttoncontainer">\n\t\t<input type="button" id="addnode" ');
-    
-      __out.push(__sanitize(_T("Add a new node", "value")));
-    
-      __out.push('>\n\t\t<input type="button" id="removenode" ');
-    
-      __out.push(__sanitize(_T("Remove this node", "value")));
-    
-      __out.push('>\n\t</div>\n\t<br>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section ng-controller="Document" ng-class="{0: \'sidebarclosed\', 1: \'sidebaropen\'}[runtime.props[\'sidebar-state\']]">\n\t<header>\n\t\t{{activeDocument.title}} \n\t\t<nav>\n\t\t\t<li ng-click="runtime.set(\'document-state\', 1)" ng-class="{0: \'inactive\', 1: \'active\'}[runtime.props[\'document-state\']]"><i class="icon-sitemap"></i></li>\n\t\t\t<li ng-click="runtime.set(\'document-state\', 0)" ng-class="{0: \'active\', 1: \'inactive\'}[runtime.props[\'document-state\']]"><i class="icon-list"></i></li>\n\t\t</nav>\n\t</header>\n\t<section id="outline" ng-class="{1: \'inactive\', 0: \'active\'}[runtime.props[\'document-state\']]">\n\t\t<article ng-repeat="node in activeDocument.indexes" ng-class="{true: \'inactive\', false: \'active\'}[node.$hidden]" ng-style="getStyles(node)">\n\t\t \t');
-    
-      __out.push(DepMan.render(["document", "_main"]));
-    
-      __out.push('\n\t\t \t');
-    
-      __out.push(DepMan.render(["document", "_alt"]));
-    
-      __out.push('\n\t\t</article>\n\t\t<aside ng-click="addRoot()"><i class="icon-plus"></i></aside>\n\t</section>\n\t<section id="mindmap" ng-class="{0: \'inactive\', 1: \'active\'}[runtime.props[\'document-state\']]">\n\t\t<canvas></canvas>\n\t</section>\n</section>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/list": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section ng-controller="DocumentList">\n\t<nav>\n\t\t<div class="slider">\n\t\t\t<li ng-click="addDocument()"><i class="icon-plus"></i></li>\n\t\t\t<li ng-click="deleteDocument()"><i class="icon-remove"></i></li>\n\t\t\t<li ng-click="saveDocument()"><i class="icon-save"></i></li>\n\t\t\t<li ng-click="downloadDocument()"><i class="icon-cloud-download"></i></li>\n\t\t\t<li ng-click="uploadDocument()"><i class="icon-cloud-upload"></i></li>\n\t\t\t<li ng-click="duplicateDocument()"><i class="icon-copy"></i></li>\n\t\t</div>\n\t</nav>\n\t<article ng-repeat="(id, document) in models._reccords">\n\t\t<input type="text" ng-model="document.title" ngc-focus="switch(id)" ng-change="replicate()" />\n\t\t<small>{{id}}</small>\n\t</article>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab1": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>To start using the application, click on the eye button (<span class=\'key\'><i class="icon-eye-open"></i></span>) on the top left to open up the sidebar or use the keyboard shortcuts (<span class="key">⌘-[1-4]</span> / <span class="key">Control-[1-4]</span>) to access the individual tabs.</p>\n<p>The application supports two ways of viewing and editing the data. To move between them use the buttons on the upper right side of the application (<span class="key"><i class="icon-sitemap"></i></span> and <span class="key"><i class="icon-list"></i></span>) </p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab2": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>With the sidebar window you can change the tabs using the keyboard shortcuts using the keyboards explained earlier, or with the four tabs on the bottom (<span class="key"><i class="icon-list"></i></span>, <span class="key"><i class="icon-signal"></i></span>, <span class="key"><i class="icon-gear"></i></span>, <span class="key"><i class="icon-code"></i></span>).</p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab3": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>To connect to another client, access the server tab of the sidebar, copy your clientID (or scan the QR code) and give that code to the person that wants to connect to you. Then that person will input that code into the second input of the page, and then he will receive the data you are already editing.</p>\n<p>From that moment on, untill you reconnect, you two will be linked together. Any action you take will be replicated between you and your connection.</p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section id="help">\n\t');
-    
-      __out.push(DepMan.render(["pages", "help"]));
-    
-      __out.push('\n</section>\n<section id="landing">\n\t');
-    
-      __out.push(DepMan.render(["pages", "landing"]));
-    
-      __out.push('\n</section>\n<section id="application">\n\t');
-    
-      __out.push(DepMan.render(["app", "index"]));
+      __out.push(DepMan.render("pages", {
+        Pages: this.Pages
+      }));
     
       __out.push('\n</section>');
     
@@ -20780,7 +16682,7 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/loading/index": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/menu": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -20819,662 +16721,30 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<section id="loadingscreen">\n\t<section></section>\n\t<aside data-location=\'left\'></aside>\n\t<aside data-location=\'right\'></aside>\n\t<article>\n\t\t<div><p>Revelati</p></div>\n\t\t<span></span>\n\t\t<div><p>n</p></div>\n\t\t<p><span id="loadingmessage"></span></p>\n\t</article>\n</section>\n');
+      var index, page, _i, _len, _ref;
     
-    }).call(this);
+      __out.push('<nav>\n\t');
     
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/modal": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push(__sanitize(console.log(this)));
-    
-      __out.push('\n<section ng-controller=\'Modal\' id=\'modal-window\' ng-class="{');
-    
-      __out.push(__sanitize(this.States["closed"]));
-    
-      __out.push(': \'closed\', ');
-    
-      __out.push(__sanitize(this.States["normal"]));
-    
-      __out.push(': \'normal\', ');
-    
-      __out.push(__sanitize(this.States["fullscreen"]));
-    
-      __out.push(': \'fullscreen\'}[runtime.props[\'modal-state\']]">\n\t<section>\n\t<header ng-bind=\'title\'></header>\n\t  <nav>\n\t\t<li ng-click=\'runtime.set("modal-state", ');
-    
-      __out.push(__sanitize(this.States['closed']));
-    
-      __out.push(')\' ><i class="icon-remove"></i></li>\n\t\t<li ng-click=\'toggle()\'><i class="icon-fullscreen"></i></li>\n\t  </nav>\n\t  <article ng-bind-html-unsafe=\'content\'></article>\n\t</section>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/help": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section class="help wrapper" ng-controller="Help" ng-click="verifyState($event)">\n\t<aside class="left" ng-click="changeState(-1)"></aside>\n\t<section>\n\t\t<article ng-repeat="doc in articles" ng-class="{true: \'active\', false: \'\'}[$index == runtime.props[\'help-state\']]" ng-bind-html-unsafe="doc">\n\t\t</article>\n\t</section>\n\t<aside class="right" ng-click="changeState(1)"></aside>\n\t<nav>\n\t\t<li ng-repeat="article in articles" ng-click="runtime.set(\'help-state\', $index)" ng-class="{true: \'active\', false: \'\'}[$index == runtime.props[\'help-state\']]"></li>\n\t</nav>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing-content": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-    
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div ng-controller="Landing" id="landingpage">\n\t<section>\n\t  <header>\n\t  \t<h1 class="left">Rasp</h1>\n\t  \t<img src="');
-    
-      __out.push(__sanitize(DepMan.image("logo")));
-    
-      __out.push('" alt="" />\n\t  \t<h1 class="right">Store</h1>\n\t  </header>\n\t</section>\n\t<section id=\'raspmenu\' ng-style="height(\'login\')">\n\t\t<aside>');
-    
-      __out.push(DepMan.render("pages/landing/login"));
-    
-      __out.push('</aside>\n\t\t<aside>');
-    
-      __out.push(DepMan.render("pages/landing/register"));
-    
-      __out.push('</aside>\n\t\t<nav><h1 ng-click="readMore()" ');
-    
-      __out.push(__sanitize(_T("Read More")));
-    
-      __out.push('></h1></nav>\n\t</section>\n\t<section ng-repeat="(section, html) in sections" ng-style="height(\'full\')" >\n\t\t<div class=\'container\' id="{{section}}" ng-bind-html-unsafe="html"></div>\n\t</section>\n\t<section id="contact">');
-    
-      __out.push(DepMan.render("pages/landing/contact"));
-    
-      __out.push('</section>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/about": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>About the app</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/contact": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container">\n\t<h1>A very basic contact form</h1>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/linux": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>A bit about the Linux Ecosystem</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/login": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container" id="login-form">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Login")));
-    
-      __out.push('></h1>\n\t<div class="content">\n\t\t<input type="text" id=\'login-email\' ');
-    
-      __out.push(__sanitize(_T("EMail", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id=\'login-password\' ');
-    
-      __out.push(__sanitize(_T("Password", "placeholder")));
-    
-      __out.push('>\n\t\t<button id=\'submit-button\' ');
-    
-      __out.push(__sanitize(_T("Submit")));
-    
-      __out.push('></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/macos": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>About the Mac OS ecosystem</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/rasp": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>Raspberry PI</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/register": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container" id="register-form">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Register")));
-    
-      __out.push('></h1>\n\t<div class="content">\n\t\t<input type="text" id="register-email" ');
-    
-      __out.push(__sanitize(_T("EMail", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id="register-pass" ');
-    
-      __out.push(__sanitize(_T("Password", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id="register-pass-verify" ');
-    
-      __out.push(__sanitize(_T("Password Verification", "placeholder")));
-    
-      __out.push('>\n\t\t<button ');
-    
-      __out.push(__sanitize(_T("Submit")));
-    
-      __out.push(' id="submit-button"></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/sidebar/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      var index, tab, _i, _len, _ref;
-    
-      __out.push('<section ng-controller="Sidebar" class="{{STATES[runtime.props[\'sidebar-state\']]}}">\n\t<nav>\n\t\t<li ng-repeat="tab in TABS" ng-click="runtime.set(\'sidebar-tab\', Tabs[tab])" ng-class="{true: \'active\'}[runtime.props[\'sidebar-tab\'] == $index]"><i class="{{ICONS[$index]}}"></i></li>\n\t</nav>\n\t<section>\n\t\t');
-    
-      _ref = this.TABS;
+      _ref = this.Pages;
       for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
-        tab = _ref[index];
-        __out.push('\n\t\t<article ng-class="{true: \'active\'}[runtime.props[\'sidebar-tab\'] == ');
+        page = _ref[index];
+        __out.push('\n\t\t');
+        console.log(page, index);
+        __out.push('\n\t\t<li ng-click=\'changeActiveTab(');
         __out.push(__sanitize(index));
-        __out.push(']">');
-        __out.push(DepMan.render(['sidebar', 'tabs', tab]));
-        __out.push('</article>\n\t\t');
+        __out.push(')\'>');
+        __out.push(__sanitize(page[0].toUpperCase() + page.substr(1)));
+        __out.push('</li>\n\t');
       }
     
-      __out.push('\n\t</section>\n\t<aside ng-click="toggleState()"><i ng-class="{');
-    
-      __out.push(__sanitize(this.States.open));
-    
-      __out.push(':\' icon-eye-open\', ');
-    
-      __out.push(__sanitize(this.States.closed));
-    
-      __out.push(': \'icon-eye-close\'}[runtime.props[\'sidebar-state\']]"></i></aside>\n</section>\n');
+      __out.push('\n</nav>');
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/experimental": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -21513,34 +16783,24 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
+      var index, page, _i, _len, _ref;
     
-      __out.push(__sanitize(_T("Experimental Features")));
-    
-      __out.push('></h1>\n<ul>\n\t<li onclick="Toast(\'Example\', \'With Content\')"><p ');
-    
-      __out.push(__sanitize(_T("Activate a Toast")));
-    
-      __out.push('></p></li>\n\t<li onclick="Notifications.toastNormal(\'Example\', [ \'With Content\' ])"><p ');
-    
-      __out.push(__sanitize(_T("Activate a Toast (Modal Override)")));
-    
-      __out.push('></p></li>\n\t<li onclick="Modal.show({title: \'Some Title\', content: \'Some Example Content\'})"><p ');
-    
-      __out.push(__sanitize(_T("Open a modal window")));
-    
-      __out.push('></p></li>\n\t<li onclick="Loading.start(); Loading.progress(\'I will turn off in 5 seconds!\'); setTimeout(Loading.end, 5000)"><p ');
-    
-      __out.push(__sanitize(_T("Open the Loading Screen")));
-    
-      __out.push('></p></li>\n</ul>\n');
+      _ref = this.Pages;
+      for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
+        page = _ref[index];
+        __out.push('\n\t<article ng-class=\'{');
+        __out.push(__sanitize(index));
+        __out.push(': "active"}[activeTab]\'>');
+        __out.push(DepMan.render("pages/" + page));
+        __out.push('</article>\n');
+      }
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/general": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages/demo": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -21579,38 +16839,14 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("General Application Settings")));
-    
-      __out.push('></h1>\n<ul>\n\t<li ng-click="runtime.set(\'app-state\', 0)"><p ');
-    
-      __out.push(__sanitize(_T("Activate the landing page")));
-    
-      __out.push('></p></li>\n\t<li ng-click="runtime.set(\'app-state\', 2)"><p ');
-    
-      __out.push(__sanitize(_T("Activate the help page")));
-    
-      __out.push('></p></li>\n\t<li>\n\t\t<label for="languageselect" ');
-    
-      __out.push(__sanitize(_T("Select your language of choice")));
-    
-      __out.push('></label>\n\t\t<select ng-change="runtime.set(\'language\', language)" ng-model=\'language\' id="languageselect">\n\t\t\t<option value="en-US" ');
-    
-      __out.push(__sanitize(_T("English")));
-    
-      __out.push('></option>\n\t\t\t<option value="ro-RO" ');
-    
-      __out.push(__sanitize(_T("Romanian")));
-    
-      __out.push('></option>\n\t\t</select>\n\t</li>\n</ul>\n');
+      __out.push('<h1>Demo</h1>');
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/list": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages/home": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -21649,73 +16885,7 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("Document List")));
-    
-      __out.push('></h1>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/sidebar/tabs/server": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("Connection Manager")));
-    
-      __out.push('></h1>\n<ul>\n\t<li ');
-    
-      __out.push(__sanitize(_T("Reconnect")));
-    
-      __out.push(' ng-click="Client.reconnect()"></li>\n</ul>\n<img id="client-qrcode" src="" alt="" class="qrcode" ng-click=\'verifyAndConnect()\' />\n<ul>\n\t<li><label for="self-client-id" ');
-    
-      __out.push(__sanitize(_T("Your Client ID")));
-    
-      __out.push('></label><input type="text" ng-model="Client.id" disabled id="self-client-id" /></li>\n\t<li><label for="remote-client-id" ');
-    
-      __out.push(__sanitize(_T("Client ID to connect to")));
-    
-      __out.push('></label><input type="text"  id="remote-client-id" ng-model="clientid"/></li>\n</ul>\n');
+      __out.push('<h1>Hackasoton</h1>');
     
     }).call(this);
     
@@ -25432,6 +20602,1091 @@ window.AppInfo = {
   },
   "main": "./lib/script.js"
 }
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
+;window.AppInfo = {
+  "name": "raspr",
+  "displayname": "Rasp Store",
+  "version": "0.1.0",
+  "author": {
+    "name": "Sabin Marcu",
+    "email": "sabinmarcu@gmail.com"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "cliparser": "*",
+    "express": "*",
+    "less": "*",
+    "stylus": "*",
+    "nib": "*",
+    "isf": "*",
+    "codo": "*",
+    "stitchw": "*",
+    "pc2cs": "*",
+    "eco": "~1.1.0-rc-3",
+    "mime": "~1.2.9",
+    "LiveScript": "~1.1.1",
+    "js-yaml": "~2.1.0",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt": "~0.4.1",
+    "grunt-devtools": "0.1.0-7"
+  },
+  "scripts": {
+    "create-dir-structure": "mkdir lib src spec bin",
+    "compile": "node node_modules/.bin/coffee -c -o lib src",
+    "run-tests": "node node_modules/.bin/jasmine-node --coffee --noColor spec",
+    "test": "npm run-script compile && npm run-script run-tests"
+  },
+  "main": "./lib/script.js"
+}
 ;// Writing Copyright Information to HTML
 var done = false;
 
@@ -25451,7 +21706,7 @@ Other than that, feel free to enjoy the application!
 @Application Name : Rasp Store
 @Author           : Sabin Marcu <sabinmarcu@gmail.com>
 @Version          : 0.1.0
-@Date Compiled    : Sun Sep 01 2013 11:02:33 GMT+0300 (EEST)
+@Date Compiled    : Sun Sep 01 2013 15:29:08 GMT+0300 (EEST)
 **/
 
 !function(module){!function(){var CHARS="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");Math.uuid=function(len,radix){var chars=CHARS,uuid=[],i;radix=radix||chars.length;if(len){for(i=0;i<len;i++)uuid[i]=chars[0|Math.random()*radix]}else{var r;uuid[8]=uuid[13]=uuid[18]=uuid[23]="-";uuid[14]="4";for(i=0;i<36;i++){if(!uuid[i]){r=0|Math.random()*16;uuid[i]=chars[i==19?r&3|8:r]}}}return uuid.join("")};Math.uuidFast=function(){var chars=CHARS,uuid=new Array(36),rnd=0,r;for(var i=0;i<36;i++){if(i==8||i==13||i==18||i==23){uuid[i]="-"}else if(i==14){uuid[i]="4"}else{if(rnd<=2)rnd=33554432+Math.random()*16777216|0;r=rnd&15;rnd=rnd>>4;uuid[i]=chars[i==19?r&3|8:r]}}return uuid.join("")};Math.uuidCompact=function(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c=="x"?r:r&3|8;return v.toString(16)})}}();!function(){if(!this.require){var modules={},cache={},require=function(name,root){var path=expand(root,name),module=cache[path],fn;if(module){return module.exports}else if(fn=modules[path]||modules[path=expand(path,"./index")]){module={id:path,exports:{}};try{cache[path]=module;fn(module.exports,function(name){return require(name,dirname(path))},module);return module.exports}catch(err){delete cache[path];throw err}}else{throw"module '"+name+"' not found"}},expand=function(root,name){var results=[],parts,part;if(/^\.\.?(\/|$)/.test(name)){parts=[root,name].join("/").split("/")}else{parts=name.split("/")}for(var i=0,length=parts.length;i<length;i++){part=parts[i];if(part==".."){results.pop()}else if(part!="."&&part!=""){results.push(part)}}return results.join("/")},dirname=function(path){return path.split("/").slice(0,-1).join("/")};this.require=function(name){return require(name,"")};this.require.define=function(bundle){for(var key in bundle)modules[key]=bundle[key]}}return this.require.define}.call(this)({Enum:function(exports,require,module){!function(){var Enum;Enum=function(){function Enum(items,offset){var item,key,_i,_len;if(offset==null){offset=0}for(key=_i=0,_len=items.length;_i<_len;key=++_i){item=items[key];this[item]=key+offset}}return Enum}();module.exports=Enum}.call(this)},ErrorReporter:function(exports,require,module){!function(){var ErrorReporter,__bind=function(fn,me){return function(){return fn.apply(me,arguments)}},__indexOf=[].indexOf||function(item){for(var i=0,l=this.length;i<l;i++){if(i in this&&this[i]===item)return i}return-1};ErrorReporter=function(){function ErrorReporter(){this.toString=__bind(this.toString,this)}ErrorReporter._errors={"Unknown Error":["An unknown error has occurred"]};ErrorReporter._indices=[ErrorReporter._errors["Unknown Error"][0]];ErrorReporter._groups=["Unknown Error"];ErrorReporter.wrapCustomError=function(error){return"["+error.name+"] "+error.message};ErrorReporter.generate=function(errorCode,extra){if(extra==null){extra=null}return(new this).generate(errorCode,extra)};ErrorReporter.extended=function(){var error,errors,group,key,_i,_len,_ref;_ref=this.errors;for(group in _ref){errors=_ref[group];this._errors[group]=errors;this._groups.push(group);for(key=_i=0,_len=errors.length;_i<_len;key=++_i){error=errors[key];this._indices.push(this._errors[group][key])}}this.prototype._=this;delete this.errors;return this.include(ErrorReporter.prototype)};ErrorReporter.prototype.generate=function(errCode,extra){var errors,group,_ref,_ref1;this.errCode=errCode;if(extra==null){extra=null}if(!this._._indices[this.errCode]){this.name=this._._groups[0];this.message=this._._errors[this._._groups[0]][0]}else{this.message=this._._indices[this.errCode];if(extra){this.message+=" - Extra Data : "+extra}_ref=this._._errors;for(group in _ref){errors=_ref[group];if(!(_ref1=this.message,__indexOf.call(errors,_ref1)>=0)){continue}this.name=group;break}}return this};ErrorReporter.prototype.toString=function(){return"["+this.name+"] "+this.message+" |"+this.errCode+"|"};return ErrorReporter}();module.exports=ErrorReporter}.call(this)},"Modules/Mediator":function(exports,require,module){!function(){var Modules;Modules={Observer:require("Modules/Observer")};Modules.Mediator=function(){var extended,included,installTo,key,value,_ref;function Mediator(){}_ref=Modules.Observer;for(key in _ref){value=_ref[key];Mediator.prototype[key]=value}installTo=function(object){this.delegate("publish",object);return this.delegate("subscribe",object)};included=function(){this.prototype.queue={};return this.prototype._delegates={publish:true,subscribe:true}};extended=function(){this.queue={};return this._delegates={publish:true,subscribe:true}};return Mediator}();module.exports=Modules.Mediator.prototype}.call(this)},"Modules/ORM":function(exports,require,module){!function(){var Modules,V,__indexOf=[].indexOf||function(item){for(var i=0,l=this.length;i<l;i++){if(i in this&&this[i]===item)return i}return-1};Modules={};V=require("Variable");Modules.ORM=function(){function ORM(){}ORM.prototype._identifier="BasicORM";ORM.prototype._reccords={};ORM.prototype._symlinks={};ORM.prototype._head=0;ORM.prototype._props=[];ORM.prototype.get=function(which){if(typeof which==="object"){return this.getAdv(which)}return this._symlinks[which]||this._reccords[which]||null};ORM.prototype.getAdv=function(what){var check,key,rec,results,_ref,_ref1;results=[];check=function(rec){var final,k,mod,modfinal,recs,v,val,value,_i,_len;for(k in what){v=what[k];final=false;if(rec[k]==null){break}if(typeof v==="object"){for(mod in v){val=v[mod];modfinal=true;switch(mod){case"$gt":if(rec[k].get()<=val){modfinal=false;break}break;case"$gte":if(rec[k].get()<val){modfinal=false;break}break;case"$lt":if(rec[k].get()>=val){modfinal=false;break}break;case"$lte":if(rec[k].get()>val){modfinal=false;break}break;case"$contains":recs=rec[k].get();if(recs.constructor!==Array){modfinal=false;break}modfinal=false;for(_i=0,_len=recs.length;_i<_len;_i++){value=recs[_i];if(value===val){modfinal=true;break}}}if(modfinal===false){break}}if(modfinal===true){final=true}}else if(rec[k].get()===v){final=true}else{break}}if(final){return results.push(rec)}};_ref=this._reccords;for(key in _ref){rec=_ref[key];check(rec)}_ref1=this._symlinks;for(key in _ref1){rec=_ref1[key];check(rec)}if(results.length===0){return null}if(results.length===1){return results[0]}return results};ORM.prototype["delete"]=function(which){var _base,_base1;if((_base=this._reccords)[which]==null){_base[which]=null}return(_base1=this._symlinks)[which]!=null?(_base1=this._symlinks)[which]:_base1[which]=null};ORM.prototype.create=function(id,args){var prop,uuid,_i,_len,_ref;if(this._reccords==null){this._reccords={}}if(args==null){args={}}uuid=id||args._id||this._head;if(args._id==null){args._id=uuid}uuid=Math.uuidFast(uuid);args._uuid=uuid;args._fn=this;if(typeof this.preCreate==="function"){this.preCreate(args)}this._reccords[uuid]=new this(args);this._reccords[uuid]._constructor(args);if(typeof this.postCreate==="function"){this.postCreate(this._reccords[uuid],args)}if(id!=null&&id!==this._head){this._symlinks[id]=this._reccords[uuid]}if(uuid===this._head){this._head++}_ref=this._props;for(_i=0,_len=_ref.length;_i<_len;_i++){prop=_ref[_i];this._reccords[uuid][prop]=V.spawn()}return this._reccords[uuid]};ORM.prototype.reuse=function(which,args){var rez;if(args==null){args={}}rez=this.get(which);if(rez!=null){return rez}return this.create(which,args)};ORM.prototype.addProp=function(prop){var key,rec,_ref,_results;this._props.push(prop);_ref=this._reccords;_results=[];for(key in _ref){rec=_ref[key];_results.push(rec[prop]!=null?rec[prop]:rec[prop]=V.spawn())}return _results};ORM.prototype.removeProp=function(prop){var k,key,p,rec,_i,_len,_ref,_ref1;_ref=this._reccords;for(key in _ref){rec=_ref[key];if(rec[prop]==null){rec[prop]=null}}_ref1=this._props;for(k=_i=0,_len=_ref1.length;_i<_len;k=++_i){p=_ref1[k];if(p===prop){return this._props.splice(k,1)}}};ORM.prototype.extended=function(){this._excludes=["_fn","_uuid","_id"];return this.include({_constructor:function(args){var k,key,v,value,valueSet,_results;valueSet={};this._uuid=args._uuid||null;this._id=args._id||null;this.fn=args._fn;for(key in args){value=args[key];if(__indexOf.call(this.fn._excludes,key)<0&&this.constructFilter(key,value)!==false){valueSet[key]=value}}if(this.init!=null){return this.init.call(this,valueSet)}_results=[];for(k in valueSet){v=valueSet[k];_results.push(this[k]=v)}return _results},constructFilter:function(key,value){return true},remove:function(){return this.parent.remove(this.id)}})};return ORM}();module.exports=Modules.ORM.prototype}.call(this)},"Modules/Observer":function(exports,require,module){!function(){var Modules,__slice=[].slice;Modules={};Modules.Observer=function(){function Observer(){}Observer.prototype.delegateEvent=function(event,handler,object){var c,_base;if(object==null){object=window}if(event.substr(0,2)==="on"){event=event.substr(2)}if((_base=this.queue)[event]==null){_base[event]=[]}c=this.queue[event].length;this.queue[event].unshift(function(){return handler.apply(object,arguments)});return c};Observer.prototype.subscribe=function(event,handler){return this.delegateEvent(event,handler,this)};Observer.prototype.publish=function(){var args,event,handler,key,_ref;args=1<=arguments.length?__slice.call(arguments,0):[];event=args[0];args=args.splice(1);if(!event||this.queue[event]==null){return this}_ref=this.queue[event];for(key in _ref){handler=_ref[key];if(key!=="__head"){handler.apply(this,args)}}return this};Observer.prototype.unsubscribe=function(event,id){if(!this.queue[event]){return null}if(!this.queue[event][id]){return null}return this.queue[event].splice(id,1)};Observer.prototype.included=function(){return this.prototype.queue={}};Observer.prototype.extended=function(){return this.queue={}};return Observer}();module.exports=Modules.Observer.prototype}.call(this)},"Modules/Overload":function(exports,require,module){!function(){var CRITERIA,Include,Modules,_count,__slice=[].slice,__bind=function(fn,me){return function(){return fn.apply(me,arguments)}};Modules={};_count=function(object){var key,nr,value;nr=0;for(key in object){value=object[key];nr++}return nr};CRITERIA={args:function(crit,args){return args.length===crit}};Include=function(){function Include(){}Include.prototype.overload=function(sets){var helper;helper=new Modules.Overload(sets,this);return function(){var args;args=1<=arguments.length?__slice.call(arguments,0):[];helper.parent=this;return helper.verifyAll.apply(helper,args)}};return Include}();Modules.Overload=function(){function Overload(sets,parent){var aux,i,j,name,set,_i,_j,_ref,_ref1,_ref2;this.parent=parent;this.verify=__bind(this.verify,this);this.verifyAll=__bind(this.verifyAll,this);this.names=[];this.verifies=[];this.handles=[];for(name in sets){set=sets[name];this.names.push(name);this.verifies.push(set["if"]||null);this.handles.push(set.then||null)}for(i=_i=0,_ref=this.verifies.length-1;0<=_ref?_i<=_ref:_i>=_ref;i=0<=_ref?++_i:--_i){for(j=_j=_ref1=i+1,_ref2=this.verifies.length;_ref1<=_ref2?_j<=_ref2:_j>=_ref2;j=_ref1<=_ref2?++_j:--_j){if(_count(this.verifies[i])<_count(this.verifies[j])){aux=this.verifies[i];this.verifies[i]=this.verifies[j];this.verifies[j]=aux;aux=this.names[i];this.names[i]=this.names[j];this.names[j]=aux;aux=this.handles[i];this.handles[i]=this.handles[j];this.handles[j]=aux}}}}Overload.prototype.verifyAll=function(){var args,how,key,set,what,_i,_len,_ref;args=1<=arguments.length?__slice.call(arguments,0):[];this.args=args;_ref=this.verifies;for(key=_i=0,_len=_ref.length;_i<_len;key=++_i){set=_ref[key];if(set!=null){for(what in set){how=set[what];if(!this.verify(what,how)){break}return this.handles[key].apply(this.parent,this.args)}}}return(this.handles["default"]||this.handles[key-1]).apply(this.parent,this.args)};Overload.prototype.verify=function(what,how){if(CRITERIA[what]){return CRITERIA[what](how,this.args)}else{what=parseInt(what.replace("arg",""))-1;if(this.args[what]!=null){return how.apply(this.parent,this.args)}return false}};return Overload}();module.exports=Include.prototype}.call(this)},"Modules/Pythonize":function(exports,require,module){!function(){var CRITERIA,Include,Modules,_count,__slice=[].slice,__bind=function(fn,me){return function(){return fn.apply(me,arguments)}},__indexOf=[].indexOf||function(item){for(var i=0,l=this.length;i<l;i++){if(i in this&&this[i]===item)return i}return-1};Modules={};_count=function(object){var key,nr,value;nr=0;for(key in object){value=object[key];nr++}return nr};CRITERIA={args:function(crit,args){return args.length===crit}};Include=function(){function Include(){}Include.prototype.parameterize=function(sets,callback){var helper;helper=new Modules.Pythonize(sets,callback);return function(){var args;args=1<=arguments.length?__slice.call(arguments,0):[];helper.parent=this;return helper.verifyAll.apply(helper,args)}};return Include}();Modules.Pythonize=function(){function Pythonize(sets,callback){var item,newItem,_i,_len;this.callback=callback;this.verifyAll=__bind(this.verifyAll,this);this.parent=null;this._options=[];for(_i=0,_len=sets.length;_i<_len;_i++){item=sets[_i];newItem={name:item.name||item.toString(),"default":item["default"]||null};this._options.push(newItem)}}Pythonize.prototype.verifyAll=function(){var arg,args,curArg,i,items,lastarg,len,_i,_ref,_ref1,_ref2;args=1<=arguments.length?__slice.call(arguments,0):[];this.args=args;this.options={};len=this.args.length-1;i=0;while(this.args.length>1){curArg=this._options[i];arg=this.args.shift();this.options[curArg.name]=arg||curArg["default"];i++}lastarg=this.args.pop();items=this.verifyObject(lastarg,len);if(len<this._options.length-1){for(i=_i=_ref=len+(items.length===0),_ref1=this._options.length-1;_ref<=_ref1?_i<=_ref1:_i>=_ref1;i=_ref<=_ref1?++_i:--_i){if(!(_ref2=this._options[i].name,__indexOf.call(items,_ref2)>=0)){this.options[this._options[i].name]=this._options[i]["default"]}}}return this.callback.apply(this.parent,[this.options])};Pythonize.prototype.verifyObject=function(obj,id){var name,omits,option,valid,value,_i,_len,_ref;omits=[];if(typeof obj==="object"){for(name in obj){value=obj[name];valid=false;_ref=this._options;for(_i=0,_len=_ref.length;_i<_len;_i++){option=_ref[_i];if(option.name===name){valid=true;break}}if(!valid){this.options[this._options[id].name]=obj;return[]}else{omits.push(name);this.options[name]=value}}}else{this.options[this._options[id].name]=obj}return omits};return Pythonize}();module.exports=Include.prototype}.call(this)},"Modules/StateMachine":function(exports,require,module){!function(){var Modules,__bind=function(fn,me){return function(){return fn.apply(me,arguments)}};Modules={};Modules.StateMachine=function(){function StateMachine(){this.delegateContext=__bind(this.delegateContext,this)}StateMachine.prototype.extended=function(){this._contexts=[];return this._activeContext=null};StateMachine.prototype.included=function(){this.prototype._contexts=[];return this.prototype._activeContext=null};StateMachine.prototype.delegateContext=function(context){var l;if(this._find(context)){return null}l=this._contexts.length;this._contexts[l]=context;if(context.activate==null){context.activate=function(){}}if(context.deactivate==null){context.deactivate=function(){}}return this};StateMachine.prototype.getActiveContextID=function(){return this._activeContext};StateMachine.prototype.getActiveContext=function(){return this._activeContext};StateMachine.prototype.getContext=function(context){return this._contexts[context]||null};StateMachine.prototype._find=function(con){var key,value,_i,_len,_ref;_ref=this._contexts;for(value=_i=0,_len=_ref.length;_i<_len;value=++_i){key=_ref[value];if(con===key){return value}}return null};StateMachine.prototype.activateContext=function(context){var con;con=this._find(context);if(con==null){return null}if(this._activeContext===con){return true}this._activeContext=con;return context.activate()};StateMachine.prototype.deactivateContext=function(context){if(this._find(context)==null){return null}this._activeContext=null;return context.deactivate()};StateMachine.prototype.switchContext=function(context){var con;if(context==null){con=this._activeContext+1;if(con===this._contexts.length){con=0}}else{con=this._find(context);if(con==null){return null}}this.deactivateContext(this._contexts[this._activeContext]);this.activateContext(this._contexts[con]);return this._contexts[con]};return StateMachine}();module.exports=Modules.StateMachine.prototype}.call(this)},Object:function(exports,require,module){!function(){var $,Obiect,clone,_excludes,__indexOf=[].indexOf||function(item){for(var i=0,l=this.length;i<l;i++){if(i in this&&this[i]===item)return i}return-1},__slice=[].slice;_excludes=["included","extended"];clone=function(obj){var k,o,v;o=obj instanceof Array?[]:{};for(k in obj){v=obj[k];if(v!=null&&typeof v==="object"){o[k]=clone(v)}else{o[k]=v}}return o};$=function(what){return $[what]||null};Obiect=function(){var extended,included;function Obiect(){}Obiect.clone=function(obj){if(obj==null){obj=this}debugger;return Obiect.proxy(Obiect.include,Obiect.proxy(Obiect.extend,function(){})(obj))(obj.prototype)};Obiect.extend=function(obj,into){var k,value,_ref;if(into==null){into=this}obj=clone(obj);for(k in obj){value=obj[k];if(!(__indexOf.call(_excludes,k)>=0||obj._excludes!=null&&__indexOf.call(obj._excludes,k)>=0)){if(into[k]!=null){if(into["super"]==null){into["super"]={}}into["super"][k]=into[k]}into[k]=value}}if((_ref=obj.extended)!=null){_ref.call(into)}return this};Obiect.include=function(obj,into){var key,value,_ref;if(into==null){into=this}obj=clone(obj);for(key in obj){value=obj[key];into.prototype[key]=value}if((_ref=obj.included)!=null){_ref.call(into)}return this};Obiect.proxy=function(){var to,what,_this=this;what=arguments[0];to=arguments[1];if(typeof what==="function"){return function(){var args;args=1<=arguments.length?__slice.call(arguments,0):[];return what.apply(to,args)}}else{return this[what]}};Obiect.delegate=function(property,context){var _ref;if(((_ref=this._delegates)!=null?_ref[property]:void 0)!=null===false&&this._deleagates[property]!==false){trigger("Cannot delegate member "+property+" to "+context)}return context[property]=this.proxy(function(){return this[property](arguments)},this)};Obiect.echo=function(){var args,owner,prefix,_d;args=1<=arguments.length?__slice.call(arguments,0):[];_d=new Date;owner="<not supported>";if(this.__proto__!=null){owner=this.__proto__.constructor.name}prefix="["+_d.getHours()+":"+_d.getMinutes()+":"+_d.getSeconds()+"]["+(this.name||owner)+"]";if(args[0]===""){args[0]=prefix}else{args[0]=""+prefix+" "+args[0]}console.log(args);return this};Obiect.log=function(){var args;args=1<=arguments.length?__slice.call(arguments,0):[];if((typeof IS!=="undefined"&&IS!==null?IS.isDev:void 0)||window.isDev||(typeof root!=="undefined"&&root!==null?root.isDev:void 0)||isDev){args.unshift("");this.echo.apply(this,args)}return this};extended=function(){};included=function(){};Obiect.include({proxy:Obiect.proxy,log:Obiect.log,echo:Obiect.echo});return Obiect}();module.exports=Obiect}.call(this)},Promise:function(exports,require,module){!function(){var Promise,__slice=[].slice;Promise=function(){function Promise(promise){if(promise instanceof Promise){return promise}this.callbacks=[]}Promise.prototype.then=function(ok,err,progr){this.callbacks.push({ok:ok,error:err,progress:progr});return this};Promise.prototype.resolve=function(){var args,callback,time,_this=this;args=1<=arguments.length?__slice.call(arguments,0):[];callback=this.callbacks.shift();if(callback&&callback.ok){callback.ok.apply(this,args)}else{time=setTimeout(function(){clearTimeout(time);return _this.resolve.apply(_this,args)},50)}return this};Promise.prototype.reject=function(){var args,callback,time,_this=this;args=1<=arguments.length?__slice.call(arguments,0):[];callback=this.callbacks.shift();if(callback&&callback.error){callback.error.apply(this,args)}else{time=setTimeout(function(){clearTimeout(time);return _this.reject.apply(_this,args)},50)}return this};Promise.prototype.progress=function(){var args,callback;args=1<=arguments.length?__slice.call(arguments,0):[];callback=this.callbacks[0];if(callback&&callback.progress){callback.progress.apply(this,args)}return this};return Promise}();module.exports=Promise}.call(this)},Variable:function(exports,require,module){!function(){var Variable,_ref,__hasProp={}.hasOwnProperty,__extends=function(child,parent){for(var key in parent){if(__hasProp.call(parent,key))child[key]=parent[key]}function ctor(){this.constructor=child}ctor.prototype=parent.prototype;child.prototype=new ctor;child.__super__=parent.prototype;return child};Variable=function(_super){__extends(Variable,_super);function Variable(){_ref=Variable.__super__.constructor.apply(this,arguments);return _ref}Variable.spawn=function(){var x;x=new this;x._value=null;return x};Variable.prototype.get=function(){return this._value};Variable.prototype.set=function(value){return this._value=value};Variable.prototype.add=function(reccord){if(this._value==null||this._value.constructor!==Array){this._value=[]}return this._value.push(reccord)};return Variable}(require("Object"));if(typeof module!=="undefined"&&module!==null){module.exports=Variable}}.call(this)},async:function(exports,require,module){!function(){var async={};var root,previous_async;root=this;if(root!=null){previous_async=root.async}async.noConflict=function(){root.async=previous_async;return async};function only_once(fn){var called=false;return function(){if(called)throw new Error("Callback was already called.");called=true;fn.apply(root,arguments)}}var _each=function(arr,iterator){if(arr.forEach){return arr.forEach(iterator)}for(var i=0;i<arr.length;i+=1){iterator(arr[i],i,arr)}};var _map=function(arr,iterator){if(arr.map){return arr.map(iterator)}var results=[];_each(arr,function(x,i,a){results.push(iterator(x,i,a))});return results};var _reduce=function(arr,iterator,memo){if(arr.reduce){return arr.reduce(iterator,memo)}_each(arr,function(x,i,a){memo=iterator(memo,x,i,a)});return memo};var _keys=function(obj){if(Object.keys){return Object.keys(obj)}var keys=[];for(var k in obj){if(obj.hasOwnProperty(k)){keys.push(k)}}return keys};if(typeof process==="undefined"||!process.nextTick){if(typeof setImmediate==="function"){async.nextTick=function(fn){setImmediate(fn)};async.setImmediate=async.nextTick}else{async.nextTick=function(fn){setTimeout(fn,0)};async.setImmediate=async.nextTick}}else{async.nextTick=process.nextTick;if(typeof setImmediate!=="undefined"){async.setImmediate=setImmediate}else{async.setImmediate=async.nextTick}}async.each=function(arr,iterator,callback){callback=callback||function(){};if(!arr.length){return callback()}var completed=0;_each(arr,function(x){iterator(x,only_once(function(err){if(err){callback(err);callback=function(){}}else{completed+=1;if(completed>=arr.length){callback(null)}}}))})};async.forEach=async.each;async.eachSeries=function(arr,iterator,callback){callback=callback||function(){};if(!arr.length){return callback()}var completed=0;var iterate=function(){iterator(arr[completed],function(err){if(err){callback(err);callback=function(){}}else{completed+=1;if(completed>=arr.length){callback(null)}else{iterate()}}})};iterate()};async.forEachSeries=async.eachSeries;async.eachLimit=function(arr,limit,iterator,callback){var fn=_eachLimit(limit);fn.apply(null,[arr,iterator,callback])};async.forEachLimit=async.eachLimit;var _eachLimit=function(limit){return function(arr,iterator,callback){callback=callback||function(){};if(!arr.length||limit<=0){return callback()}var completed=0;var started=0;var running=0;!function replenish(){if(completed>=arr.length){return callback()}while(running<limit&&started<arr.length){started+=1;running+=1;iterator(arr[started-1],function(err){if(err){callback(err);callback=function(){}}else{completed+=1;running-=1;if(completed>=arr.length){callback()}else{replenish()}}})}}()}};var doParallel=function(fn){return function(){var args=Array.prototype.slice.call(arguments);return fn.apply(null,[async.each].concat(args))}};var doParallelLimit=function(limit,fn){return function(){var args=Array.prototype.slice.call(arguments);return fn.apply(null,[_eachLimit(limit)].concat(args))}};var doSeries=function(fn){return function(){var args=Array.prototype.slice.call(arguments);return fn.apply(null,[async.eachSeries].concat(args))}};var _asyncMap=function(eachfn,arr,iterator,callback){var results=[];arr=_map(arr,function(x,i){return{index:i,value:x}});eachfn(arr,function(x,callback){iterator(x.value,function(err,v){results[x.index]=v;callback(err)})},function(err){callback(err,results)})};async.map=doParallel(_asyncMap);async.mapSeries=doSeries(_asyncMap);async.mapLimit=function(arr,limit,iterator,callback){return _mapLimit(limit)(arr,iterator,callback)};var _mapLimit=function(limit){return doParallelLimit(limit,_asyncMap)};async.reduce=function(arr,memo,iterator,callback){async.eachSeries(arr,function(x,callback){iterator(memo,x,function(err,v){memo=v;callback(err)})},function(err){callback(err,memo)})};async.inject=async.reduce;async.foldl=async.reduce;async.reduceRight=function(arr,memo,iterator,callback){var reversed=_map(arr,function(x){return x}).reverse();async.reduce(reversed,memo,iterator,callback)};async.foldr=async.reduceRight;var _filter=function(eachfn,arr,iterator,callback){var results=[];arr=_map(arr,function(x,i){return{index:i,value:x}});eachfn(arr,function(x,callback){iterator(x.value,function(v){if(v){results.push(x)}callback()})},function(err){callback(_map(results.sort(function(a,b){return a.index-b.index}),function(x){return x.value}))})};async.filter=doParallel(_filter);async.filterSeries=doSeries(_filter);async.select=async.filter;async.selectSeries=async.filterSeries;var _reject=function(eachfn,arr,iterator,callback){var results=[];arr=_map(arr,function(x,i){return{index:i,value:x}});eachfn(arr,function(x,callback){iterator(x.value,function(v){if(!v){results.push(x)}callback()})},function(err){callback(_map(results.sort(function(a,b){return a.index-b.index}),function(x){return x.value}))})};async.reject=doParallel(_reject);async.rejectSeries=doSeries(_reject);var _detect=function(eachfn,arr,iterator,main_callback){eachfn(arr,function(x,callback){iterator(x,function(result){if(result){main_callback(x);main_callback=function(){}}else{callback()}})},function(err){main_callback()})};async.detect=doParallel(_detect);async.detectSeries=doSeries(_detect);async.some=function(arr,iterator,main_callback){async.each(arr,function(x,callback){iterator(x,function(v){if(v){main_callback(true);main_callback=function(){}}callback()})},function(err){main_callback(false)})};async.any=async.some;async.every=function(arr,iterator,main_callback){async.each(arr,function(x,callback){iterator(x,function(v){if(!v){main_callback(false);main_callback=function(){}}callback()})},function(err){main_callback(true)})};async.all=async.every;async.sortBy=function(arr,iterator,callback){async.map(arr,function(x,callback){iterator(x,function(err,criteria){if(err){callback(err)}else{callback(null,{value:x,criteria:criteria})}})},function(err,results){if(err){return callback(err)}else{var fn=function(left,right){var a=left.criteria,b=right.criteria;return a<b?-1:a>b?1:0};callback(null,_map(results.sort(fn),function(x){return x.value}))}})};async.auto=function(tasks,callback){callback=callback||function(){};var keys=_keys(tasks);if(!keys.length){return callback(null)}var results={};var listeners=[];var addListener=function(fn){listeners.unshift(fn)};var removeListener=function(fn){for(var i=0;i<listeners.length;i+=1){if(listeners[i]===fn){listeners.splice(i,1);return}}};var taskComplete=function(){_each(listeners.slice(0),function(fn){fn()})};addListener(function(){if(_keys(results).length===keys.length){callback(null,results);callback=function(){}}});_each(keys,function(k){var task=tasks[k]instanceof Function?[tasks[k]]:tasks[k];var taskCallback=function(err){var args=Array.prototype.slice.call(arguments,1);if(args.length<=1){args=args[0]}if(err){var safeResults={};_each(_keys(results),function(rkey){safeResults[rkey]=results[rkey]});safeResults[k]=args;callback(err,safeResults);callback=function(){}}else{results[k]=args;async.setImmediate(taskComplete)}};var requires=task.slice(0,Math.abs(task.length-1))||[];var ready=function(){return _reduce(requires,function(a,x){return a&&results.hasOwnProperty(x)},true)&&!results.hasOwnProperty(k)};if(ready()){task[task.length-1](taskCallback,results)}else{var listener=function(){if(ready()){removeListener(listener);task[task.length-1](taskCallback,results)}};addListener(listener)}})};async.waterfall=function(tasks,callback){callback=callback||function(){};if(tasks.constructor!==Array){var err=new Error("First argument to waterfall must be an array of functions");return callback(err)}if(!tasks.length){return callback()}var wrapIterator=function(iterator){return function(err){if(err){callback.apply(null,arguments);callback=function(){}}else{var args=Array.prototype.slice.call(arguments,1);var next=iterator.next();if(next){args.push(wrapIterator(next))}else{args.push(callback)}async.setImmediate(function(){iterator.apply(null,args)})}}};wrapIterator(async.iterator(tasks))()};var _parallel=function(eachfn,tasks,callback){callback=callback||function(){};if(tasks.constructor===Array){eachfn.map(tasks,function(fn,callback){if(fn){fn(function(err){var args=Array.prototype.slice.call(arguments,1);if(args.length<=1){args=args[0]}callback.call(null,err,args)})}},callback)}else{var results={};eachfn.each(_keys(tasks),function(k,callback){tasks[k](function(err){var args=Array.prototype.slice.call(arguments,1);if(args.length<=1){args=args[0]}results[k]=args;callback(err)})},function(err){callback(err,results)})}};async.parallel=function(tasks,callback){_parallel({map:async.map,each:async.each},tasks,callback)};async.parallelLimit=function(tasks,limit,callback){_parallel({map:_mapLimit(limit),each:_eachLimit(limit)},tasks,callback)};async.series=function(tasks,callback){callback=callback||function(){};if(tasks.constructor===Array){async.mapSeries(tasks,function(fn,callback){if(fn){fn(function(err){var args=Array.prototype.slice.call(arguments,1);if(args.length<=1){args=args[0]}callback.call(null,err,args)})}},callback)}else{var results={};async.eachSeries(_keys(tasks),function(k,callback){tasks[k](function(err){var args=Array.prototype.slice.call(arguments,1);if(args.length<=1){args=args[0]}results[k]=args;callback(err)})},function(err){callback(err,results)})}};async.iterator=function(tasks){var makeCallback=function(index){var fn=function(){if(tasks.length){tasks[index].apply(null,arguments)}return fn.next()};fn.next=function(){return index<tasks.length-1?makeCallback(index+1):null};return fn};return makeCallback(0)};async.apply=function(fn){var args=Array.prototype.slice.call(arguments,1);return function(){return fn.apply(null,args.concat(Array.prototype.slice.call(arguments)))}};var _concat=function(eachfn,arr,fn,callback){var r=[];eachfn(arr,function(x,cb){fn(x,function(err,y){r=r.concat(y||[]);cb(err)})},function(err){callback(err,r)})};async.concat=doParallel(_concat);async.concatSeries=doSeries(_concat);async.whilst=function(test,iterator,callback){if(test()){iterator(function(err){if(err){return callback(err)}async.whilst(test,iterator,callback)})}else{callback()}};async.doWhilst=function(iterator,test,callback){iterator(function(err){if(err){return callback(err)}if(test()){async.doWhilst(iterator,test,callback)}else{callback()}})};async.until=function(test,iterator,callback){if(!test()){iterator(function(err){if(err){return callback(err)}async.until(test,iterator,callback)})}else{callback()}};async.doUntil=function(iterator,test,callback){iterator(function(err){if(err){return callback(err)}if(!test()){async.doUntil(iterator,test,callback)}else{callback()}})};async.queue=function(worker,concurrency){if(concurrency===undefined){concurrency=1}function _insert(q,data,pos,callback){if(data.constructor!==Array){data=[data]
@@ -25656,21 +21911,15 @@ Other than that, feel free to enjoy the application!
       this$.loadApplication = bind$(this$, 'loadApplication', prototype);
       this$.fixStylesheets = bind$(this$, 'fixStylesheets', prototype);
       this$.firstTimeInclude = bind$(this$, 'firstTimeInclude', prototype);
-      this$.continueLoad = bind$(this$, 'continueLoad', prototype);
       this$.baseSetup();
       this$.firstTimeInclude();
       this$.loadLibs();
       this$.fixStylesheets();
-      window.Loading = new (DepMan.helper("Loading"))();
-      window.DBStorage = new (DepMan.helper("Storage"))(this$.continueLoad);
+      this$.loadApplication();
       return this$;
     } function ctor$(){} ctor$.prototype = prototype;
-    prototype.continueLoad = function(){
-      return this.loadApplication();
-    };
     prototype.baseSetup = function(){
       AppInfo.displayname == null && (AppInfo.displayname = AppInfo.name);
-      window.echo = require("classes/Object").echo;
       document.title = AppInfo.displayname;
       return function(){
         var meta;
@@ -25707,7 +21956,7 @@ Other than that, feel free to enjoy the application!
       return window.Tester = new (DepMan.helper("Tester"))();
     };
     prototype.fixStylesheets = function(){
-      var styles, fwstyles;
+      var styles, fwstyles, regex, str;
       styles = window.getStylesheets();
       fwstyles = $('#css-font-awesome');
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT OPEN SANS 300 WOFF HERE\>\>/g, DepMan.font("woff/opensans1"));
@@ -25715,29 +21964,21 @@ Other than that, feel free to enjoy the application!
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ELECTROLIZE WOFF HERE\>\>/g, DepMan.font("woff/electrolize"));
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ROBOTO 100 WOFF HERE\>\>/g, DepMan.font("woff/roboto100"));
       styles.innerHTML = styles.innerHTML.replace(/\<\<INSERT ROBOTO 400 WOFF HERE\>\>/g, DepMan.font("woff/roboto400"));
+      regex = /[\"\']escape-nib - ([^;]*)[\"\']/gm;
+      str = regex.exec(styles.innerHTML);
+      while (str && str.length) {
+        styles.innerHTML = styles.innerHTML.replace(str[0], str[1]);
+        str = regex.exec(styles.innerHTML);
+      }
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME EOT HERE\>\>/g, DepMan.font("eot/fontawesome-webfont")));
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME TTF HERE\>\>/g, DepMan.font("ttf/fontawesome-webfont")));
       fwstyles.html(fwstyles.html().replace(/\<\<INSERT FONTAWESOME WOFF HERE\>\>/g, DepMan.font("woff/fontawesome-webfont")));
       return document.head.appendChild(styles);
     };
     prototype.loadApplication = function(){
-      var ref$;
       angular.module(AppInfo.displayname, []);
       DepMan.helper("Runtime");
-      DepMan.helper("Language");
-      DepMan.helper("DataTransfer");
-      ref$ = DepMan.helper("Notification"), window.Notifications = ref$[0], window.Toast = ref$[1];
-      DepMan.model("RecipeModel");
-      DepMan.controller("Modals");
-      DepMan.controller("Page");
-      DepMan.controller("Landing");
-      DepMan.controller("Help");
-      DepMan.controller("AppRouter");
-      DepMan.controller("AccountController");
-      DepMan.controller("RecipeController");
-      DepMan.controller("ApplicationsController");
-      DepMan.controller("DevicesController");
-      DepMan.model("UserModel");
+      window.Controller = DepMan.controller("Landing");
       return angular.bootstrap(document.body, [AppInfo.displayname]);
     };
     return Application;
@@ -25758,1229 +21999,31 @@ Other than that, feel free to enjoy the application!
     return obj;
   }
 }).call(this);
-}, "classes/Object": function(exports, require, module) {(function() {
-  var BObject, _baseObj, _ref,
-    __slice = [].slice,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  _baseObj = {
-    echo: function() {
-      var args, owner, _d;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _d = new Date;
-      owner = "<not supported>";
-      if (this.__proto__ != null) {
-        owner = this.__proto__.constructor.name;
-      }
-      args[0] = "[" + (_d.getHours()) + ":" + (_d.getMinutes()) + ":" + (_d.getSeconds()) + "][" + (this.name || owner) + "]	" + args[0];
-      console.log(args);
-      return this;
-    },
-    log: function() {
-      var args;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      args.unshift("");
-      return this.echo.apply(this, args);
-    }
-  };
-
-  BObject = (function(_super) {
-    __extends(BObject, _super);
-
-    function BObject() {
-      _ref = BObject.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    BObject.extend(_baseObj);
-
-    BObject.include(_baseObj);
-
-    return BObject;
-
-  })(IS.Object);
-
-  module.exports = window.BaseObject = BObject;
-
-}).call(this);
-}, "classes/controllers/AccountController": function(exports, require, module) {(function(){
-  var AccountController;
-  AccountController = (function(superclass){
-    var prototype = extend$((import$(AccountController, superclass).displayName = 'AccountController', AccountController), superclass).prototype, constructor = AccountController;
-    function AccountController(scope, runtime, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.user = user;
-      this$.verifyNewPasswords = bind$(this$, 'verifyNewPasswords', prototype);
-      this$.changePassword = bind$(this$, 'changePassword', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      return this;
-    };
-    prototype.hookEvents = function(){
-      var this$ = this;
-      $('#account-name').change(function(){
-        return this$.user.send('name');
-      });
-      return $('#account-email').change(function(){
-        if (this$.user.verifyEmail()) {
-          return this$.user.send('email');
-        }
-      });
-    };
-    prototype.changePassword = function(){
-      if (this.user.verifyPassword(this.scope.currentpass) && this.verifyNewPasswords()) {
-        this.user.edit('password', this.scope.newpass);
-        Toast("Success", "Data is saved!");
-      } else {
-        Toast("Error", "Data was not saved! (check console for logs)");
-      }
-      return this.scope.currentpass = this.scope.newpass = this.scope.newpassverify = "";
-    };
-    prototype.verifyNewPasswords = function(){
-      return this.scope.newpass === this.scope.newpassverify;
-    };
-    return AccountController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("AccountController", ["$scope", "Runtime", "User", AccountController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/AngularBootstrap": function(exports, require, module) {(function(){
-  module.exports = {
-    Controller: Controller,
-    Bootstrap: function(cntr, name, args){
-      var Controller;
-      Controller = new cntr();
-      args.push(Controller.init);
-      angular.module("Revelation").controller(name, args);
-      return module.exports = Controller;
-    }
-  };
-}).call(this);
-}, "classes/controllers/AppRouter": function(exports, require, module) {(function(){
-  var TABS, Tabs, STATES, States, AppRouter;
-  TABS = ['account', 'applications', 'devices', 'develop'];
-  Tabs = new IS.Enum(TABS);
-  STATES = ['asideopen', 'asideclosed'];
-  States = new IS.Enum(STATES);
-  AppRouter = (function(superclass){
-    var prototype = extend$((import$(AppRouter, superclass).displayName = 'AppRouter', AppRouter), superclass).prototype, constructor = AppRouter;
-    function AppRouter(scope, runtime){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      window.AppRouter = this$;
-      this$.configScope().initRuntime().hookKeyboard();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.initRuntime = function(){
-      var this$ = this;
-      DBStorage.get("active-tab", function(tab){
-        tab == null && (tab = Tabs['account']);
-        this$.runtime.props['active-tab'] = this$.scope.activeTab = tab;
-        this$.runtime.subscribe('prop-active-tab-change', function(tab){
-          this$.scope.activeTab = tab;
-          DBStorage.set('active-tab', tab);
-          return this$.safeApply();
-        });
-        return this$.safeApply();
-      });
-      DBStorage.get('tab-state', function(tab){
-        tab == null && (tab = States['asideclosed']);
-        this$.runtime.props['tab-state'] = this$.scope.tabState = tab;
-        this$.runtime.subscribe('prop-tab-state-change', function(tab){
-          this$.scope.tabState = tab;
-          this$.runtime['tab-state'] = tab;
-          DBStorage.set('tab-state', tab);
-          return this$.safeApply();
-        });
-        return this$.safeApply();
-      });
-      return this;
-    };
-    prototype.hookKeyboard = function(){
-      var key, target, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      jwerty.key(key + "+1", function(e){
-        this$.runtime.set('active-tab', Tabs['account']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+2", function(e){
-        this$.runtime.set('active-tab', Tabs['applications']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+3", function(e){
-        this$.runtime.set('active-tab', Tabs['devices']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+4", function(e){
-        this$.runtime.set('active-tab', Tabs['develop']);
-        return e.preventDefault();
-      });
-      jwerty.key(key + "+shift+v", function(e){
-        if (this$.runtime['tab-state'] === States['asideopen']) {
-          this$.runtime.set('tab-state', States['asideclosed']);
-        } else {
-          this$.runtime.set('tab-state', States['asideopen']);
-        }
-        return e.preventDefault();
-      });
-      return target = Hammer($('#approuter-container')[0]);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    return AppRouter;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("AppRouter", ["$scope", "Runtime", AppRouter]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/ApplicationsController": function(exports, require, module) {(function(){
-  var ApplicationsController;
-  ApplicationsController = (function(superclass){
-    var prototype = extend$((import$(ApplicationsController, superclass).displayName = 'ApplicationsController', ApplicationsController), superclass).prototype, constructor = ApplicationsController;
-    function ApplicationsController(scope, runtime, recipeModel, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.user = user;
-      this$.installApp = bind$(this$, 'installApp', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.info = {
-        device: null
-      };
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.installApp = function(recipe){
-      Client.post("devices/stack_app", {
-        uuid: this.info.device.uuid,
-        app_id: UserModel.data.mail + "$" + recipe._id
-      }, function(){
-        return Toast("Success", "App queued to install on device");
-      }, function(){
-        return Toast("Error", "Failed to queue app for install");
-      });
-      return this.info.device = null;
-    };
-    return ApplicationsController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("ApplicationsController", ["$scope", "Runtime", "Recipe", "User", ApplicationsController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/DevicesController": function(exports, require, module) {(function(){
-  var DevicesController;
-  DevicesController = (function(superclass){
-    var prototype = extend$((import$(DevicesController, superclass).displayName = 'DevicesController', DevicesController), superclass).prototype, constructor = DevicesController;
-    function DevicesController(scope, runtime, recipeModel, user){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.user = user;
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.hookEvents = function(){};
-    return DevicesController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("DevicesController", ["$scope", "Runtime", "Recipe", "User", DevicesController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Document": function(exports, require, module) {(function(){
-  var STATES, States, AUXSTATES, AuxStates, DocumentController, Controller, slice$ = [].slice;
-  STATES = ['outline', 'mindmap'];
-  States = new IS.Enum(STATES);
-  AUXSTATES = ['sidebaropen', 'sidebarclosed'];
-  AuxStates = new IS.Enum(AUXSTATES);
-  angular.module(AppInfo.displayname).directive("ngcFocus", [
-    '$parse', function($parse){
-      return function(scope, element, attr){
-        var fn;
-        fn = $parse(attr['ngcFocus']);
-        return element.bind('focus', function(e){
-          return scope.$apply(function(){
-            return fn(scope, {
-              $event: e
-            });
-          });
-        });
-      };
-    }
-  ]);
-  DocumentController = (function(superclass){
-    var prototype = extend$((import$(DocumentController, superclass).displayName = 'DocumentController', DocumentController), superclass).prototype, constructor = DocumentController;
-    function DocumentController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.modalEdit = bind$(this$, 'modalEdit', prototype);
-      this$.refresh = bind$(this$, 'refresh', prototype);
-      this$.propagateChange = bind$(this$, 'propagateChange', prototype);
-      this$.changeStatus = bind$(this$, 'changeStatus', prototype);
-      this$.getStyles = bind$(this$, 'getStyles', prototype);
-      this$.getActiveDocument = bind$(this$, 'getActiveDocument', prototype);
-      this$['switch'] = bind$(this$, 'switch', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookGestures = bind$(this$, 'hookGestures', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.renderDocumentTemplate = bind$(this$, 'renderDocumentTemplate', prototype);
-      this$.prep = bind$(this$, 'prep', prototype);
-      this$.passthrough = bind$(this$, 'passthrough', prototype);
-      this$.nodeRemove = bind$(this$, 'nodeRemove', prototype);
-      this$.nodeAddRoot = bind$(this$, 'nodeAddRoot', prototype);
-      this$.nodeAdd = bind$(this$, 'nodeAdd', prototype);
-      this$.fetchNode = bind$(this$, 'fetchNode', prototype);
-      this$.fetchDocument = bind$(this$, 'fetchDocument', prototype);
-      this$.remove = bind$(this$, 'remove', prototype);
-      this$.addRoot = bind$(this$, 'addRoot', prototype);
-      this$.add = bind$(this$, 'add', prototype);
-      this$.replicate = bind$(this$, 'replicate', prototype);
-      this$.nodeMove = bind$(this$, 'nodeMove', prototype);
-      this$.nodeChange = bind$(this$, 'nodeChange', prototype);
-      this$.log("Document Controller Online");
-      window.DocumentController = this$;
-      this$.STATES = STATES;
-      this$.States = States;
-      this$.AUXSTATES = STATES;
-      this$.AuxStates = AuxStates;
-      this$.renderDocumentTemplate();
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.events = {
-          "node.change": function(){
-            var args;
-            args = slice$.call(arguments);
-            return this$.passthrough(this$.nodeChange, args);
-          },
-          "node.add": this$.nodeAdd,
-          "node.add-root": this$.nodeAddRoot,
-          "node.remove": this$.nodeRemove,
-          "node.move": this$.nodeMove
-        };
-      }
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.loadEvents();
-      }
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.nodeChange = function(index, property, value){
-      var node, ref$;
-      this.log("Changing " + index + "'s " + property + " to " + value);
-      node = this.fetchNode(index);
-      node[property] = value;
-      if (property === 'status') {
-        this.propagateChange(node);
-      }
-      if (property === 'text') {
-        node.$renderer.sequence();
-      }
-      if (property === 'relation') {
-        if ((ref$ = node.$linerenderer) != null) {
-          ref$.sequence();
-        }
-      }
-      this.fetchDocument().refresh();
-      node.$renderer.sequence();
-      return this.safeApply();
-    };
-    prototype.nodeMove = function(index, x, y){
-      var node, ref$, i$, len$, kid, results$ = [];
-      node = this.fetchNode(index);
-      node.location.x = x;
-      node.location.y = y;
-      if ((ref$ = node.$linerenderer) != null) {
-        ref$.sequence();
-      }
-      if (node.children) {
-        for (i$ = 0, len$ = (ref$ = node.children).length; i$ < len$; ++i$) {
-          kid = ref$[i$];
-          results$.push(kid.$linerenderer.sequence());
-        }
-        return results$;
-      }
-    };
-    prototype.replicate = function(node, property){
-      return this.prep('node.change', node.$index, property, node[property]);
-    };
-    prototype.add = function(node){
-      return Client.publish('node.add', node.$index);
-    };
-    prototype.addRoot = function(){
-      return Client.publish("node.add-root", null);
-    };
-    prototype.remove = function(node){
-      return Client.publish('node.remove', node.$index);
-    };
-    prototype.fetchDocument = function(){
-      return this.models._reccords[this.runtime.props['active-document']];
-    };
-    prototype.fetchNode = function(index){
-      return this.fetchDocument().indexes[index];
-    };
-    prototype.nodeAdd = function(index){
-      var node;
-      this.log(index, this.fetchNode(index));
-      node = this.fetchNode(index);
-      node.children == null && (node.children = []);
-      node.children.push({
-        text: "New Node"
-      });
-      node.status = 'indeterminate';
-      this.fetchDocument().refresh();
-      this.safeApply();
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.nodeAddRoot = function(){
-      var doc;
-      doc = this.fetchDocument();
-      if (doc) {
-        this.log(doc.data);
-        doc.data.push({
-          text: "New Root Document"
-        });
-        this.log(doc.data);
-        doc.refresh();
-        this.safeApply();
-        setTimeout(LanguageHelper._translateAll, 50);
-      } else {
-        this.models['new']();
-      }
-      return this.safeApply();
-    };
-    prototype.nodeRemove = function(index){
-      var node, repo;
-      node = this.fetchNode(index);
-      repo = node.$parent.children || node.$parent.data;
-      repo.splice(repo.indexOf(node, 1));
-      if (repo.length === 0 && node.$parent.children) {
-        node.$parent.children = null;
-        node.$parent.status = 'unchecked';
-      }
-      this.fetchDocument().refresh();
-      return this.safeApply();
-    };
-    prototype.passthrough = function(fn, args){
-      var id;
-      id = args.pop();
-      if (id !== Client.id) {
-        return fn.apply(this, args);
-      }
-    };
-    prototype.prep = function(ev){
-      var data;
-      data = slice$.call(arguments, 1);
-      data.push(Client.id);
-      data.unshift(ev);
-      return Client.publish.apply(Client, data);
-    };
-    prototype.renderDocumentTemplate = function(){
-      var div;
-      div = document.createElement("div");
-      div.setAttribute("rel", "Main Document Placeholder");
-      div.setAttribute("id", "documentplaceholder");
-      div.innerHTML = DepMan.render(['document', 'index'], {
-        AuxStates: AuxStates
-      });
-      return $(div).insertBefore($('section#application').children()[0]);
-    };
-    prototype.initRuntime = function(){
-      var this$ = this;
-      this.runtime.init("document-state", 'number');
-      this.runtime.subscribe("prop-document-state-change", function(){
-        return this$.safeApply();
-      });
-      return this.runtime.subscribe("prop-document-state-change", function(){
-        if (this$.runtime.props['document-state'] === States.outline) {
-          this$.canvas.end();
-          return this$.scanvas.end();
-        } else {
-          this$.canvas.start();
-          return this$.scanvas.start();
-        }
-      });
-    };
-    prototype.init = function(scope, runtime, models, canvas, scanvas){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.models = models;
-      this.canvas = canvas;
-      this.scanvas = scanvas;
-      this.configScope();
-      this.initRuntime();
-      this.hookKeyboard();
-      this.hookGestures();
-      this.runtime.subscribe('prop-active-document-change', this.getActiveDocument);
-      return this.getActiveDocument();
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, way){
-        way == null && (way = null);
-        if (this$.runtime.props['app-state'] === 1) {
-          e.preventDefault();
-          if (way) {
-            return this$.runtime.set("document-state", States[way]);
-          } else if (this$.runtime.props['document-state'] === States.outline) {
-            return this$.runtime.set('document-state', States.mindmap);
-          } else {
-            return this$.runtime.set('document-state', States.outline);
-          }
-        }
-      };
-      jwerty.key(key + "+]", function(it){
-        return handle(it, 'mindmap');
-      });
-      jwerty.key(key + "+[", function(it){
-        return handle(it, 'outline');
-      });
-      return jwerty.key(key + "+alt+tab", function(it){
-        return handle(it);
-      });
-    };
-    prototype.hookGestures = function(){
-      var target, this$ = this;
-      target = Hammer($('#documentplaceholder #outline')[0]);
-      target.on("swipeleft", function(){
-        return this$.runtime.set('document-state', States.mindmap);
-      });
-      target.on("swiperight", function(){
-        return this$.runtime.set('sidebar-state', 1);
-      });
-      target.on("tap", function(){
-        return this$.runtime.set('sidebar-state', 0);
-      });
-      return this.log(target);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            fn();
-          }
-        } else {
-          this$.scope.$apply(fn);
-        }
-        return LanguageHelper._translateAll();
-      };
-      import$(this.scope, this);
-      this.canvas.edit = this.modalEdit;
-      return this.canvas.newRoot = this.addRoot;
-    };
-    prototype['switch'] = function(id){
-      return this.runtime.set('active-document', id);
-    };
-    prototype.getActiveDocument = function(){
-      this.scope.activeDocument = this.models._reccords[this.runtime.get('active-document')];
-      this.runtime.set('document-state', States.mindmap);
-      return this.safeApply();
-    };
-    prototype.getStyles = function(node){
-      var size;
-      size = 50;
-      if (window.innerWidth <= 320) {
-        size = 15;
-      }
-      return {
-        paddingLeft: node.$depth * size
-      };
-    };
-    prototype.changeStatus = function(node, preventBubble){
-      var oldstatus;
-      preventBubble == null && (preventBubble = false);
-      oldstatus = node.status;
-      (function(){
-        var det, i$, ref$, len$, kid, ref1$;
-        if (this.children && this.children.length > 0) {
-          det = 0;
-          for (i$ = 0, len$ = (ref$ = this.children).length; i$ < len$; ++i$) {
-            kid = ref$[i$];
-            if ((ref1$ = kid.status) == 'checked' || ref1$ == 'determinate') {
-              det++;
-            }
-          }
-          if (det === this.children.length) {
-            this.status = 'determinate';
-          } else {
-            this.status = 'indeterminate';
-          }
-        } else {
-          if (this.$status) {
-            this.status = 'checked';
-          } else {
-            this.status = 'unchecked';
-          }
-        }
-      }.call(node));
-      if (node.status !== oldstatus) {
-        node.$renderer.sequence();
-        if (!preventBubble) {
-          this.replicate(node, 'status');
-          this.propagateChange(node);
-          return this.safeApply();
-        }
-      }
-    };
-    prototype.propagateChange = function(node){
-      while (node) {
-        if (node.$parent) {
-          node = node.$parent;
-        } else {
-          break;
-        }
-        this.changeStatus(node, true);
-      }
-      return this.safeApply();
-    };
-    prototype.refresh = function(node){
-      this.replicate(node, '$folded');
-      return this.fetchDocument().refresh();
-    };
-    prototype.modalEdit = function(node){
-      var sub, this$ = this;
-      sub = this.runtime.subscribe('prop-modal-state-change', function(){
-        var form, oldvalues, ref$;
-        if (this$.runtime.props['modal-state'] === 0) {
-          form = $('#editform');
-          oldvalues = {
-            text: node.text,
-            relation: node.relation,
-            note: node.note,
-            folded: node.$folded,
-            checked: node.$status
-          };
-          node.text = form.find('#text').val();
-          node.relation = form.find('#relation').val();
-          node.note = form.find('#note').val();
-          if (node.children != null && node.children.length >= 0) {
-            node.$folded = form.find('#folded')[0].checked === true;
-          } else {
-            node.$status = form.find('#checked')[0].checked === true;
-          }
-          if (oldvalues.text !== node.text) {
-            this$.replicate(node, 'text');
-            node.$renderer.sequence();
-          }
-          if (oldvalues.relation !== node.relation) {
-            if ((ref$ = node.$linerenderer) != null) {
-              ref$.sequence();
-            }
-            this$.replicate(node, 'relation');
-          }
-          if (oldvalues.note !== node.note) {
-            this$.replicate(node, 'note');
-          }
-          if (oldvalues.$folded !== node.$folded) {
-            this$.refresh(node);
-          }
-          if (oldvalues.checked !== node.$status) {
-            this$.changeStatus(node);
-          }
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          return this$.safeApply();
-        }
-      });
-      Modal.show({
-        title: "Edit node",
-        content: DepMan.render(['document', 'editform'])
-      });
-      return setTimeout(function(){
-        var form;
-        form = $('#editform');
-        if (window.innerWidth <= 300) {
-          this$.runtime.set('modal-state', 2);
-        }
-        form.find('#checkcontainer').attr("checked", false).show();
-        form.find('#foldcontainer').attr("checked", false).show();
-        form.find('#text').val(node.text);
-        form.find('#relation').val(node.relation);
-        form.find('#note').val(node.note);
-        if (node.children != null && node.children.length >= 0) {
-          form.find('#checkcontainer').hide();
-          if (node.$folded) {
-            form.find('#folded').attr('checked', true);
-          }
-        } else {
-          form.find('#foldcontainer').hide();
-          if (node.$status) {
-            form.find('#checked').attr('checked', true);
-          }
-        }
-        form.find('#addnode').click(function(){
-          this$.add(node);
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          form.find('#addnode').unbind();
-          Modal.hide();
-          return this$.safeApply();
-        });
-        return form.find('#removenode').click(function(){
-          this$.remove(node);
-          this$.runtime.unsubscribe('prop-modal-state-change', sub);
-          form.find('#removenode').unbind();
-          Modal.hide();
-          return this$.safeApply();
-        });
-      }, 50);
-    };
-    return DocumentController;
-  }(IS.Object));
-  Controller = new DocumentController();
-  angular.module(AppInfo.displayname).controller("Document", ["$scope", "Runtime", "Documents", "Canvas", "ShadowCanvas", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/DocumentList": function(exports, require, module) {(function(){
-  var DocumentListController, Controller, slice$ = [].slice;
-  DocumentListController = (function(superclass){
-    var prototype = extend$((import$(DocumentListController, superclass).displayName = 'DocumentListController', DocumentListController), superclass).prototype, constructor = DocumentListController;
-    function DocumentListController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.uploadDocument = bind$(this$, 'uploadDocument', prototype);
-      this$.saveState = bind$(this$, 'saveState', prototype);
-      this$.duplicateDocument = bind$(this$, 'duplicateDocument', prototype);
-      this$.fetchDocument = bind$(this$, 'fetchDocument', prototype);
-      this$.downloadDocument = bind$(this$, 'downloadDocument', prototype);
-      this$.saveDocument = bind$(this$, 'saveDocument', prototype);
-      this$.deleteDocument = bind$(this$, 'deleteDocument', prototype);
-      this$.addDocument = bind$(this$, 'addDocument', prototype);
-      this$['switch'] = bind$(this$, 'switch', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.connectionBroadcast = bind$(this$, 'connectionBroadcast', prototype);
-      this$.connectionNew = bind$(this$, 'connectionNew', prototype);
-      this$.connectionRequest = bind$(this$, 'connectionRequest', prototype);
-      this$.prep = bind$(this$, 'prep', prototype);
-      this$.passthrough = bind$(this$, 'passthrough', prototype);
-      this$.documentChange = bind$(this$, 'documentChange', prototype);
-      this$.replicate = bind$(this$, 'replicate', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.renderListTemplate = bind$(this$, 'renderListTemplate', prototype);
-      this$.log("DocumentList Controller Online");
-      window.DocumentListController = this$;
-      this$.renderListTemplate();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.renderListTemplate = function(){
-      var div;
-      div = document.createElement("div");
-      div.setAttribute("rel", "Documents List Placeholder");
-      div.setAttribute("id", "documentlistplaceholder");
-      div.innerHTML = DepMan.render(['document', 'list']);
-      return $('#sidebar-container section section').children()[0].appendChild(div);
-    };
-    prototype.init = function(scope, runtime, models, dnd){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.models = models;
-      this.dnd = dnd;
-      this.configScope();
-      this.hookKeyboard();
-      return this.hookEvents();
-    };
-    prototype.hookEvents = function(){
-      var this$ = this;
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.events = {
-          "connection.new": this.connectionNew,
-          "connection.request": this.connectionRequest,
-          "connection.broadcast": this.connectionBroadcast,
-          "document.change": function(){
-            var args;
-            args = slice$.call(arguments);
-            return this$.passthrough(this$.documentChange, args);
-          }
-        };
-      }
-      if (typeof Client != 'undefined' && Client !== null) {
-        Client.loadEvents;
-      }
-      return this.runtime.subscribe("prop-active-document-change", this.saveState);
-    };
-    prototype.replicate = function(){
-      return this.prep('document.change', this.fetchDocument().title);
-    };
-    prototype.documentChange = function(newval){
-      this.fetchDocument().title = newval;
-      return this.safeApply();
-    };
-    prototype.passthrough = function(fn, args){
-      var id;
-      id = args.pop();
-      if (id !== Client.id) {
-        return fn.apply(this, args);
-      }
-    };
-    prototype.prep = function(ev){
-      var data;
-      data = slice$.call(arguments, 1);
-      data.push(Client.id);
-      data.unshift(ev);
-      return Client.publish.apply(Client, data);
-    };
-    prototype.connectionRequest = function(){
-      this.requested = true;
-      return this.log("Client connect requested! (should not send away data)");
-    };
-    prototype.connectionNew = function(id){
-      if (!this.requested) {
-        this.log("Sending data to the new connection! (should not appear on the requester)");
-        return Client.publish("connection.broadcast", id, this.fetchDocument()['export']());
-      }
-    };
-    prototype.connectionBroadcast = function(id, doc){
-      var ref$;
-      if (id == null || id === Client.id) {
-        this.log("Got data from the connectee! (should appear on the requester)");
-        Toast("Got Document", "Got incoming document from the network!", "The new document has been opened and synchronized between all clients!");
-        this.models.getDocument(doc);
-        return ref$ = this.requested, delete this.requested, ref$;
-      }
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, key){
-        var current;
-        e.preventDefault();
-        switch (key) {
-        case 'new':
-          return this$.addDocument();
-        case 'next':
-        case 'previous':
-          if (this$.runtime.props['sidebar-state'] === 0 || this$.runtime.props['sidebar-tab'] !== 0) {
-            return;
-          }
-          current = this$.models.documents.indexOf(this$.runtime.props['active-document']);
-          if (key === 'next' && current + 1 < this$.models.documents.length) {
-            current += 1;
-          }
-          if (key === 'previous' && current - 1 > 0) {
-            current -= 1;
-          }
-          return this$.runtime.set('active-document', this$.models.documents[current]);
-        default:
-          if (this$[key + "Document"]) {
-            return this$[key + "Document"]();
-          }
-        }
-      };
-      jwerty.key(key + "+alt+n", function(it){
-        this$.log("N");
-        return handle(it, 'new');
-      });
-      jwerty.key(key + "+arrow-down", function(it){
-        return handle(it, 'next');
-      });
-      jwerty.key(key + "+arrow-up", function(it){
-        return handle(it, 'previous');
-      });
-      jwerty.key(key + "+s", function(it){
-        return handle(it, 'save');
-      });
-      jwerty.key(key + "+d", function(it){
-        return handle(it, 'delete');
-      });
-      jwerty.key(key + "+shift+d", function(it){
-        return handle(it, 'download');
-      });
-      jwerty.key(key + "+shift+u", function(it){
-        return handle(it, 'upload');
-      });
-      jwerty.key(key + "+shift+c", function(it){
-        return handle(it, 'duplicate');
-      });
-      return this.log("Handled!");
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype['switch'] = function(it){
-      if (this.runtime.props['active-document'] !== it) {
-        this.runtime.set('active-document', it);
-        return Client.publish("connection.broadcast", null, this.fetchDocument()['export']());
-      }
-    };
-    prototype.addDocument = function(){
-      this.models['new']();
-      return Client.publish("connection.broadcast", null, this.fetchDocument()['export']());
-    };
-    prototype.deleteDocument = function(){
-      return this.models['delete'](this.runtime.props['active-document']);
-    };
-    prototype.saveDocument = function(doc){
-      return this.models.save(doc || this.runtime.props['active-document']);
-    };
-    prototype.downloadDocument = function(){
-      var content;
-      content = this.fetchDocument()['export']();
-      return window.open("data:application/xml," + content, "Download", "location=no,menubar=no,titlebar=no,toolbar=no");
-    };
-    prototype.fetchDocument = function(){
-      return this.models._reccords[this.runtime.props['active-document']];
-    };
-    prototype.duplicateDocument = function(){
-      var doc, content, ref$, f, l;
-      doc = this.fetchDocument();
-      content = doc['export']();
-      content = content.replace(doc.title, doc.title + " Copy");
-      ref$ = [content.indexOf("<uuid>"), content.indexOf("</uuid>")], f = ref$[0], l = ref$[1];
-      content = content.replace(content.substr(f, l - f + 9), "");
-      return this.models.getDocument(content);
-    };
-    prototype.saveState = function(){
-      var i$, ref$, len$, doc, results$ = [];
-      for (i$ = 0, len$ = (ref$ = this.models.documents).length; i$ < len$; ++i$) {
-        doc = ref$[i$];
-        results$.push(this.saveDocument(doc));
-      }
-      return results$;
-    };
-    prototype.uploadDocument = function(){
-      var input, this$ = this;
-      input = document.createElement("input");
-      input.type = 'file';
-      document.body.appendChild(input);
-      return $(input).click().change(function(it){
-        var i$, ref$, len$, file, results$ = [];
-        for (i$ = 0, len$ = (ref$ = it.target.files).length; i$ < len$; ++i$) {
-          file = ref$[i$];
-          results$.push((fn$.call(this$, file, file)));
-        }
-        return results$;
-        function fn$(f, file){
-          var type, reader, this$ = this;
-          type = f.name.substr(f.name.lastIndexOf(".") + 1);
-          if (type == 'opml' || type == 'xml') {
-            reader = new FileReader();
-            reader.onload = function(it){
-              return this$.models.getDocument(it.target.result);
-            };
-            return reader.readAsText(f);
-          }
-        }
-      });
-    };
-    return DocumentListController;
-  }(IS.Object));
-  Controller = new DocumentListController();
-  angular.module(AppInfo.displayname).controller("DocumentList", ["$scope", "Runtime", "Documents", "DND", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Help": function(exports, require, module) {(function(){
-  var STATES, States, HelpController, Controller;
-  STATES = ['tab1', 'tab2', 'tab3'];
-  States = new IS.Enum(STATES);
-  HelpController = (function(superclass){
-    var prototype = extend$((import$(HelpController, superclass).displayName = 'HelpController', HelpController), superclass).prototype, constructor = HelpController;
-    function HelpController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.verifyState = bind$(this$, 'verifyState', prototype);
-      this$.changeState = bind$(this$, 'changeState', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.getStates = bind$(this$, 'getStates', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      window.HelpController = this$;
-      this$.getStates();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.initRuntime = function(){
-      return this.runtime.init("help-state", 'number');
-    };
-    prototype.getStates = function(){
-      var i$, ref$, len$, state, results$ = [];
-      this.articles = [];
-      for (i$ = 0, len$ = (ref$ = STATES).length; i$ < len$; ++i$) {
-        state = ref$[i$];
-        results$.push(this.articles.push(DepMan.render(['help', state])));
-      }
-      return results$;
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      return this.hookKeyboard();
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(it){
-        if (this$.runtime.props['app-state'] !== 2) {
-          return;
-        }
-        this$.changeState(it);
-        return this$.safeApply();
-      };
-      jwerty.key(key + "+[", function(it){
-        it.preventDefault();
-        return handle(-1);
-      });
-      return jwerty.key(key + "+]", function(it){
-        it.preventDefault();
-        return handle(1);
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.changeState = function(it){
-      var currentValue;
-      currentValue = this.runtime.get('help-state');
-      if (!(currentValue + it < 0 || currentValue + it >= this.articles.length)) {
-        currentValue += it;
-        return this.runtime.set('help-state', currentValue);
-      }
-    };
-    prototype.verifyState = function(it){
-      if (it.target.className.indexOf("wrapper") >= 0) {
-        return this.runtime.set("app-state", 1);
-      }
-    };
-    return HelpController;
-  }(IS.Object));
-  Controller = new HelpController();
-  angular.module(AppInfo.displayname).controller("Help", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
 }, "classes/controllers/Landing": function(exports, require, module) {(function(){
-  var SECTIONS, Sections, LandingController, Controller;
-  SECTIONS = ['rasp', 'about', 'linux', 'macos'];
-  Sections = new IS.Enum(SECTIONS);
+  var STATES, States, PAGES, Pages, LandingController, Controller;
+  STATES = ['open', 'closed'];
+  States = new IS.Enum(STATES);
+  PAGES = ['home', 'demo'];
+  Pages = new IS.Enum(PAGES);
   LandingController = (function(superclass){
     var prototype = extend$((import$(LandingController, superclass).displayName = 'LandingController', LandingController), superclass).prototype, constructor = LandingController;
     function LandingController(){
       var this$ = this instanceof ctor$ ? this : new ctor$;
       this$.height = bind$(this$, 'height', prototype);
+      this$.move = bind$(this$, 'move', prototype);
+      this$.changeActiveTab = bind$(this$, 'changeActiveTab', prototype);
+      this$.toggle = bind$(this$, 'toggle', prototype);
+      this$.render = bind$(this$, 'render', prototype);
       this$.readMore = bind$(this$, 'readMore', prototype);
       this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
       this$.init = bind$(this$, 'init', prototype);
+      this$.render();
       return this$;
     } function ctor$(){} ctor$.prototype = prototype;
     prototype.init = function(scope, runtime){
       this.scope = scope;
       this.runtime = runtime;
-      this.configScope();
-      return this.initRuntime();
-    };
-    prototype.initRuntime = function(){
-      var i$, ref$, len$, section, this$ = this;
-      this.scope.sections = {};
-      for (i$ = 0, len$ = (ref$ = SECTIONS).length; i$ < len$; ++i$) {
-        section = ref$[i$];
-        this.scope.sections[section] = DepMan.render(['pages', 'landing', section].join("/"));
-      }
-      return window.addEventListener("resize", function(){
-        return typeof this$.safeApply === 'function' ? this$.safeApply() : void 8;
-      });
+      return this.configScope();
     };
     prototype.configScope = function(){
       var this$ = this;
@@ -27000,6 +22043,47 @@ Other than that, feel free to enjoy the application!
     prototype.readMore = function(){
       if (!(window.location.toString().indexOf('#about') >= 0)) {
         return window.location = window.location + '#about';
+      }
+    };
+    prototype.render = function(){
+      (function(body){
+        this.sidebarStatus = States.closed;
+        this.activeTab = Pages.home;
+        body.setAttribute("ng-controller", "Landing");
+        body.setAttribute("ng-class", "sidebarStatus");
+        body.innerHTML = DepMan.render("index", {
+          States: States,
+          Pages: PAGES
+        });
+      }.call(this, document.body));
+      window.addEventListener("mousemove", this.move);
+      return window.addEventListener("touchmove", this.move);
+    };
+    prototype.toggle = function(){
+      this.scope.sidebarStatus = (function(){
+        switch (this.scope.sidebarStatus) {
+        case 0:
+          return 1;
+        case 1:
+          return 0;
+        }
+      }.call(this));
+      return this.safeApply();
+    };
+    prototype.changeActiveTab = function(it){
+      this.scope.activeTab = it;
+      this.scope.sidebarStatus = States.closed;
+      return this.safeApply();
+    };
+    prototype.move = function(it){
+      var point, ref$;
+      point = ((ref$ = it.touches) != null ? ref$[0].clientX : void 8) || it.clientX;
+      if (point < 50) {
+        this.scope.sidebarStatus = States.open;
+        return this.safeApply();
+      } else if (point >= window.innerHeight / 2 && this.scope.sidebarStatus === States.open) {
+        this.scope.sidebarStatus = States.closed;
+        return this.safeApply();
       }
     };
     prototype.height = function(style){
@@ -27033,997 +22117,6 @@ Other than that, feel free to enjoy the application!
     for (var key in src) if (own.call(src, key)) obj[key] = src[key];
     return obj;
   }
-}).call(this);
-}, "classes/controllers/Modals": function(exports, require, module) {(function(){
-  var STATES, States, ModalController, Controller;
-  STATES = ['closed', 'normal', 'fullscreen'];
-  States = new IS.Enum(STATES);
-  ModalController = (function(superclass){
-    var prototype = extend$((import$(ModalController, superclass).displayName = 'ModalController', ModalController), superclass).prototype, constructor = ModalController;
-    function ModalController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.set = bind$(this$, 'set', prototype);
-      this$.hide = bind$(this$, 'hide', prototype);
-      this$.show = bind$(this$, 'show', prototype);
-      this$.toggle = bind$(this$, 'toggle', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.setAttributes = bind$(this$, 'setAttributes', prototype);
-      this$.renderModal = bind$(this$, 'renderModal', prototype);
-      this$.setAttributes();
-      this$.renderModal();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.renderModal = function(){
-      var div;
-      div = document.createElement('div');
-      div.innerHTML = DepMan.render("modal", {
-        States: States,
-        STATES: STATES
-      });
-      div.setAttribute('rel', "Modal Container");
-      div.setAttribute('id', 'modal-container');
-      return document.body.appendChild(div);
-    };
-    prototype.setAttributes = function(){
-      this.title = "Modal Window";
-      return this.content = "Test Content";
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      return this.hookKeyboard();
-    };
-    prototype.hookKeyboard = function(){
-      var this$ = this;
-      return jwerty.key("esc", function(){
-        return this$.hide();
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.initRuntime = function(){
-      return this.runtime.init('modal-state', 'number');
-    };
-    prototype.toggle = function(){
-      if (this.runtime.get('modal-state') === States.normal) {
-        this.runtime.set('modal-state', States.fullscreen);
-      } else {
-        this.runtime.set('modal-state', States.normal);
-      }
-      return this.log(this.runtime.get('modal-state'));
-    };
-    prototype.show = function(data, timeout){
-      data == null && (data = {
-        title: "No Title",
-        content: "No Content"
-      });
-      this.scope.title = data.title || this.scope.title;
-      this.scope.content = data.content || this.scope.content;
-      if (window.innerWidth <= 320) {
-        this.runtime.set('modal-state', States.fullscreen);
-      } else {
-        this.runtime.set('modal-state', States.normal);
-      }
-      if (timeout) {
-        setTimeout(this.hide, timeout);
-      }
-      return this.safeApply();
-    };
-    prototype.hide = function(){
-      this.runtime.set('modal-state', States.closed);
-      return this.safeApply();
-    };
-    prototype.set = function(key, value){
-      if (key == 'title' || key == 'content') {
-        this[key] = value;
-        return this.safeApply();
-      }
-    };
-    return ModalController;
-  }(IS.Object));
-  Controller = new ModalController();
-  angular.module(AppInfo.displayname).controller("Modal", ["$scope", "Runtime", Controller.init]);
-  window.Modal = {
-    set: function(){
-      return Controller.edit.apply(Controller, arguments);
-    },
-    show: function(){
-      return Controller.show.apply(Controller, arguments);
-    },
-    hide: function(){
-      return Controller.hide.apply(Controller, arguments);
-    }
-  };
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Page": function(exports, require, module) {(function(){
-  var STATES, States, MODALS, Modals, PageController, Controller;
-  STATES = ['landing', 'application', 'help'];
-  States = new IS.Enum(STATES);
-  MODALS = ['modal-inactive', 'modal-active', 'modal-active'];
-  Modals = new IS.Enum(MODALS);
-  PageController = (function(superclass){
-    var prototype = extend$((import$(PageController, superclass).displayName = 'PageController', PageController), superclass).prototype, constructor = PageController;
-    function PageController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.computeClass = bind$(this$, 'computeClass', prototype);
-      this$.getBodyState = bind$(this$, 'getBodyState', prototype);
-      this$.getStored = bind$(this$, 'getStored', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.renderIndex = bind$(this$, 'renderIndex', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.setAttributes = bind$(this$, 'setAttributes', prototype);
-      this$.setAttributes();
-      this$.renderIndex();
-      this$.log("PageController Initialized");
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setAttributes = function(){
-      document.body.setAttribute("ng-csp", true);
-      document.body.setAttribute("ng-controller", "Page");
-      return window.PageController = this;
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      this.getStored();
-      this.hookKeyboard();
-      return this;
-    };
-    prototype.hookKeyboard = function(){
-      var key, handler, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handler = function(e, key){
-        if (UserModel.data != null) {
-          e.preventDefault();
-          key = (function(){
-            switch (key) {
-            case 'l':
-              return States.landing;
-            case 'p':
-              return States.application;
-            case '?':
-              return States.help;
-            }
-          }());
-          this$.runtime.set('app-state', key);
-          return this$.safeApply();
-        }
-      };
-      jwerty.key(key + "+l", function(it){
-        return handler(it, 'l');
-      });
-      jwerty.key(key + "+p", function(it){
-        return handler(it, 'p');
-      });
-      jwerty.key(key + "+shift+/", function(it){
-        return handler(it, '?');
-      });
-      return jwerty.key("esc", function(){
-        if (this$.runtime.get('app-state') === States.help) {
-          this$.runtime.set('app-state', States.application);
-          return this$.safeApply();
-        }
-      });
-    };
-    prototype.renderIndex = function(){
-      var d;
-      d = document.createElement("div");
-      d.setAttribute("id", "appwrapper");
-      d.setAttribute("class", "{{computeClass()}}");
-      d.setAttribute("rel", "Document Wrapper");
-      d.innerHTML = DepMan.render("index", {
-        States: States
-      });
-      return document.body.insertBefore(d, document.body.children[0]);
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.initRuntime = function(){
-      this.runtime.init("app-state", 'number');
-      return this.runtime.subscribe("prop-app-state-change", this.safeApply);
-    };
-    prototype.getStored = function(){
-      this.runtime.set("app-state", States.landing);
-      return this.safeApply();
-    };
-    prototype.getBodyState = function(){
-      return STATES[this.runtime.get("app-state")];
-    };
-    prototype.computeClass = function(){
-      return [STATES[this.runtime.get('app-state')], MODALS[this.runtime.get("modal-state")]].join(" ");
-    };
-    return PageController;
-  }(IS.Object));
-  Controller = new PageController();
-  angular.module(AppInfo.displayname).controller("Page", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/RecipeController": function(exports, require, module) {(function(){
-  var RecipeController;
-  RecipeController = (function(superclass){
-    var prototype = extend$((import$(RecipeController, superclass).displayName = 'RecipeController', RecipeController), superclass).prototype, constructor = RecipeController;
-    function RecipeController(scope, runtime, recipeModel){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.scope = scope;
-      this$.runtime = runtime;
-      this$.recipeModel = recipeModel;
-      this$.removeStub = bind$(this$, 'removeStub', prototype);
-      this$.removeInstruction = bind$(this$, 'removeInstruction', prototype);
-      this$.addInstruction = bind$(this$, 'addInstruction', prototype);
-      this$.addStub = bind$(this$, 'addStub', prototype);
-      this$.addRecipe = bind$(this$, 'addRecipe', prototype);
-      this$.remove = bind$(this$, 'remove', prototype);
-      this$.toggleEditing = bind$(this$, 'toggleEditing', prototype);
-      this$.hookEvents = bind$(this$, 'hookEvents', prototype);
-      this$.getModel = bind$(this$, 'getModel', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.getModel().configScope().hookEvents();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      import$(this.scope, this);
-      return this;
-    };
-    prototype.getModel = function(){
-      this.recipeModel.controller = this;
-      return this;
-    };
-    prototype.hookEvents = function(){};
-    prototype.toggleEditing = function(recipe){
-      recipe.editing = !recipe.editing;
-      recipe.getData();
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.remove = function(recipe){
-      Client.post("apps/remove", {
-        id: UserModel.data.mail + "$" + recipe.data.name
-      }, function(){
-        return Toast("Success", "Removed Successfuly");
-      }, function(){
-        return Toast("Error", "Something went wrong");
-      });
-      delete this.recipes[recipe._uuid];
-      return this.safeApply();
-    };
-    prototype.addRecipe = function(recipe){
-      return this.recipeModel['new']();
-    };
-    prototype.addStub = function(to){
-      to.stubs == null && (to.stubs = []);
-      to.stubs.push({
-        url: "http://github.com/rasberries/",
-        instructions: []
-      });
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.addInstruction = function(to){
-      to.push({
-        command: "New Instruction"
-      });
-      return setTimeout(LanguageHelper._translateAll, 50);
-    };
-    prototype.removeInstruction = function(whom, fr){
-      return fr.splice(fr.indexOf(whom), 1);
-    };
-    prototype.removeStub = function(whom, fr){
-      return fr.splice(fr.indexOf(whom), 1);
-    };
-    return RecipeController;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).controller("RecipeController", ["$scope", "Runtime", "Recipe", RecipeController]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/controllers/Sidebar": function(exports, require, module) {(function(){
-  var STATES, States, TABS, Tabs, ICONS, SidebarController, Controller;
-  STATES = ['closed', 'open'];
-  States = new IS.Enum(STATES);
-  TABS = ['list', 'server', 'general', 'experimental'];
-  Tabs = new IS.Enum(TABS);
-  ICONS = ['icon-list', 'icon-signal', 'icon-gear', 'icon-code'];
-  SidebarController = (function(superclass){
-    var prototype = extend$((import$(SidebarController, superclass).displayName = 'SidebarController', SidebarController), superclass).prototype, constructor = SidebarController;
-    function SidebarController(){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.verifyAndConnect = bind$(this$, 'verifyAndConnect', prototype);
-      this$.toggleState = bind$(this$, 'toggleState', prototype);
-      this$.configScope = bind$(this$, 'configScope', prototype);
-      this$.hookGestures = bind$(this$, 'hookGestures', prototype);
-      this$.hookKeyboard = bind$(this$, 'hookKeyboard', prototype);
-      this$.init = bind$(this$, 'init', prototype);
-      this$.initRuntime = bind$(this$, 'initRuntime', prototype);
-      this$.renderAside = bind$(this$, 'renderAside', prototype);
-      this$.getTabs = bind$(this$, 'getTabs', prototype);
-      this$.generateImage = bind$(this$, 'generateImage', prototype);
-      this$.hookImage = bind$(this$, 'hookImage', prototype);
-      this$.getDeps = bind$(this$, 'getDeps', prototype);
-      this$.STATES = STATES;
-      this$.States = States;
-      this$.ICONS = ICONS;
-      this$.TABS = TABS;
-      this$.Tabs = Tabs;
-      this$.getDeps();
-      this$.getTabs();
-      this$.renderAside();
-      window.SidebarController = this$;
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.getDeps = function(){
-      var this$ = this;
-      DepMan.lib("qrcode");
-      DepMan.lib("qrcapacitytable");
-      DepMan.lib("excanvas");
-      this.Client = DepMan.helper("DataTransfer");
-      return this.Client.subscribe("CONNECTED", function(){
-        this$.hookImage();
-        return this$.generateImage();
-      });
-    };
-    prototype.hookImage = function(){
-      this.image = $('.qrcode')[0];
-      return this.canvas = document.createElement("canvas");
-    };
-    prototype.generateImage = function(){
-      this.draw == null && (this.draw = new QRCodeDraw());
-      this.draw.draw(this.canvas, this.Client.id, function(){});
-      return this.image.setAttribute("src", this.canvas.toDataURL());
-    };
-    prototype.getTabs = function(){
-      var tab;
-      return this.tabs = (function(){
-        var i$, ref$, len$, results$ = [];
-        for (i$ = 0, len$ = (ref$ = TABS).length; i$ < len$; ++i$) {
-          tab = ref$[i$];
-          results$.push(DepMan.render(['sidebar', 'tabs', tab]));
-        }
-        return results$;
-      }());
-    };
-    prototype.renderAside = function(){
-      var div, x$, y$, this$ = this;
-      div = document.createElement("div");
-      div.setAttribute('rel', "Sidebar Container");
-      div.setAttribute('id', 'sidebar-container');
-      div.innerHTML = DepMan.render(['sidebar', 'index'], {
-        TABS: TABS,
-        Tabs: Tabs,
-        States: States
-      });
-      x$ = $('section#application');
-      x$.append(div);
-      y$ = x$[0];
-      y$.addEventListener("contextmenu", function(){
-        if (this$.runtime.props['sidebar-state'] !== States.closed) {
-          return;
-        }
-        this$.runtime.set('sidebar-state', States.open);
-        return this$.safeApply();
-      });
-      y$.addEventListener("click", function(e){
-        if ($(e.target).parents('#sidebar-container')[0]) {
-          return;
-        }
-        if (this$.runtime.props['sidebar-state'] !== States.open) {
-          return;
-        }
-        this$.runtime.set('sidebar-state', States.closed);
-        return this$.safeApply();
-      });
-      return $('#remote-client-id').change(function(e){
-        return Client.connect(this$.scope.clientid);
-      });
-    };
-    prototype.initRuntime = function(){
-      var this$ = this;
-      this.runtime.init("sidebar-state", 'number');
-      this.runtime.init("sidebar-tab", 'number');
-      this.runtime.subscribe("prop-sidebar-state-change", function(){
-        return this$.safeApply();
-      });
-      this.runtime.subscribe("prop-sidebar-tab-change", function(){
-        return this$.safeApply();
-      });
-      return DBStorage.get("sidebar-tab", function(tab){
-        tab == null && (tab = 0);
-        this$.runtime.set("sidebar-tab", tab);
-        return this$.runtime.subscribe("prop-sidebar-tab-change", function(){
-          return DBStorage.set("sidebar-tab", this$.runtime.get("sidebar-tab"));
-        });
-      });
-    };
-    prototype.init = function(scope, runtime){
-      this.scope = scope;
-      this.runtime = runtime;
-      this.configScope();
-      this.initRuntime();
-      this.hookKeyboard();
-      this.hookGestures();
-      this.scope.clientid = "";
-      return this.scope.language = this.runtime.get('language');
-    };
-    prototype.hookKeyboard = function(){
-      var key, handle, i$, ref$, len$, tab, this$ = this;
-      key = Tester.mac ? "cmd" : "ctrl";
-      handle = function(e, tab){
-        e.preventDefault();
-        if (this$.runtime.get("sidebar-state") === States.closed) {
-          this$.runtime.set("sidebar-state", States.open);
-        }
-        this$.runtime.set("sidebar-tab", Tabs[tab]);
-        return this$.safeApply();
-      };
-      for (i$ = 0, len$ = (ref$ = TABS).length; i$ < len$; ++i$) {
-        tab = ref$[i$];
-        (fn$.call(this, tab, tab));
-      }
-      return jwerty.key("esc", function(){
-        if (this$.runtime.get("sidebar-state") === States.open) {
-          this$.runtime.set('sidebar-state', States.closed);
-          return this$.safeApply();
-        }
-      });
-      function fn$(currentTab, tab){
-        jwerty.key(key + "+" + (Tabs[currentTab] + 1), function(it){
-          return handle(it, currentTab);
-        });
-      }
-    };
-    prototype.hookGestures = function(){
-      var target, this$ = this;
-      target = Hammer($('#sidebar-container section section')[0]);
-      target.on("swiperight", function(){
-        if (this$.runtime.props['sidebar-tab'] !== Tabs.list) {
-          return this$.runtime.set('sidebar-tab', this$.runtime.props['sidebar-tab'] - 1);
-        }
-      });
-      target.on("swipeleft", function(){
-        if (this$.runtime.props['sidebar-tab'] !== Tabs.experimental) {
-          return this$.runtime.set('sidebar-tab', this$.runtime.props['sidebar-tab'] + 1);
-        }
-      });
-      return target.on("swipedown", function(){
-        if (this$.runtime.props['sidebar-tab'] === Tabs.server) {
-          return Client.reconnect();
-        }
-      });
-    };
-    prototype.configScope = function(){
-      var this$ = this;
-      this.safeApply = function(fn){
-        var phase;
-        phase = this$.scope.$parent.$$phase;
-        if (phase === "$apply" || phase === "$digest") {
-          if (fn && typeof fn === 'function') {
-            return fn();
-          }
-        } else {
-          return this$.scope.$apply(fn);
-        }
-      };
-      return import$(this.scope, this);
-    };
-    prototype.toggleState = function(){
-      this.log("Toggleing state");
-      if (this.runtime.props['sidebar-state'] === States.open) {
-        return this.runtime.set('sidebar-state', States.closed);
-      } else {
-        return this.runtime.set("sidebar-state", States.open);
-      }
-    };
-    prototype.verifyAndConnect = function(){
-      if (this.scope.clientid) {
-        return Client.connect(this.scope.clientid);
-      }
-    };
-    return SidebarController;
-  }(IS.Object));
-  Controller = new SidebarController();
-  angular.module(AppInfo.displayname).controller("Sidebar", ["$scope", "Runtime", Controller.init]);
-  module.exports = Controller;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/gestures/swypeleft": function(exports, require, module) {(function() {
-  var SwypeleftGesture, _prefixes, _tolerance,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  SwypeleftGesture = (function(_super) {
-    __extends(SwypeleftGesture, _super);
-
-    function SwypeleftGesture(init) {
-      this.init = init;
-      this.end = __bind(this.end, this);
-      this.move = __bind(this.move, this);
-      window.addEventListener("touchmove", this.move);
-      window.addEventListener("touchend", this.end);
-      this.event = null;
-    }
-
-    SwypeleftGesture.prototype.move = function(e) {
-      var appscope, delta, docscope, percent, pos, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r;
-      if (this.breakup != null) {
-        return;
-      }
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      pos = Swype.getParams(e);
-      if (pos.x - this.init.x > _tolerance) {
-        delta = pos.x - this.init.x;
-        percent = delta / 2.5;
-        if (appscope.sidebarstatus === "open") {
-          this.event = "tabs";
-          if (this.lastpos) {
-            if (pos.x < this.lastpos.x) {
-              this.event = null;
-            } else {
-              this.event = "tabs";
-            }
-          }
-          if (this.currentTab == null) {
-            this.currentTab = jQuery("body > aside article.active");
-          }
-          if (this.prevTab == null) {
-            this.prevTab = this.currentTab.prev();
-          }
-          for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-            prefix = _prefixes[_i];
-            this.currentTab.css("" + prefix + "transition", "none");
-          }
-          for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-            prefix = _prefixes[_j];
-            this.currentTab.css("" + prefix + "transform", "translateX(" + delta + "px)");
-          }
-          this.currentTab.css("opacity", "" + ((100 - percent) / 100));
-          for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-            prefix = _prefixes[_k];
-            this.prevTab.css("" + prefix + "transition", "none");
-          }
-          for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-            prefix = _prefixes[_l];
-            this.prevTab.css("" + prefix + "transform", "translateX(-" + (275 - delta) + "px)");
-          }
-          this.prevTab.css("opacity", "" + (percent / 100));
-          this.lastpos = pos;
-        } else {
-          if (docscope.view === "mindmap") {
-            return;
-          }
-          if (docscope.sidebarstatus) {
-            if (docscope.view === "mindmap") {
-              return;
-            }
-            this.event = "docsidebar";
-            if (this.lastpos) {
-              if (pos.x < this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "docsidebar";
-              }
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article article > div");
-            }
-            this.log(delta);
-            if (delta < 100) {
-              for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-                prefix = _prefixes[_m];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-                prefix = _prefixes[_n];
-                this.content.css("" + prefix + "transform", "translateX(-" + (100 - delta) + "px)");
-              }
-            }
-          } else {
-            this.event = "appsidebar";
-            if (this.lastpos) {
-              if (pos.x < this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "appsidebar";
-              }
-            }
-            if (this.sidebar == null) {
-              this.sidebar = jQuery("body > aside");
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article");
-            }
-            if (delta < 250) {
-              for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-                prefix = _prefixes[_o];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-                prefix = _prefixes[_p];
-                this.content.css("" + prefix + "transform", "translateX(" + delta + "px)");
-              }
-              for (_q = 0, _len8 = _prefixes.length; _q < _len8; _q++) {
-                prefix = _prefixes[_q];
-                this.sidebar.css("" + prefix + "transition", "none");
-              }
-              for (_r = 0, _len9 = _prefixes.length; _r < _len9; _r++) {
-                prefix = _prefixes[_r];
-                this.sidebar.css("" + prefix + "transform", "translateX(" + ((-250 + delta) / 2) + "px)");
-              }
-              this.sidebar.css("opacity", "" + (percent / 100));
-            }
-            this.lastpos = pos;
-          }
-        }
-        return appscope.safeApply();
-      }
-    };
-
-    SwypeleftGesture.prototype.end = function(e) {
-      var appscope, docscope, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _m, _n, _o, _p;
-      this.breakup = true;
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      if (this.sidebar) {
-        for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-          prefix = _prefixes[_i];
-          this.sidebar.css("" + prefix + "transition", "");
-        }
-        for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-          prefix = _prefixes[_j];
-          this.sidebar.css("" + prefix + "transform", "");
-        }
-        this.sidebar.css("opacity", "");
-      }
-      if (this.content) {
-        for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-          prefix = _prefixes[_k];
-          this.content.css("" + prefix + "transition", "");
-        }
-        for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-          prefix = _prefixes[_l];
-          this.content.css("" + prefix + "transform", "");
-        }
-      }
-      if (this.currentTab) {
-        for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-          prefix = _prefixes[_m];
-          this.currentTab.css("" + prefix + "transition", "");
-        }
-        for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-          prefix = _prefixes[_n];
-          this.currentTab.css("" + prefix + "transform", "");
-        }
-        this.currentTab.css("opacity", "");
-        for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-          prefix = _prefixes[_o];
-          this.prevTab.css("" + prefix + "transition", "");
-        }
-        for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-          prefix = _prefixes[_p];
-          this.prevTab.css("" + prefix + "transform", "");
-        }
-        this.prevTab.css("opacity", "");
-      }
-      switch (this.event) {
-        case "tabs":
-          appscope.asidetab(null, -1);
-          break;
-        case "appsidebar":
-          appscope.togglesidebar();
-      }
-      window.removeEventListener("touchmove", this.move);
-      return window.removeEventListener("touchend", this.end);
-    };
-
-    return SwypeleftGesture;
-
-  })(BaseObject);
-
-  _prefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
-
-  _tolerance = 50;
-
-  module.exports = SwypeleftGesture;
-
-}).call(this);
-}, "classes/gestures/swyperight": function(exports, require, module) {(function() {
-  var SwyperightGesture, _prefixes, _tolerance,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  SwyperightGesture = (function(_super) {
-    __extends(SwyperightGesture, _super);
-
-    function SwyperightGesture(init) {
-      this.init = init;
-      this.end = __bind(this.end, this);
-      this.move = __bind(this.move, this);
-      window.addEventListener("touchmove", this.move);
-      window.addEventListener("touchend", this.end);
-    }
-
-    SwyperightGesture.prototype.move = function(e) {
-      var appscope, delta, docscope, percent, pos, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _len8, _len9, _m, _n, _o, _p, _q, _r;
-      if (this.breakup != null) {
-        return;
-      }
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      pos = Swype.getParams(e);
-      if (this.init.x - pos.x > _tolerance) {
-        delta = this.init.x - pos.x;
-        percent = delta / 2.5;
-        if (appscope.sidebarstatus === "open") {
-          if (this.init.x <= 250) {
-            this.event = "tabs";
-            this.log(delta, percent);
-            if (this.lastpos) {
-              if (pos.x > this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "tabs";
-              }
-            }
-            if (this.currentTab == null) {
-              this.currentTab = jQuery("body > aside article.active");
-            }
-            if (this.prevTab == null) {
-              this.prevTab = this.currentTab.next();
-            }
-            for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-              prefix = _prefixes[_i];
-              this.currentTab.css("" + prefix + "transition", "none");
-            }
-            for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-              prefix = _prefixes[_j];
-              this.currentTab.css("" + prefix + "transform", "translateX(-" + delta + "px)");
-            }
-            this.currentTab.css("opacity", "" + ((100 - percent) / 100));
-            for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-              prefix = _prefixes[_k];
-              this.prevTab.css("" + prefix + "transition", "none");
-            }
-            for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-              prefix = _prefixes[_l];
-              this.prevTab.css("" + prefix + "transform", "translateX(" + (275 - delta) + "px)");
-            }
-            this.prevTab.css("opacity", "" + (percent / 100));
-          } else {
-            this.event = "appsidebar";
-            if (this.lastpos) {
-              if (pos.x > this.lastpos.x) {
-                this.event = null;
-              } else {
-                this.event = "appsidebar";
-              }
-            }
-            if (this.sidebar == null) {
-              this.sidebar = jQuery("body > aside");
-            }
-            if (this.content == null) {
-              this.content = jQuery("body > article");
-            }
-            if (delta < 250) {
-              for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-                prefix = _prefixes[_m];
-                this.content.css("" + prefix + "transition", "none");
-              }
-              for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-                prefix = _prefixes[_n];
-                this.content.css("" + prefix + "transform", "translateX(" + (250 - delta) + "px)");
-              }
-              for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-                prefix = _prefixes[_o];
-                this.sidebar.css("" + prefix + "transition", "none");
-              }
-              for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-                prefix = _prefixes[_p];
-                this.sidebar.css("" + prefix + "transform", "translateX(-" + (delta / 2) + "px)");
-              }
-              this.sidebar.css("opacity", "" + ((100 - percent) / 100));
-            }
-          }
-        } else {
-          if (docscope.view === "mindmap") {
-            return;
-          }
-          this.event = "docsidebar";
-          if (this.lastpos) {
-            if (pos.x > this.lastpos.x) {
-              this.event = null;
-            } else {
-              this.event = "docsidebar";
-            }
-          }
-          if (this.content == null) {
-            this.content = jQuery("body > article article > div");
-          }
-          this.log(delta);
-          if (delta < 100) {
-            for (_q = 0, _len8 = _prefixes.length; _q < _len8; _q++) {
-              prefix = _prefixes[_q];
-              this.content.css("" + prefix + "transition", "none");
-            }
-            for (_r = 0, _len9 = _prefixes.length; _r < _len9; _r++) {
-              prefix = _prefixes[_r];
-              this.content.css("" + prefix + "transform", "translateX(-" + (delta - 50) + "px)");
-            }
-          }
-        }
-        return this.lastpos = pos;
-      }
-    };
-
-    SwyperightGesture.prototype.end = function(e) {
-      var appscope, docscope, prefix, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _len7, _m, _n, _o, _p;
-      this.breakup = true;
-      appscope = angular.element("[ng-controller='NGAsideController']").scope();
-      docscope = angular.element("[ng-controller='OPMLController']").scope();
-      if (this.content) {
-        for (_i = 0, _len = _prefixes.length; _i < _len; _i++) {
-          prefix = _prefixes[_i];
-          this.content.css("" + prefix + "transition", "");
-        }
-        for (_j = 0, _len1 = _prefixes.length; _j < _len1; _j++) {
-          prefix = _prefixes[_j];
-          this.content.css("" + prefix + "transform", "");
-        }
-      }
-      if (this.sidebar) {
-        for (_k = 0, _len2 = _prefixes.length; _k < _len2; _k++) {
-          prefix = _prefixes[_k];
-          this.sidebar.css("" + prefix + "transition", "");
-        }
-        for (_l = 0, _len3 = _prefixes.length; _l < _len3; _l++) {
-          prefix = _prefixes[_l];
-          this.sidebar.css("" + prefix + "transform", "");
-        }
-        this.sidebar.css("opacity", "");
-      }
-      if (this.currentTab) {
-        for (_m = 0, _len4 = _prefixes.length; _m < _len4; _m++) {
-          prefix = _prefixes[_m];
-          this.currentTab.css("" + prefix + "transition", "");
-        }
-        for (_n = 0, _len5 = _prefixes.length; _n < _len5; _n++) {
-          prefix = _prefixes[_n];
-          this.currentTab.css("" + prefix + "transform", "");
-        }
-        this.currentTab.css("opacity", "");
-        for (_o = 0, _len6 = _prefixes.length; _o < _len6; _o++) {
-          prefix = _prefixes[_o];
-          this.prevTab.css("" + prefix + "transition", "");
-        }
-        for (_p = 0, _len7 = _prefixes.length; _p < _len7; _p++) {
-          prefix = _prefixes[_p];
-          this.prevTab.css("" + prefix + "transform", "");
-        }
-        this.prevTab.css("opacity", "");
-      }
-      switch (this.event) {
-        case "tabs":
-          appscope.asidetab(null, 1);
-          break;
-        case "appsidebar":
-          appscope.togglesidebar();
-          break;
-        case "docsidebar":
-          docscope.toggleSidebar();
-      }
-      window.removeEventListener("touchmove", this.move);
-      return window.removeEventListener("touchend", this.end);
-    };
-
-    return SwyperightGesture;
-
-  })(BaseObject);
-
-  _prefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
-
-  _tolerance = 50;
-
-  module.exports = SwyperightGesture;
-
 }).call(this);
 }, "classes/helpers/Canvas": function(exports, require, module) {(function(){
   var CanvasService, DECEL_FACTOR, ACCEL_FACTOR;
@@ -44152,1073 +38245,7 @@ QRBitBuffer.prototype = {
 
         this.length++;
     }
-};}, "classes/models/AppModel": function(exports, require, module) {(function(){
-  var __blankData__, RecipeModel;
-  __blankData__ = {
-    description: "something",
-    stubs: []
-  };
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(runtime){
-      RecipeModel.runtime = runtime;
-      window.RecipeRepo = RecipeModel;
-      RecipeModel.runtime.subscribe("prop-active-tab-change", function(){
-        if (RecipeModel.runtime.props['active-tab'] === 3) {
-          return RecipeModel.refresh();
-        }
-      });
-      RecipeModel.runtime.subscribe("prop-app-state-change", function(){
-        if (RecipeModel.runtime.props['app-state'] === 1) {
-          return RecipeModel.refresh();
-        }
-      });
-      RecipeModel.refresh();
-      return RecipeModel;
-    };
-    RecipeModel.refresh = function(){
-      var onsuccess, onerror;
-      onsuccess = function(list){
-        var ref$, i$, len$, item;
-        RecipeModel.list = list;
-        RecipeModel.log(RecipeModel.list);
-        RecipeModel._reccords = {};
-        if ((ref$ = RecipeModel.controller) != null) {
-          ref$.recipes = RecipeModel._reccords;
-        }
-        for (i$ = 0, len$ = (ref$ = RecipeModel.list).length; i$ < len$; ++i$) {
-          item = ref$[i$];
-          (fn$.call(RecipeModel, item, item));
-        }
-        RecipeModel.log(RecipeModel.controller);
-        return (ref$ = RecipeModel.controller) != null ? ref$.safeApply() : void 8;
-        function fn$(i, item){
-          var x, ref$;
-          if (i._id) {
-            delete i._id;
-          }
-          x = this.create(i.name, item);
-          x._id = i.name;
-          (ref$ = x.data).stubs == null && (ref$.stubs = []);
-        }
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the list of stuff!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("users/" + UserModel.data.mail + "/apps", onsuccess, onerror);
-      }
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.data.name = this._id;
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.getData = function(){
-      var onsuccess, onerror, this$ = this;
-      onsuccess = function(data){
-        this$.data = data;
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the full recipe!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("apps/" + this.data.id, onsuccess, onerror);
-      }
-    };
-    prototype.save = function(){
-      var onsuccess, onerror, data, this$ = this;
-      onsuccess = function(){
-        return Toast("Success", "The data was saved!");
-      };
-      onerror = function(){
-        return Toast("Error", "Could not save the data!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        data = {};
-        import$(data, this.data);
-        data.author = UserModel.data.mail;
-        data.id = UserModel.data.mail + ":" + data.name;
-        if (data._id) {
-          delete data._id;
-        }
-        return Client.post("apps/update/", data, onsuccess, onerror);
-      }
-    };
-    RecipeModel['new'] = function(){
-      var x;
-      x = RecipeModel.reuse("New Recipe", __blankData__);
-      return x._id = "New Recipe";
-    };
-    function RecipeModel(){
-      this.save = bind$(this, 'save', prototype);
-      this.getData = bind$(this, 'getData', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory("Recipe", ["Runtime", RecipeModel.init]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/Document": function(exports, require, module) {(function(){
-  var DocumentModel;
-  DocumentModel = (function(superclass){
-    var prototype = extend$((import$(DocumentModel, superclass).displayName = 'DocumentModel', DocumentModel), superclass).prototype, constructor = DocumentModel;
-    DocumentModel.extend(IS.Modules.ORM);
-    prototype.init = function(data){
-      this.data = data.element;
-      this.parent = this.constructor;
-      this.title = this.data.title;
-      this._id = this._uuid;
-      if (this.data.uuid) {
-        this.parent.relocate(this._uuid, this.data.uuid);
-      } else {
-        this._id = this._uuid;
-      }
-      this.data = this.data.json.data;
-      this.parent.documents.push(this._id);
-      this.refresh();
-      this.parent.runtime.set("active-document", this._id);
-      return this.log("New Document: [" + this.title + "|" + this._id + "]");
-    };
-    prototype.refresh = function(){
-      this.initIndex();
-      return this.refreshIndex(this.data, 0, this);
-    };
-    prototype.initIndex = function(){
-      this.index = 0;
-      this.indexes = [];
-      return this.levels = [];
-    };
-    prototype.refreshIndex = function(list, depth, parent){
-      var ref$, i$, len$, node, yOffset, results$ = [];
-      (ref$ = this.levels)[depth] == null && (ref$[depth] = []);
-      for (i$ = 0, len$ = list.length; i$ < len$; ++i$) {
-        node = list[i$];
-        node.$index = this.index++;
-        node.$depth = depth;
-        node.$parent = parent;
-        node.$status == null && (node.$status = false);
-        node.$viewmore == null && (node.$viewmore = false);
-        node.$folded == null && (node.$folded = false);
-        node.$hidden = parent.$folded;
-        node.relation == null && (node.relation = "");
-        node.note == null && (node.note = "");
-        if (!node.status) {
-          if (node.children && node.children.length) {
-            node.status = "indeterminate";
-          } else {
-            node.status = "unchecked";
-          }
-        }
-        if (!node.$renderer) {
-          node.$renderer = new (DepMan.renderer("Node"))(node);
-        }
-        if (!node.location) {
-          yOffset = this.levels[depth].length;
-          if (yOffset) {
-            yOffset = this.levels[depth][yOffset - 1].location.y + 70;
-          }
-          if (parent.location) {
-            node.location = {
-              x: parent.location.x + 350,
-              y: parent.location.y + yOffset
-            };
-          } else {
-            node.location = {
-              x: 20,
-              y: 20 + yOffset
-            };
-          }
-        }
-        if (depth && !node.$linerenderer) {
-          node.$linerenderer = new (DepMan.renderer("Line"))(node);
-        }
-        this.indexes.push(node);
-        this.levels[depth].push(node);
-        if (node.children) {
-          results$.push(this.refreshIndex(node.children, depth + 1, node));
-        }
-      }
-      return results$;
-    };
-    prototype.save = function(){
-      return this.parent.save(this._id);
-    };
-    prototype['delete'] = function(){
-      return this.parent['delete'](this._id);
-    };
-    prototype['export'] = function(){
-      this.log(this);
-      return this.parent.reader.read({
-        title: this.title,
-        data: this.data,
-        uuid: this._id
-      }).opml;
-    };
-    DocumentModel.inject = function(runtime, reader){
-      DocumentModel.runtime = runtime;
-      DocumentModel.reader = reader;
-      DocumentModel.documents = [];
-      DocumentModel.getInitialState();
-      return DocumentModel;
-    };
-    DocumentModel.relocate = function(init, final){
-      DocumentModel.log("Relocating " + init + " to " + final);
-      DocumentModel._reccords[final] = DocumentModel._reccords[init];
-      DocumentModel.documents.splice(DocumentModel.documents.indexOf(init, 1, final));
-      if (DocumentModel.runtime.props['active-document'] === init) {
-        DocumentModel.runtime.set('active-document', final);
-      }
-      delete DocumentModel._reccords[init];
-      return DocumentModel._reccords[final]._id = DocumentModel._reccords[final]._uuid = final;
-    };
-    DocumentModel.getInitialState = function(){
-      return DBStorage.get("documents", function(docs){
-        var i$, len$, doc, results$ = [];
-        docs == null && (docs = []);
-        if (docs.substr != null) {
-          docs = JSON.parse(docs);
-        }
-        for (i$ = 0, len$ = docs.length; i$ < len$; ++i$) {
-          doc = docs[i$];
-          results$.push(DBStorage.get(doc, fn$));
-        }
-        return results$;
-        function fn$(content){
-          return DocumentModel.getDocument(content);
-        }
-      });
-    };
-    DocumentModel.getDocument = function(data){
-      var kid;
-      data = DocumentModel.reader.read(data);
-      kid = DocumentModel.reuse(null, {
-        element: data
-      });
-      return kid;
-    };
-    DocumentModel['new'] = function(){
-      return DocumentModel.getDocument({
-        title: "New Document",
-        data: [
-          {
-            text: "Parent Node",
-            children: [
-              {
-                text: "Child Node"
-              }, {
-                text: "Second Child Node"
-              }
-            ]
-          }, {
-            text: "Sibling"
-          }
-        ]
-      });
-    };
-    DocumentModel['delete'] = function(item){
-      var index;
-      DocumentModel.deleteLink(item);
-      delete DocumentModel._reccords[item];
-      DBStorage.remove(item);
-      index = DocumentModel.documents.indexOf(item);
-      DocumentModel.documents = DocumentModel.documents.splice(index, 1);
-      DocumentModel.runtime.set('active-document', DocumentModel.documents[index - 1]) || null;
-      return Toast("Document Status", "The document has been successfuly deleted!");
-    };
-    DocumentModel.deleteLink = function(item){
-      return DBStorage.get("documents", function(items){
-        items == null && (items = []);
-        if (items.substr != null) {
-          items = JSON.parse(items);
-        }
-        if (items.indexOf(item >= 0)) {
-          items.splice(items.indexOf(item), 1);
-          return DBStorage.set("documents", JSON.stringify(items));
-        }
-      });
-    };
-    DocumentModel.save = function(item){
-      DocumentModel.saveLink(item);
-      if (DocumentModel._reccords[item]) {
-        DBStorage.set(item, DocumentModel._reccords[item]['export']());
-      }
-      return Toast("Document Status", "The document has been successfuly saved!");
-    };
-    DocumentModel.saveLink = function(item){
-      return DBStorage.get("documents", function(items){
-        items == null && (items = []);
-        if (items.substr != null) {
-          items = JSON.parse(items);
-        }
-        if (!(items.indexOf(item) >= 0)) {
-          items.push(item);
-          return DBStorage.set("documents", JSON.stringify(items));
-        }
-      });
-    };
-    function DocumentModel(){
-      this['export'] = bind$(this, 'export', prototype);
-      this['delete'] = bind$(this, 'delete', prototype);
-      this.save = bind$(this, 'save', prototype);
-      this.refreshIndex = bind$(this, 'refreshIndex', prototype);
-      this.initIndex = bind$(this, 'initIndex', prototype);
-      this.refresh = bind$(this, 'refresh', prototype);
-      this.init = bind$(this, 'init', prototype);
-      DocumentModel.superclass.apply(this, arguments);
-    }
-    return DocumentModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory('Documents', ["Runtime", 'OPMLReader', DocumentModel.inject]);
-  module.exports = window.Documents = DocumentModel;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/ReceipeModel": function(exports, require, module) {(function(){
-  var __dummyData__, RecipeModel;
-  __dummyData__ = [
-    {
-      name: "NPM",
-      description: "Install NPM",
-      stubs: [{
-        url: "http://npmjs.org/install.sh",
-        instructions: ["sh install.sh"]
-      }]
-    }, {
-      name: "Node",
-      description: "Install Node.JS",
-      stubs: [
-        {
-          url: "http://nodejs.org/install.tar.gz",
-          instructions: ["tar -xvzf install.tar.gz", "cd install", "./configure", "make", "make install"]
-        }, {
-          url: "http://npmjs.org/install.sh",
-          instructions: ["sh install.sh"]
-        }
-      ]
-    }
-  ];
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(data){
-      var i$, ref$, len$, item, results$ = [];
-      RecipeModel.data = data != null ? data : __dummyData__;
-      window.RecipeRepo = RecipeModel;
-      delete RecipeModel._reccords;
-      RecipeModel._reccords = {};
-      for (i$ = 0, len$ = (ref$ = RecipeModel.data).length; i$ < len$; ++i$) {
-        item = ref$[i$];
-        results$.push(RecipeModel.reuse(null, item));
-      }
-      return results$;
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.log("Should go for the remote data");
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.verifyPassword = function(it){
-      return it === this.data.password;
-    };
-    prototype.verifyEmail = function(){
-      return /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/.test(this.data.email);
-    };
-    function RecipeModel(){
-      this.verifyEmail = bind$(this, 'verifyEmail', prototype);
-      this.verifyPassword = bind$(this, 'verifyPassword', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  RecipeModel.init();
-  angular.module(AppInfo.displayname).factory("Recipe", function(){
-    return RecipeModel;
-  });
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/RecipeModel": function(exports, require, module) {(function(){
-  var __blankData__, RecipeModel;
-  __blankData__ = {
-    description: "something",
-    stubs: []
-  };
-  RecipeModel = (function(superclass){
-    var prototype = extend$((import$(RecipeModel, superclass).displayName = 'RecipeModel', RecipeModel), superclass).prototype, constructor = RecipeModel;
-    RecipeModel.extend(IS.Modules.ORM);
-    RecipeModel.init = function(runtime){
-      var all;
-      RecipeModel.runtime = runtime;
-      window.RecipeRepo = RecipeModel;
-      all = true;
-      RecipeModel.runtime.subscribe("prop-active-tab-change", function(){
-        switch (RecipeModel.runtime.props['active-tab']) {
-        case 3:
-          return RecipeModel.refresh();
-        case 1:
-          return RecipeModel.refresh(all);
-        }
-      });
-      RecipeModel.runtime.subscribe("prop-app-state-change", function(){
-        if (RecipeModel.runtime.props['app-state'] === 1) {
-          switch (RecipeModel.runtime.props['active-tab']) {
-          case 3:
-            return RecipeModel.refresh();
-          case 1:
-            return RecipeModel.refresh(all);
-          }
-        }
-      });
-      return RecipeModel;
-    };
-    RecipeModel.refresh = function(all){
-      var onsuccess, onerror;
-      all == null && (all = false);
-      onsuccess = function(list){
-        var ref$, i$, len$, item;
-        RecipeModel.list = list;
-        RecipeModel.log(RecipeModel.list);
-        RecipeModel._reccords = {};
-        if ((ref$ = RecipeModel.controller) != null) {
-          ref$.recipes = RecipeModel._reccords;
-        }
-        RecipeModel.recipes = [];
-        for (i$ = 0, len$ = (ref$ = RecipeModel.list).length; i$ < len$; ++i$) {
-          item = ref$[i$];
-          (fn$.call(RecipeModel, item, item));
-        }
-        return (ref$ = RecipeModel.controller) != null ? ref$.safeApply() : void 8;
-        function fn$(i, item){
-          var x, ref$;
-          if (i._id) {
-            delete i._id;
-          }
-          x = this.create(i.name, item);
-          x._id = i.name;
-          (ref$ = x.data).stubs == null && (ref$.stubs = []);
-          this.recipes.push(x);
-        }
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the list of stuff!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        if (all) {
-          return Client.request("apps", onsuccess, onerror);
-        } else {
-          return Client.request("users/" + UserModel.data.mail + "/apps", onsuccess, onerror);
-        }
-      }
-    };
-    prototype.init = function(data){
-      this.data = data;
-      return this.data.name = this._id;
-    };
-    prototype.edit = function(something, into){
-      if (!!this.data[something]) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.getData = function(){
-      var onsuccess, onerror, this$ = this;
-      onsuccess = function(data){
-        this$.data = data;
-      };
-      onerror = function(){
-        return Toast("Error", "Could not get the full recipe!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        return Client.request("apps/" + this.data.id, onsuccess, onerror);
-      }
-    };
-    prototype.save = function(){
-      var onsuccess, onerror, data, this$ = this;
-      onsuccess = function(){
-        return Toast("Success", "The data was saved!");
-      };
-      onerror = function(){
-        return Toast("Error", "Could not save the data!");
-      };
-      if (!((typeof UserModel == 'undefined' || UserModel === null) || UserModel.data == null || UserModel.data.mail == null)) {
-        data = {};
-        import$(data, this.data);
-        data.author = UserModel.data.mail;
-        data.id = UserModel.data.mail + "$" + data.name;
-        if (data._id) {
-          delete data._id;
-        }
-        return Client.post("apps/update/", data, onsuccess, onerror);
-      }
-    };
-    RecipeModel['new'] = function(){
-      var x;
-      x = RecipeModel.create("New Recipe", __blankData__);
-      x._id = "New Recipe";
-      RecipeModel.recipes == null && (RecipeModel.recipes = []);
-      return RecipeModel.recipes.push(x);
-    };
-    function RecipeModel(){
-      this.save = bind$(this, 'save', prototype);
-      this.getData = bind$(this, 'getData', prototype);
-      this.send = bind$(this, 'send', prototype);
-      this.edit = bind$(this, 'edit', prototype);
-      this.init = bind$(this, 'init', prototype);
-      RecipeModel.superclass.apply(this, arguments);
-    }
-    return RecipeModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).factory("Recipe", ["Runtime", RecipeModel.init]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/models/UserModel": function(exports, require, module) {(function(){
-  var UserModel;
-  UserModel = (function(superclass){
-    var prototype = extend$((import$(UserModel, superclass).displayName = 'UserModel', UserModel), superclass).prototype, constructor = UserModel;
-    function UserModel(runtime){
-      var form, loginFunc, regform, registerFunc, this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.runtime = runtime;
-      this$.verifyEmail = bind$(this$, 'verifyEmail', prototype);
-      this$.verifyPassword = bind$(this$, 'verifyPassword', prototype);
-      this$.send = bind$(this$, 'send', prototype);
-      this$.edit = bind$(this$, 'edit', prototype);
-      window.UserModel = this$;
-      form = $('#login-form');
-      loginFunc = function(){
-        var data;
-        data = {
-          mail: form.find('#login-email').val(),
-          pass: form.find('#login-password').val()
-        };
-        if (data.mail !== "" && data.pass !== "") {
-          return Client.login(data, function(){
-            var onsuccess, onerror;
-            this$.data = data;
-            this$.runtime.set('app-state', 1);
-            form.find('#login-email').val("");
-            form.find('#login-password').val("");
-            onsuccess = function(list){
-              var i$, ref$, len$, device, results$ = [];
-              this$.data.devices = list[0].user_devices.filter(function(e, pos, self){
-                return self.indexOf(e) === pos;
-              });
-              this$.devices = {};
-              for (i$ = 0, len$ = (ref$ = this$.data.devices).length; i$ < len$; ++i$) {
-                device = ref$[i$];
-                results$.push((fn$.call(this$, device, device)));
-              }
-              return results$;
-              function fn$(d, device){
-                var this$ = this;
-                return Client.request("devices/" + d, function(it){
-                  return this$.devices[d] = it;
-                }, function(){
-                  return Toast("Error", "Could not get info about " + d + " device");
-                });
-              }
-            };
-            onerror = function(){
-              return Toast("Error", "Could not grab the devices list.");
-            };
-            return Client.request("users/devices/" + this$.data.mail, onsuccess, onerror);
-          });
-        }
-      };
-      regform = $('#register-form');
-      registerFunc = function(){
-        var data;
-        data = {
-          mail: regform.find('#register-email').val(),
-          pass: regform.find('#register-pass').val(),
-          verpass: regform.find('#register-pass-verify').val()
-        };
-        this$.log(data);
-        if (data.mail !== "" && data.pass !== "" && data.verpass !== "") {
-          if (data.pass !== data.verpass) {
-            return Toast("Error", "The two passwords were different");
-          } else {
-            return Client.register(data, function(){
-              regform.find('#register-email').val("");
-              regform.find('#register-pass').val("");
-              return regform.find('#register-pass-verify').val("");
-            });
-          }
-        }
-      };
-      form.find('#submit-button').click(loginFunc);
-      form.find('#login-email').change(loginFunc);
-      form.find('#login-password').change(loginFunc);
-      regform.find('#submit-button').click(registerFunc);
-      regform.find('#register-email').change(registerFunc);
-      regform.find('#register-pass').change(registerFunc);
-      regform.find('#register-pass-verify').change(registerFunc);
-      this$;
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.edit = function(something, into){
-      if (!(this.data == null || !this.data[something])) {
-        this.data[something] = into;
-        return this.send(something);
-      }
-    };
-    prototype.send = function(something){
-      return this.log("Should send '" + something + "' [" + this.data[something] + "]");
-    };
-    prototype.verifyPassword = function(it){
-      return it === this.data.password;
-    };
-    prototype.verifyEmail = function(){
-      return /^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/.test(this.data.email);
-    };
-    return UserModel;
-  }(IS.Object));
-  angular.module(AppInfo.displayname).service("User", ["Runtime", UserModel]);
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Base": function(exports, require, module) {(function(){
-  var BaseFrameBuffer;
-  Object.getPrototypeOf(document.createElement("canvas").getContext("2d")).fillRectR = function(x, y, w, h, r){
-    if (typeof r === "undefined") {
-      r = 5;
-    }
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.lineTo(x + w - r, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r);
-    this.lineTo(x + w, y + h - r);
-    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this.lineTo(x + r, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r);
-    this.lineTo(x, y + r);
-    this.quadraticCurveTo(x, y, x + r, y);
-    this.closePath();
-    return this.fill();
-  };
-  Object.getPrototypeOf(document.createElement("canvas").getContext("2d")).strokeRectR = function(x, y, w, h, r){
-    if (typeof r === "undefined") {
-      r = 5;
-    }
-    this.beginPath();
-    this.moveTo(x + r, y);
-    this.lineTo(x + w - r, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r);
-    this.lineTo(x + w, y + h - r);
-    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this.lineTo(x + r, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r);
-    this.lineTo(x, y + r);
-    this.quadraticCurveTo(x, y, x + r, y);
-    this.closePath();
-    return this.stroke();
-  };
-  BaseFrameBuffer = (function(superclass){
-    var prototype = extend$((import$(BaseFrameBuffer, superclass).displayName = 'BaseFrameBuffer', BaseFrameBuffer), superclass).prototype, constructor = BaseFrameBuffer;
-    function BaseFrameBuffer(buffer){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.buffer = buffer;
-      this$.endResize = bind$(this$, 'endResize', prototype);
-      this$.startResize = bind$(this$, 'startResize', prototype);
-      this$.endDraw = bind$(this$, 'endDraw', prototype);
-      this$.startDraw = bind$(this$, 'startDraw', prototype);
-      this$.scan = bind$(this$, 'scan', prototype);
-      this$.getShadowColor = bind$(this$, 'getShadowColor', prototype);
-      this$.drawShadow = bind$(this$, 'drawShadow', prototype);
-      this$.reset = bind$(this$, 'reset', prototype);
-      if (!this$.buffer) {
-        this$.buffer = document.createElement("canvas");
-      }
-      this$.sbuffer = document.createElement("canvas");
-      this$.context = this$.buffer.getContext("2d");
-      this$.scontext = this$.sbuffer.getContext("2d");
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.reset = function(){
-      return this.buffer.width = this.buffer.width;
-    };
-    prototype.drawShadow = function(){
-      this.sbuffer.width = this.sbuffer.width;
-      this.getShadowColor();
-      this.scontext.fillStyle = this.scolor;
-      return this.scontext.fillRect(0, 0, this.sbuffer.width, this.sbuffer.height);
-    };
-    prototype.getShadowColor = function(){
-      var r, g, b, ref$, rest;
-      r = 0;
-      g = 0;
-      b = (((ref$ = this.node) != null ? ref$.$index : void 8) + 1) % 255;
-      rest = r / 255;
-      if (rest) {
-        g = rest % 255;
-        rest = rest / 255;
-        if (rest) {
-          r = rest % 255;
-        }
-      }
-      return this.scolor = "rgb(" + r + ", " + g + ", " + b + ")";
-    };
-    prototype.scan = function(it){
-      var rgb;
-      rgb = this.context.getImageData(it.x, it.y, 1, 1).data;
-      return rgb[0] * 255 * 255 + rgb[1] * 255 + rgb[2];
-    };
-    prototype.startDraw = function(){
-      return this.drawing = true;
-    };
-    prototype.endDraw = function(){
-      var ref$;
-      return ref$ = this.drawing, delete this.drawing, ref$;
-    };
-    prototype.startResize = function(){
-      return this.resizing = true;
-    };
-    prototype.endResize = function(){
-      var ref$;
-      return ref$ = this.resizing, delete this.resizing, ref$;
-    };
-    return BaseFrameBuffer;
-  }(IS.Object));
-  module.exports = BaseFrameBuffer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Line": function(exports, require, module) {(function(){
-  var LineRenderer;
-  LineRenderer = (function(superclass){
-    var prototype = extend$((import$(LineRenderer, superclass).displayName = 'LineRenderer', LineRenderer), superclass).prototype, constructor = LineRenderer;
-    function LineRenderer(node){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.node = node;
-      this$.drawText = bind$(this$, 'drawText', prototype);
-      this$.rotate = bind$(this$, 'rotate', prototype);
-      this$.setTextPoints = bind$(this$, 'setTextPoints', prototype);
-      this$.drawLine = bind$(this$, 'drawLine', prototype);
-      this$.setPoints = bind$(this$, 'setPoints', prototype);
-      this$.sequence = bind$(this$, 'sequence', prototype);
-      this$.setupSize = bind$(this$, 'setupSize', prototype);
-      LineRenderer.superclass.call(this$);
-      this$.setupSize();
-      this$.sequence();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setupSize = function(){
-      this.startResize();
-      this.deltas = {
-        x: this.node.location.x - this.node.$parent.location.x,
-        y: this.node.location.y - this.node.$parent.location.y
-      };
-      this.buffer.width = Math.abs(this.deltas.x) + 1;
-      this.buffer.height = Math.abs(this.deltas.y) + 1;
-      return this.endResize();
-    };
-    prototype.sequence = function(){
-      this.setupSize();
-      this.reset();
-      this.setPoints();
-      this.drawLine();
-      this.setTextPoints();
-      if (this.node.relation !== "") {
-        this.rotate();
-        return this.drawText();
-      }
-    };
-    prototype.setPoints = function(){
-      this.points = {
-        first: {
-          x: 0,
-          y: 0
-        },
-        second: {
-          x: 0,
-          y: 0
-        }
-      };
-      this.rpoints = {
-        first: {
-          x: 0,
-          y: 0
-        },
-        second: {
-          x: 0,
-          y: 0
-        }
-      };
-      if (this.deltas.x > 0) {
-        this.points.first.x = this.node.$parent.location.x;
-        this.points.second.x = this.node.location.x;
-        this.rpoints.first.x = 0;
-        this.rpoints.second.x = this.buffer.width;
-      } else {
-        this.points.first.x = this.node.location.x;
-        this.points.second.x = this.node.$parent.location.x;
-        this.rpoints.first.x = this.buffer.width;
-        this.rpoints.second.x = 0;
-      }
-      if (this.deltas.y > 0) {
-        this.points.first.y = this.node.$parent.location.y;
-        this.points.second.y = this.node.location.y;
-        this.rpoints.first.y = 0;
-        return this.rpoints.second.y = this.buffer.height;
-      } else {
-        this.points.first.y = this.node.location.y;
-        this.points.second.y = this.node.$parent.location.y;
-        this.rpoints.first.y = this.buffer.height;
-        return this.rpoints.second.y = 0;
-      }
-    };
-    prototype.drawLine = function(){
-      this.context.strokeStyle = "rgb(100, 100, 100)";
-      this.context.beginPath();
-      this.context.moveTo(this.rpoints.first.x, this.rpoints.first.y);
-      this.context.bezierCurveTo(this.rpoints.first.x + this.deltas.x / 3, this.rpoints.first.y + this.deltas.y, this.rpoints.second.x - this.deltas.x / 3, this.rpoints.second.y - this.deltas.y, this.rpoints.second.x, this.rpoints.second.y);
-      return this.context.stroke();
-    };
-    prototype.setTextPoints = function(){
-      this.context.font = "normal 12px Verdana";
-      this.rpoints = this.context.measureText(this.node.relation);
-      return this.log(this.rpoints);
-    };
-    prototype.rotate = function(){
-      this.log(this.buffer.width / 2 - this.rpoints.width / 2, this.buffer.height / 2 - 20);
-      this.context.translate(this.buffer.width / 2, this.buffer.height / 2);
-      return this.context.rotate(Math.atan(this.buffer.height / this.buffer.width / 8));
-    };
-    prototype.drawText = function(){
-      this.context.fillStyle = 'rgba(256, 256, 256, 0.9)';
-      this.context.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      this.context.fillRectR(this.rpoints.width / -2, -20, this.rpoints.width * 2, 30, 4);
-      this.context.strokeRectR(this.rpoints.width / -2, -20, this.rpoints.width * 2, 30, 4);
-      this.context.fillStyle = "black";
-      return this.context.fillText(this.node.relation, 0, 0);
-    };
-    return LineRenderer;
-  }(DepMan.renderer("Base")));
-  module.exports = LineRenderer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "classes/renderers/Node": function(exports, require, module) {(function(){
-  var NodeRenderer;
-  NodeRenderer = (function(superclass){
-    var prototype = extend$((import$(NodeRenderer, superclass).displayName = 'NodeRenderer', NodeRenderer), superclass).prototype, constructor = NodeRenderer;
-    function NodeRenderer(node){
-      var this$ = this instanceof ctor$ ? this : new ctor$;
-      this$.node = node;
-      this$.drawText = bind$(this$, 'drawText', prototype);
-      this$.drawShape = bind$(this$, 'drawShape', prototype);
-      this$.genGradient = bind$(this$, 'genGradient', prototype);
-      this$.setStyles = bind$(this$, 'setStyles', prototype);
-      this$.sequence = bind$(this$, 'sequence', prototype);
-      this$.setupSize = bind$(this$, 'setupSize', prototype);
-      NodeRenderer.superclass.call(this$);
-      this$.setupSize();
-      this$.sequence();
-      return this$;
-    } function ctor$(){} ctor$.prototype = prototype;
-    prototype.setupSize = function(){
-      this.buffer.width = this.sbuffer.width = 300;
-      return this.buffer.height = this.sbuffer.height = 50;
-    };
-    prototype.sequence = function(){
-      this.reset();
-      this.setStyles();
-      this.genGradient();
-      this.drawShape();
-      this.drawText();
-      return this.drawShadow();
-    };
-    prototype.setStyles = function(){
-      return this.colors = (function(){
-        switch (this.node.status) {
-        case "indeterminate":
-          return {
-            first: "rgb(0, 0, 0)",
-            second: "rgb(50, 50, 50)",
-            border: "rgb(100, 100, 100)",
-            text: "rgb(256, 256, 256)"
-          };
-        case "determinate":
-          return {
-            first: "rgb(256, 256, 256)",
-            second: "rgb(230 , 230 , 230 )",
-            border: "rgb(150, 150, 150)",
-            text: "rgb(40, 40, 40)"
-          };
-        case "checked":
-          return {
-            first: "rgb(0, 135, 255)",
-            second: "rgb(0, 100, 220)",
-            border: "rgb(40, 40, 40)",
-            text: "rgb(256, 256, 256)"
-          };
-        default:
-          return {
-            first: "rgb(255, 67, 16)",
-            second: "rgb(220, 30, 0)",
-            border: "rgb(40, 40, 40)",
-            text: "rgb(256, 256, 256)"
-          };
-        }
-      }.call(this));
-    };
-    prototype.genGradient = function(){
-      this.grad = this.context.createLinearGradient(0, 0, 0, this.buffer.height);
-      this.grad.addColorStop(0, this.colors.first);
-      this.grad.addColorStop(0.5, this.colors.first);
-      return this.grad.addColorStop(1, this.colors.second);
-    };
-    prototype.drawShape = function(){
-      this.context.fillStyle = this.grad;
-      this.context.strokeStyle = "rgb(0, 0, 0)";
-      this.context.lineHeight = 1;
-      this.context.fillRectR(0, 0, this.buffer.width, this.buffer.height, 4);
-      return this.context.strokeRectR(0, 0, this.buffer.width, this.buffer.height, 4);
-    };
-    prototype.drawText = function(){
-      var text;
-      this.context.fillStyle = this.colors.text;
-      this.context.strokeStyle = this.colors.border;
-      this.context.font = "normal 15px Verdana";
-      text = this.node.text;
-      if (text.length > 28) {
-        text = text.substr(0, 25) + "...";
-      }
-      this.context.strokeText(text, 20, 30);
-      return this.context.fillText(text, 20, 30);
-    };
-    return NodeRenderer;
-  }(DepMan.renderer("Base")));
-  module.exports = NodeRenderer;
-  function bind$(obj, key, target){
-    return function(){ return (target || obj)[key].apply(obj, arguments) };
-  }
-  function extend$(sub, sup){
-    function fun(){} fun.prototype = (sub.superclass = sup).prototype;
-    (sub.prototype = new fun).constructor = sub;
-    if (typeof sup.extended == 'function') sup.extended(sub);
-    return sub;
-  }
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
-}).call(this);
-}, "data/fonts/eot/fontawesome-webfont": function(exports, require, module) {if (!window.imagePackage) window.imagePackage = function() { return "data:" + this.mime + ";base64," + this.content };
+};}, "data/fonts/eot/fontawesome-webfont": function(exports, require, module) {if (!window.imagePackage) window.imagePackage = function() { return "data:" + this.mime + ";base64," + this.content };
 if (!window.otherImports) window.otherImports = {}; 
 var item = {
 	mime: 'application/vnd.ms-fontobject', 
@@ -45292,7 +38319,7 @@ return window.otherImports['logo'] = module.exports = item; }, "data/languages/e
 var item = JSON.parse("{\n}", function(key, value) { var v; try { v = eval(value) } catch(e) { v = value } return v;}); 
 return window.JSONImport['en-US'] = module.exports = item;}, "data/languages/ro-RO": function(exports, require, module) {if (!window.JSONImport) window.JSONImport = {}; 
 var item = JSON.parse("{\"English\":\"Engleză\",\"Romanian\":\"Română\",\"Document List\":\"Lista de Documente\",\"Connection Manager\":\"Manager de Conexiuni\",\"Your Client ID\":\"ID-ul Tău de Client\",\"Client ID to connect to\":\"ID-ul de Client la care să te conectezi\",\"General Application Settings\":\"Setări Generale ale Aplicației\",\"Activate the landing page\":\"Activează pagina de sosire\",\"Activate the help page\":\"Activează pagina de ajutor\",\"Select your language of choice\":\"Alege limba\",\"Experimental Features\":\"Lucruri Experimentale\",\"Activate a Toast\":\"Activează un mesaj\",\"Activate a Toast (Modal Override)\":\"Activează un mesaj (modal)\",\"Open a modal window\":\"Activează o fereastră modală\",\"Launch Application\":\"Lansează Aplicația\",\"Install application in Chrome\":\"Instalează aplicația în Chrome\",\"Install application in Firefox\":\"Instalează aplicația în Firefox\",\"Install application in Windows 8\":\"Instalează aplicația în Windows 8\",\"Install application in Opera New\":\"Instalează aplicația în Opera New\",\"Relation between this node and the previous.\":\"Relația dintre acest nod și cel anterior\",\"Notes associated\":\"Notițe asociate\",\"Node Text\":\"Textul Nodului\",\"The text of the node\":\"Textul Nodului\",\"Is this node checked?\":\"Este acest nod bifat?\",\"Relation with its parent\":\"Relația cu părintele său\",\"Add a new node\":\"Adaugă un nod nou\",\"Remove this node\":\"Sterge acest nod\",\"Read More\":\"Citește mai mult\",\"Reconnect\":\"Reconectează-te\",\"Open the Loading Screen\":\"Deschide ecranul de încărcare\"}", function(key, value) { var v; try { v = eval(value) } catch(e) { v = value } return v;}); 
-return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/font-awesome": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = "/*!\n *  Font Awesome 3.2.1\n *  the iconic font designed for Bootstrap\n *  ------------------------------------------------------------------------------\n *  The full suite of pictographic icons, examples, and documentation can be\n *  found at http://fontawesome.io.  Stay up to date on Twitter at\n *  http://twitter.com/fontawesome.\n *\n *  License\n *  ------------------------------------------------------------------------------\n *  - The Font Awesome font is licensed under SIL OFL 1.1 -\n *    http://scripts.sil.org/OFL\n *  - Font Awesome CSS, LESS, and SASS files are licensed under MIT License -\n *    http://opensource.org/licenses/mit-license.html\n *  - Font Awesome documentation licensed under CC BY 3.0 -\n *    http://creativecommons.org/licenses/by/3.0/\n *  - Attribution is no longer required in Font Awesome 3.0, but much appreciated:\n *    \"Font Awesome by Dave Gandy - http://fontawesome.io\"\n *\n *  Author - Dave Gandy\n *  ------------------------------------------------------------------------------\n *  Email: dave@fontawesome.io\n *  Twitter: http://twitter.com/davegandy\n *  Work: Lead Product Designer @ Kyruus - http://kyruus.com\n */\n/* FONT PATH\n * -------------------------- */\n@font-face {\n  font-family: 'FontAwesome';\n  src: url('<<INSERT FONTAWESOME EOT HERE>>');\n  src: url('<<INSERT FONTAWESOME EOT HERE>>?#iefix') format('embedded-opentype'), url('<<INSERT FONTAWESOME WOFF HERE>>') format('woff'), url('<<INSERT FONTAWESOME TTF HERE>>') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n}\n/* FONT AWESOME CORE\n * -------------------------- */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  font-family: FontAwesome;\n  font-weight: normal;\n  font-style: normal;\n  text-decoration: inherit;\n  -webkit-font-smoothing: antialiased;\n  *margin-right: .3em;\n}\n[class^=\"icon-\"]:before,\n[class*=\" icon-\"]:before {\n  text-decoration: inherit;\n  display: inline-block;\n  speak: none;\n}\n/* makes the font 33% larger relative to the icon container */\n.icon-large:before {\n  vertical-align: -10%;\n  font-size: 1.3333333333333333em;\n}\n/* makes sure icons active on rollover in links */\na [class^=\"icon-\"],\na [class*=\" icon-\"] {\n  display: inline;\n}\n/* increased font size for icon-large */\n[class^=\"icon-\"].icon-fixed-width,\n[class*=\" icon-\"].icon-fixed-width {\n  display: inline-block;\n  width: 1.1428571428571428em;\n  text-align: right;\n  padding-right: 0.2857142857142857em;\n}\n[class^=\"icon-\"].icon-fixed-width.icon-large,\n[class*=\" icon-\"].icon-fixed-width.icon-large {\n  width: 1.4285714285714286em;\n}\n.icons-ul {\n  margin-left: 2.142857142857143em;\n  list-style-type: none;\n}\n.icons-ul > li {\n  position: relative;\n}\n.icons-ul .icon-li {\n  position: absolute;\n  left: -2.142857142857143em;\n  width: 2.142857142857143em;\n  text-align: center;\n  line-height: inherit;\n}\n[class^=\"icon-\"].hide,\n[class*=\" icon-\"].hide {\n  display: none;\n}\n.icon-muted {\n  color: #eeeeee;\n}\n.icon-light {\n  color: #ffffff;\n}\n.icon-dark {\n  color: #333333;\n}\n.icon-border {\n  border: solid 1px #eeeeee;\n  padding: .2em .25em .15em;\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.icon-2x {\n  font-size: 2em;\n}\n.icon-2x.icon-border {\n  border-width: 2px;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.icon-3x {\n  font-size: 3em;\n}\n.icon-3x.icon-border {\n  border-width: 3px;\n  -webkit-border-radius: 5px;\n  -moz-border-radius: 5px;\n  border-radius: 5px;\n}\n.icon-4x {\n  font-size: 4em;\n}\n.icon-4x.icon-border {\n  border-width: 4px;\n  -webkit-border-radius: 6px;\n  -moz-border-radius: 6px;\n  border-radius: 6px;\n}\n.icon-5x {\n  font-size: 5em;\n}\n.icon-5x.icon-border {\n  border-width: 5px;\n  -webkit-border-radius: 7px;\n  -moz-border-radius: 7px;\n  border-radius: 7px;\n}\n.pull-right {\n  float: right;\n}\n.pull-left {\n  float: left;\n}\n[class^=\"icon-\"].pull-left,\n[class*=\" icon-\"].pull-left {\n  margin-right: .3em;\n}\n[class^=\"icon-\"].pull-right,\n[class*=\" icon-\"].pull-right {\n  margin-left: .3em;\n}\n/* BOOTSTRAP SPECIFIC CLASSES\n * -------------------------- */\n/* Bootstrap 2.0 sprites.less reset */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  display: inline;\n  width: auto;\n  height: auto;\n  line-height: normal;\n  vertical-align: baseline;\n  background-image: none;\n  background-position: 0% 0%;\n  background-repeat: repeat;\n  margin-top: 0;\n}\n/* more sprites.less reset */\n.icon-white,\n.nav-pills > .active > a > [class^=\"icon-\"],\n.nav-pills > .active > a > [class*=\" icon-\"],\n.nav-list > .active > a > [class^=\"icon-\"],\n.nav-list > .active > a > [class*=\" icon-\"],\n.navbar-inverse .nav > .active > a > [class^=\"icon-\"],\n.navbar-inverse .nav > .active > a > [class*=\" icon-\"],\n.dropdown-menu > li > a:hover > [class^=\"icon-\"],\n.dropdown-menu > li > a:hover > [class*=\" icon-\"],\n.dropdown-menu > .active > a > [class^=\"icon-\"],\n.dropdown-menu > .active > a > [class*=\" icon-\"],\n.dropdown-submenu:hover > a > [class^=\"icon-\"],\n.dropdown-submenu:hover > a > [class*=\" icon-\"] {\n  background-image: none;\n}\n/* keeps Bootstrap styles with and without icons the same */\n.btn [class^=\"icon-\"].icon-large,\n.nav [class^=\"icon-\"].icon-large,\n.btn [class*=\" icon-\"].icon-large,\n.nav [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].icon-spin,\n.nav [class^=\"icon-\"].icon-spin,\n.btn [class*=\" icon-\"].icon-spin,\n.nav [class*=\" icon-\"].icon-spin {\n  display: inline-block;\n}\n.nav-tabs [class^=\"icon-\"],\n.nav-pills [class^=\"icon-\"],\n.nav-tabs [class*=\" icon-\"],\n.nav-pills [class*=\" icon-\"],\n.nav-tabs [class^=\"icon-\"].icon-large,\n.nav-pills [class^=\"icon-\"].icon-large,\n.nav-tabs [class*=\" icon-\"].icon-large,\n.nav-pills [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].pull-left.icon-2x,\n.btn [class*=\" icon-\"].pull-left.icon-2x,\n.btn [class^=\"icon-\"].pull-right.icon-2x,\n.btn [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .18em;\n}\n.btn [class^=\"icon-\"].icon-spin.icon-large,\n.btn [class*=\" icon-\"].icon-spin.icon-large {\n  line-height: .8em;\n}\n.btn.btn-small [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-small [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .25em;\n}\n.btn.btn-large [class^=\"icon-\"],\n.btn.btn-large [class*=\" icon-\"] {\n  margin-top: 0;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .05em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x {\n  margin-right: .2em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-left: .2em;\n}\n/* Fixes alignment in nav lists */\n.nav-list [class^=\"icon-\"],\n.nav-list [class*=\" icon-\"] {\n  line-height: inherit;\n}\n/* EXTRAS\n * -------------------------- */\n/* Stacked and layered icon */\n.icon-stack {\n  position: relative;\n  display: inline-block;\n  width: 2em;\n  height: 2em;\n  line-height: 2em;\n  vertical-align: -35%;\n}\n.icon-stack [class^=\"icon-\"],\n.icon-stack [class*=\" icon-\"] {\n  display: block;\n  text-align: center;\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  font-size: 1em;\n  line-height: inherit;\n  *line-height: 2em;\n}\n.icon-stack .icon-stack-base {\n  font-size: 2em;\n  *line-height: 1em;\n}\n/* Animated rotating icon */\n.icon-spin {\n  display: inline-block;\n  -moz-animation: spin 2s infinite linear;\n  -o-animation: spin 2s infinite linear;\n  -webkit-animation: spin 2s infinite linear;\n  animation: spin 2s infinite linear;\n}\n/* Prevent stack and spinners from being taken inline when inside a link */\na .icon-stack,\na .icon-spin {\n  display: inline-block;\n  text-decoration: none;\n}\n@-moz-keyframes spin {\n  0% {\n    -moz-transform: rotate(0deg);\n  }\n  100% {\n    -moz-transform: rotate(359deg);\n  }\n}\n@-webkit-keyframes spin {\n  0% {\n    -webkit-transform: rotate(0deg);\n  }\n  100% {\n    -webkit-transform: rotate(359deg);\n  }\n}\n@-o-keyframes spin {\n  0% {\n    -o-transform: rotate(0deg);\n  }\n  100% {\n    -o-transform: rotate(359deg);\n  }\n}\n@-ms-keyframes spin {\n  0% {\n    -ms-transform: rotate(0deg);\n  }\n  100% {\n    -ms-transform: rotate(359deg);\n  }\n}\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(359deg);\n  }\n}\n/* Icon rotations and mirroring */\n.icon-rotate-90:before {\n  -webkit-transform: rotate(90deg);\n  -moz-transform: rotate(90deg);\n  -ms-transform: rotate(90deg);\n  -o-transform: rotate(90deg);\n  transform: rotate(90deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);\n}\n.icon-rotate-180:before {\n  -webkit-transform: rotate(180deg);\n  -moz-transform: rotate(180deg);\n  -ms-transform: rotate(180deg);\n  -o-transform: rotate(180deg);\n  transform: rotate(180deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);\n}\n.icon-rotate-270:before {\n  -webkit-transform: rotate(270deg);\n  -moz-transform: rotate(270deg);\n  -ms-transform: rotate(270deg);\n  -o-transform: rotate(270deg);\n  transform: rotate(270deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);\n}\n.icon-flip-horizontal:before {\n  -webkit-transform: scale(-1, 1);\n  -moz-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n.icon-flip-vertical:before {\n  -webkit-transform: scale(1, -1);\n  -moz-transform: scale(1, -1);\n  -ms-transform: scale(1, -1);\n  -o-transform: scale(1, -1);\n  transform: scale(1, -1);\n}\n/* ensure rotation occurs inside anchor tags */\na .icon-rotate-90:before,\na .icon-rotate-180:before,\na .icon-rotate-270:before,\na .icon-flip-horizontal:before,\na .icon-flip-vertical:before {\n  display: inline-block;\n}\n/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen\n   readers do not read off random characters that represent icons */\n.icon-glass:before {\n  content: \"\\f000\";\n}\n.icon-music:before {\n  content: \"\\f001\";\n}\n.icon-search:before {\n  content: \"\\f002\";\n}\n.icon-envelope-alt:before {\n  content: \"\\f003\";\n}\n.icon-heart:before {\n  content: \"\\f004\";\n}\n.icon-star:before {\n  content: \"\\f005\";\n}\n.icon-star-empty:before {\n  content: \"\\f006\";\n}\n.icon-user:before {\n  content: \"\\f007\";\n}\n.icon-film:before {\n  content: \"\\f008\";\n}\n.icon-th-large:before {\n  content: \"\\f009\";\n}\n.icon-th:before {\n  content: \"\\f00a\";\n}\n.icon-th-list:before {\n  content: \"\\f00b\";\n}\n.icon-ok:before {\n  content: \"\\f00c\";\n}\n.icon-remove:before {\n  content: \"\\f00d\";\n}\n.icon-zoom-in:before {\n  content: \"\\f00e\";\n}\n.icon-zoom-out:before {\n  content: \"\\f010\";\n}\n.icon-power-off:before,\n.icon-off:before {\n  content: \"\\f011\";\n}\n.icon-signal:before {\n  content: \"\\f012\";\n}\n.icon-gear:before,\n.icon-cog:before {\n  content: \"\\f013\";\n}\n.icon-trash:before {\n  content: \"\\f014\";\n}\n.icon-home:before {\n  content: \"\\f015\";\n}\n.icon-file-alt:before {\n  content: \"\\f016\";\n}\n.icon-time:before {\n  content: \"\\f017\";\n}\n.icon-road:before {\n  content: \"\\f018\";\n}\n.icon-download-alt:before {\n  content: \"\\f019\";\n}\n.icon-download:before {\n  content: \"\\f01a\";\n}\n.icon-upload:before {\n  content: \"\\f01b\";\n}\n.icon-inbox:before {\n  content: \"\\f01c\";\n}\n.icon-play-circle:before {\n  content: \"\\f01d\";\n}\n.icon-rotate-right:before,\n.icon-repeat:before {\n  content: \"\\f01e\";\n}\n.icon-refresh:before {\n  content: \"\\f021\";\n}\n.icon-list-alt:before {\n  content: \"\\f022\";\n}\n.icon-lock:before {\n  content: \"\\f023\";\n}\n.icon-flag:before {\n  content: \"\\f024\";\n}\n.icon-headphones:before {\n  content: \"\\f025\";\n}\n.icon-volume-off:before {\n  content: \"\\f026\";\n}\n.icon-volume-down:before {\n  content: \"\\f027\";\n}\n.icon-volume-up:before {\n  content: \"\\f028\";\n}\n.icon-qrcode:before {\n  content: \"\\f029\";\n}\n.icon-barcode:before {\n  content: \"\\f02a\";\n}\n.icon-tag:before {\n  content: \"\\f02b\";\n}\n.icon-tags:before {\n  content: \"\\f02c\";\n}\n.icon-book:before {\n  content: \"\\f02d\";\n}\n.icon-bookmark:before {\n  content: \"\\f02e\";\n}\n.icon-print:before {\n  content: \"\\f02f\";\n}\n.icon-camera:before {\n  content: \"\\f030\";\n}\n.icon-font:before {\n  content: \"\\f031\";\n}\n.icon-bold:before {\n  content: \"\\f032\";\n}\n.icon-italic:before {\n  content: \"\\f033\";\n}\n.icon-text-height:before {\n  content: \"\\f034\";\n}\n.icon-text-width:before {\n  content: \"\\f035\";\n}\n.icon-align-left:before {\n  content: \"\\f036\";\n}\n.icon-align-center:before {\n  content: \"\\f037\";\n}\n.icon-align-right:before {\n  content: \"\\f038\";\n}\n.icon-align-justify:before {\n  content: \"\\f039\";\n}\n.icon-list:before {\n  content: \"\\f03a\";\n}\n.icon-indent-left:before {\n  content: \"\\f03b\";\n}\n.icon-indent-right:before {\n  content: \"\\f03c\";\n}\n.icon-facetime-video:before {\n  content: \"\\f03d\";\n}\n.icon-picture:before {\n  content: \"\\f03e\";\n}\n.icon-pencil:before {\n  content: \"\\f040\";\n}\n.icon-map-marker:before {\n  content: \"\\f041\";\n}\n.icon-adjust:before {\n  content: \"\\f042\";\n}\n.icon-tint:before {\n  content: \"\\f043\";\n}\n.icon-edit:before {\n  content: \"\\f044\";\n}\n.icon-share:before {\n  content: \"\\f045\";\n}\n.icon-check:before {\n  content: \"\\f046\";\n}\n.icon-move:before {\n  content: \"\\f047\";\n}\n.icon-step-backward:before {\n  content: \"\\f048\";\n}\n.icon-fast-backward:before {\n  content: \"\\f049\";\n}\n.icon-backward:before {\n  content: \"\\f04a\";\n}\n.icon-play:before {\n  content: \"\\f04b\";\n}\n.icon-pause:before {\n  content: \"\\f04c\";\n}\n.icon-stop:before {\n  content: \"\\f04d\";\n}\n.icon-forward:before {\n  content: \"\\f04e\";\n}\n.icon-fast-forward:before {\n  content: \"\\f050\";\n}\n.icon-step-forward:before {\n  content: \"\\f051\";\n}\n.icon-eject:before {\n  content: \"\\f052\";\n}\n.icon-chevron-left:before {\n  content: \"\\f053\";\n}\n.icon-chevron-right:before {\n  content: \"\\f054\";\n}\n.icon-plus-sign:before {\n  content: \"\\f055\";\n}\n.icon-minus-sign:before {\n  content: \"\\f056\";\n}\n.icon-remove-sign:before {\n  content: \"\\f057\";\n}\n.icon-ok-sign:before {\n  content: \"\\f058\";\n}\n.icon-question-sign:before {\n  content: \"\\f059\";\n}\n.icon-info-sign:before {\n  content: \"\\f05a\";\n}\n.icon-screenshot:before {\n  content: \"\\f05b\";\n}\n.icon-remove-circle:before {\n  content: \"\\f05c\";\n}\n.icon-ok-circle:before {\n  content: \"\\f05d\";\n}\n.icon-ban-circle:before {\n  content: \"\\f05e\";\n}\n.icon-arrow-left:before {\n  content: \"\\f060\";\n}\n.icon-arrow-right:before {\n  content: \"\\f061\";\n}\n.icon-arrow-up:before {\n  content: \"\\f062\";\n}\n.icon-arrow-down:before {\n  content: \"\\f063\";\n}\n.icon-mail-forward:before,\n.icon-share-alt:before {\n  content: \"\\f064\";\n}\n.icon-resize-full:before {\n  content: \"\\f065\";\n}\n.icon-resize-small:before {\n  content: \"\\f066\";\n}\n.icon-plus:before {\n  content: \"\\f067\";\n}\n.icon-minus:before {\n  content: \"\\f068\";\n}\n.icon-asterisk:before {\n  content: \"\\f069\";\n}\n.icon-exclamation-sign:before {\n  content: \"\\f06a\";\n}\n.icon-gift:before {\n  content: \"\\f06b\";\n}\n.icon-leaf:before {\n  content: \"\\f06c\";\n}\n.icon-fire:before {\n  content: \"\\f06d\";\n}\n.icon-eye-open:before {\n  content: \"\\f06e\";\n}\n.icon-eye-close:before {\n  content: \"\\f070\";\n}\n.icon-warning-sign:before {\n  content: \"\\f071\";\n}\n.icon-plane:before {\n  content: \"\\f072\";\n}\n.icon-calendar:before {\n  content: \"\\f073\";\n}\n.icon-random:before {\n  content: \"\\f074\";\n}\n.icon-comment:before {\n  content: \"\\f075\";\n}\n.icon-magnet:before {\n  content: \"\\f076\";\n}\n.icon-chevron-up:before {\n  content: \"\\f077\";\n}\n.icon-chevron-down:before {\n  content: \"\\f078\";\n}\n.icon-retweet:before {\n  content: \"\\f079\";\n}\n.icon-shopping-cart:before {\n  content: \"\\f07a\";\n}\n.icon-folder-close:before {\n  content: \"\\f07b\";\n}\n.icon-folder-open:before {\n  content: \"\\f07c\";\n}\n.icon-resize-vertical:before {\n  content: \"\\f07d\";\n}\n.icon-resize-horizontal:before {\n  content: \"\\f07e\";\n}\n.icon-bar-chart:before {\n  content: \"\\f080\";\n}\n.icon-twitter-sign:before {\n  content: \"\\f081\";\n}\n.icon-facebook-sign:before {\n  content: \"\\f082\";\n}\n.icon-camera-retro:before {\n  content: \"\\f083\";\n}\n.icon-key:before {\n  content: \"\\f084\";\n}\n.icon-gears:before,\n.icon-cogs:before {\n  content: \"\\f085\";\n}\n.icon-comments:before {\n  content: \"\\f086\";\n}\n.icon-thumbs-up-alt:before {\n  content: \"\\f087\";\n}\n.icon-thumbs-down-alt:before {\n  content: \"\\f088\";\n}\n.icon-star-half:before {\n  content: \"\\f089\";\n}\n.icon-heart-empty:before {\n  content: \"\\f08a\";\n}\n.icon-signout:before {\n  content: \"\\f08b\";\n}\n.icon-linkedin-sign:before {\n  content: \"\\f08c\";\n}\n.icon-pushpin:before {\n  content: \"\\f08d\";\n}\n.icon-external-link:before {\n  content: \"\\f08e\";\n}\n.icon-signin:before {\n  content: \"\\f090\";\n}\n.icon-trophy:before {\n  content: \"\\f091\";\n}\n.icon-github-sign:before {\n  content: \"\\f092\";\n}\n.icon-upload-alt:before {\n  content: \"\\f093\";\n}\n.icon-lemon:before {\n  content: \"\\f094\";\n}\n.icon-phone:before {\n  content: \"\\f095\";\n}\n.icon-unchecked:before,\n.icon-check-empty:before {\n  content: \"\\f096\";\n}\n.icon-bookmark-empty:before {\n  content: \"\\f097\";\n}\n.icon-phone-sign:before {\n  content: \"\\f098\";\n}\n.icon-twitter:before {\n  content: \"\\f099\";\n}\n.icon-facebook:before {\n  content: \"\\f09a\";\n}\n.icon-github:before {\n  content: \"\\f09b\";\n}\n.icon-unlock:before {\n  content: \"\\f09c\";\n}\n.icon-credit-card:before {\n  content: \"\\f09d\";\n}\n.icon-rss:before {\n  content: \"\\f09e\";\n}\n.icon-hdd:before {\n  content: \"\\f0a0\";\n}\n.icon-bullhorn:before {\n  content: \"\\f0a1\";\n}\n.icon-bell:before {\n  content: \"\\f0a2\";\n}\n.icon-certificate:before {\n  content: \"\\f0a3\";\n}\n.icon-hand-right:before {\n  content: \"\\f0a4\";\n}\n.icon-hand-left:before {\n  content: \"\\f0a5\";\n}\n.icon-hand-up:before {\n  content: \"\\f0a6\";\n}\n.icon-hand-down:before {\n  content: \"\\f0a7\";\n}\n.icon-circle-arrow-left:before {\n  content: \"\\f0a8\";\n}\n.icon-circle-arrow-right:before {\n  content: \"\\f0a9\";\n}\n.icon-circle-arrow-up:before {\n  content: \"\\f0aa\";\n}\n.icon-circle-arrow-down:before {\n  content: \"\\f0ab\";\n}\n.icon-globe:before {\n  content: \"\\f0ac\";\n}\n.icon-wrench:before {\n  content: \"\\f0ad\";\n}\n.icon-tasks:before {\n  content: \"\\f0ae\";\n}\n.icon-filter:before {\n  content: \"\\f0b0\";\n}\n.icon-briefcase:before {\n  content: \"\\f0b1\";\n}\n.icon-fullscreen:before {\n  content: \"\\f0b2\";\n}\n.icon-group:before {\n  content: \"\\f0c0\";\n}\n.icon-link:before {\n  content: \"\\f0c1\";\n}\n.icon-cloud:before {\n  content: \"\\f0c2\";\n}\n.icon-beaker:before {\n  content: \"\\f0c3\";\n}\n.icon-cut:before {\n  content: \"\\f0c4\";\n}\n.icon-copy:before {\n  content: \"\\f0c5\";\n}\n.icon-paperclip:before,\n.icon-paper-clip:before {\n  content: \"\\f0c6\";\n}\n.icon-save:before {\n  content: \"\\f0c7\";\n}\n.icon-sign-blank:before {\n  content: \"\\f0c8\";\n}\n.icon-reorder:before {\n  content: \"\\f0c9\";\n}\n.icon-list-ul:before {\n  content: \"\\f0ca\";\n}\n.icon-list-ol:before {\n  content: \"\\f0cb\";\n}\n.icon-strikethrough:before {\n  content: \"\\f0cc\";\n}\n.icon-underline:before {\n  content: \"\\f0cd\";\n}\n.icon-table:before {\n  content: \"\\f0ce\";\n}\n.icon-magic:before {\n  content: \"\\f0d0\";\n}\n.icon-truck:before {\n  content: \"\\f0d1\";\n}\n.icon-pinterest:before {\n  content: \"\\f0d2\";\n}\n.icon-pinterest-sign:before {\n  content: \"\\f0d3\";\n}\n.icon-google-plus-sign:before {\n  content: \"\\f0d4\";\n}\n.icon-google-plus:before {\n  content: \"\\f0d5\";\n}\n.icon-money:before {\n  content: \"\\f0d6\";\n}\n.icon-caret-down:before {\n  content: \"\\f0d7\";\n}\n.icon-caret-up:before {\n  content: \"\\f0d8\";\n}\n.icon-caret-left:before {\n  content: \"\\f0d9\";\n}\n.icon-caret-right:before {\n  content: \"\\f0da\";\n}\n.icon-columns:before {\n  content: \"\\f0db\";\n}\n.icon-sort:before {\n  content: \"\\f0dc\";\n}\n.icon-sort-down:before {\n  content: \"\\f0dd\";\n}\n.icon-sort-up:before {\n  content: \"\\f0de\";\n}\n.icon-envelope:before {\n  content: \"\\f0e0\";\n}\n.icon-linkedin:before {\n  content: \"\\f0e1\";\n}\n.icon-rotate-left:before,\n.icon-undo:before {\n  content: \"\\f0e2\";\n}\n.icon-legal:before {\n  content: \"\\f0e3\";\n}\n.icon-dashboard:before {\n  content: \"\\f0e4\";\n}\n.icon-comment-alt:before {\n  content: \"\\f0e5\";\n}\n.icon-comments-alt:before {\n  content: \"\\f0e6\";\n}\n.icon-bolt:before {\n  content: \"\\f0e7\";\n}\n.icon-sitemap:before {\n  content: \"\\f0e8\";\n}\n.icon-umbrella:before {\n  content: \"\\f0e9\";\n}\n.icon-paste:before {\n  content: \"\\f0ea\";\n}\n.icon-lightbulb:before {\n  content: \"\\f0eb\";\n}\n.icon-exchange:before {\n  content: \"\\f0ec\";\n}\n.icon-cloud-download:before {\n  content: \"\\f0ed\";\n}\n.icon-cloud-upload:before {\n  content: \"\\f0ee\";\n}\n.icon-user-md:before {\n  content: \"\\f0f0\";\n}\n.icon-stethoscope:before {\n  content: \"\\f0f1\";\n}\n.icon-suitcase:before {\n  content: \"\\f0f2\";\n}\n.icon-bell-alt:before {\n  content: \"\\f0f3\";\n}\n.icon-coffee:before {\n  content: \"\\f0f4\";\n}\n.icon-food:before {\n  content: \"\\f0f5\";\n}\n.icon-file-text-alt:before {\n  content: \"\\f0f6\";\n}\n.icon-building:before {\n  content: \"\\f0f7\";\n}\n.icon-hospital:before {\n  content: \"\\f0f8\";\n}\n.icon-ambulance:before {\n  content: \"\\f0f9\";\n}\n.icon-medkit:before {\n  content: \"\\f0fa\";\n}\n.icon-fighter-jet:before {\n  content: \"\\f0fb\";\n}\n.icon-beer:before {\n  content: \"\\f0fc\";\n}\n.icon-h-sign:before {\n  content: \"\\f0fd\";\n}\n.icon-plus-sign-alt:before {\n  content: \"\\f0fe\";\n}\n.icon-double-angle-left:before {\n  content: \"\\f100\";\n}\n.icon-double-angle-right:before {\n  content: \"\\f101\";\n}\n.icon-double-angle-up:before {\n  content: \"\\f102\";\n}\n.icon-double-angle-down:before {\n  content: \"\\f103\";\n}\n.icon-angle-left:before {\n  content: \"\\f104\";\n}\n.icon-angle-right:before {\n  content: \"\\f105\";\n}\n.icon-angle-up:before {\n  content: \"\\f106\";\n}\n.icon-angle-down:before {\n  content: \"\\f107\";\n}\n.icon-desktop:before {\n  content: \"\\f108\";\n}\n.icon-laptop:before {\n  content: \"\\f109\";\n}\n.icon-tablet:before {\n  content: \"\\f10a\";\n}\n.icon-mobile-phone:before {\n  content: \"\\f10b\";\n}\n.icon-circle-blank:before {\n  content: \"\\f10c\";\n}\n.icon-quote-left:before {\n  content: \"\\f10d\";\n}\n.icon-quote-right:before {\n  content: \"\\f10e\";\n}\n.icon-spinner:before {\n  content: \"\\f110\";\n}\n.icon-circle:before {\n  content: \"\\f111\";\n}\n.icon-mail-reply:before,\n.icon-reply:before {\n  content: \"\\f112\";\n}\n.icon-github-alt:before {\n  content: \"\\f113\";\n}\n.icon-folder-close-alt:before {\n  content: \"\\f114\";\n}\n.icon-folder-open-alt:before {\n  content: \"\\f115\";\n}\n.icon-expand-alt:before {\n  content: \"\\f116\";\n}\n.icon-collapse-alt:before {\n  content: \"\\f117\";\n}\n.icon-smile:before {\n  content: \"\\f118\";\n}\n.icon-frown:before {\n  content: \"\\f119\";\n}\n.icon-meh:before {\n  content: \"\\f11a\";\n}\n.icon-gamepad:before {\n  content: \"\\f11b\";\n}\n.icon-keyboard:before {\n  content: \"\\f11c\";\n}\n.icon-flag-alt:before {\n  content: \"\\f11d\";\n}\n.icon-flag-checkered:before {\n  content: \"\\f11e\";\n}\n.icon-terminal:before {\n  content: \"\\f120\";\n}\n.icon-code:before {\n  content: \"\\f121\";\n}\n.icon-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-mail-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-star-half-full:before,\n.icon-star-half-empty:before {\n  content: \"\\f123\";\n}\n.icon-location-arrow:before {\n  content: \"\\f124\";\n}\n.icon-crop:before {\n  content: \"\\f125\";\n}\n.icon-code-fork:before {\n  content: \"\\f126\";\n}\n.icon-unlink:before {\n  content: \"\\f127\";\n}\n.icon-question:before {\n  content: \"\\f128\";\n}\n.icon-info:before {\n  content: \"\\f129\";\n}\n.icon-exclamation:before {\n  content: \"\\f12a\";\n}\n.icon-superscript:before {\n  content: \"\\f12b\";\n}\n.icon-subscript:before {\n  content: \"\\f12c\";\n}\n.icon-eraser:before {\n  content: \"\\f12d\";\n}\n.icon-puzzle-piece:before {\n  content: \"\\f12e\";\n}\n.icon-microphone:before {\n  content: \"\\f130\";\n}\n.icon-microphone-off:before {\n  content: \"\\f131\";\n}\n.icon-shield:before {\n  content: \"\\f132\";\n}\n.icon-calendar-empty:before {\n  content: \"\\f133\";\n}\n.icon-fire-extinguisher:before {\n  content: \"\\f134\";\n}\n.icon-rocket:before {\n  content: \"\\f135\";\n}\n.icon-maxcdn:before {\n  content: \"\\f136\";\n}\n.icon-chevron-sign-left:before {\n  content: \"\\f137\";\n}\n.icon-chevron-sign-right:before {\n  content: \"\\f138\";\n}\n.icon-chevron-sign-up:before {\n  content: \"\\f139\";\n}\n.icon-chevron-sign-down:before {\n  content: \"\\f13a\";\n}\n.icon-html5:before {\n  content: \"\\f13b\";\n}\n.icon-css3:before {\n  content: \"\\f13c\";\n}\n.icon-anchor:before {\n  content: \"\\f13d\";\n}\n.icon-unlock-alt:before {\n  content: \"\\f13e\";\n}\n.icon-bullseye:before {\n  content: \"\\f140\";\n}\n.icon-ellipsis-horizontal:before {\n  content: \"\\f141\";\n}\n.icon-ellipsis-vertical:before {\n  content: \"\\f142\";\n}\n.icon-rss-sign:before {\n  content: \"\\f143\";\n}\n.icon-play-sign:before {\n  content: \"\\f144\";\n}\n.icon-ticket:before {\n  content: \"\\f145\";\n}\n.icon-minus-sign-alt:before {\n  content: \"\\f146\";\n}\n.icon-check-minus:before {\n  content: \"\\f147\";\n}\n.icon-level-up:before {\n  content: \"\\f148\";\n}\n.icon-level-down:before {\n  content: \"\\f149\";\n}\n.icon-check-sign:before {\n  content: \"\\f14a\";\n}\n.icon-edit-sign:before {\n  content: \"\\f14b\";\n}\n.icon-external-link-sign:before {\n  content: \"\\f14c\";\n}\n.icon-share-sign:before {\n  content: \"\\f14d\";\n}\n.icon-compass:before {\n  content: \"\\f14e\";\n}\n.icon-collapse:before {\n  content: \"\\f150\";\n}\n.icon-collapse-top:before {\n  content: \"\\f151\";\n}\n.icon-expand:before {\n  content: \"\\f152\";\n}\n.icon-euro:before,\n.icon-eur:before {\n  content: \"\\f153\";\n}\n.icon-gbp:before {\n  content: \"\\f154\";\n}\n.icon-dollar:before,\n.icon-usd:before {\n  content: \"\\f155\";\n}\n.icon-rupee:before,\n.icon-inr:before {\n  content: \"\\f156\";\n}\n.icon-yen:before,\n.icon-jpy:before {\n  content: \"\\f157\";\n}\n.icon-renminbi:before,\n.icon-cny:before {\n  content: \"\\f158\";\n}\n.icon-won:before,\n.icon-krw:before {\n  content: \"\\f159\";\n}\n.icon-bitcoin:before,\n.icon-btc:before {\n  content: \"\\f15a\";\n}\n.icon-file:before {\n  content: \"\\f15b\";\n}\n.icon-file-text:before {\n  content: \"\\f15c\";\n}\n.icon-sort-by-alphabet:before {\n  content: \"\\f15d\";\n}\n.icon-sort-by-alphabet-alt:before {\n  content: \"\\f15e\";\n}\n.icon-sort-by-attributes:before {\n  content: \"\\f160\";\n}\n.icon-sort-by-attributes-alt:before {\n  content: \"\\f161\";\n}\n.icon-sort-by-order:before {\n  content: \"\\f162\";\n}\n.icon-sort-by-order-alt:before {\n  content: \"\\f163\";\n}\n.icon-thumbs-up:before {\n  content: \"\\f164\";\n}\n.icon-thumbs-down:before {\n  content: \"\\f165\";\n}\n.icon-youtube-sign:before {\n  content: \"\\f166\";\n}\n.icon-youtube:before {\n  content: \"\\f167\";\n}\n.icon-xing:before {\n  content: \"\\f168\";\n}\n.icon-xing-sign:before {\n  content: \"\\f169\";\n}\n.icon-youtube-play:before {\n  content: \"\\f16a\";\n}\n.icon-dropbox:before {\n  content: \"\\f16b\";\n}\n.icon-stackexchange:before {\n  content: \"\\f16c\";\n}\n.icon-instagram:before {\n  content: \"\\f16d\";\n}\n.icon-flickr:before {\n  content: \"\\f16e\";\n}\n.icon-adn:before {\n  content: \"\\f170\";\n}\n.icon-bitbucket:before {\n  content: \"\\f171\";\n}\n.icon-bitbucket-sign:before {\n  content: \"\\f172\";\n}\n.icon-tumblr:before {\n  content: \"\\f173\";\n}\n.icon-tumblr-sign:before {\n  content: \"\\f174\";\n}\n.icon-long-arrow-down:before {\n  content: \"\\f175\";\n}\n.icon-long-arrow-up:before {\n  content: \"\\f176\";\n}\n.icon-long-arrow-left:before {\n  content: \"\\f177\";\n}\n.icon-long-arrow-right:before {\n  content: \"\\f178\";\n}\n.icon-apple:before {\n  content: \"\\f179\";\n}\n.icon-windows:before {\n  content: \"\\f17a\";\n}\n.icon-android:before {\n  content: \"\\f17b\";\n}\n.icon-linux:before {\n  content: \"\\f17c\";\n}\n.icon-dribbble:before {\n  content: \"\\f17d\";\n}\n.icon-skype:before {\n  content: \"\\f17e\";\n}\n.icon-foursquare:before {\n  content: \"\\f180\";\n}\n.icon-trello:before {\n  content: \"\\f181\";\n}\n.icon-female:before {\n  content: \"\\f182\";\n}\n.icon-male:before {\n  content: \"\\f183\";\n}\n.icon-gittip:before {\n  content: \"\\f184\";\n}\n.icon-sun:before {\n  content: \"\\f185\";\n}\n.icon-moon:before {\n  content: \"\\f186\";\n}\n.icon-archive:before {\n  content: \"\\f187\";\n}\n.icon-bug:before {\n  content: \"\\f188\";\n}\n.icon-vk:before {\n  content: \"\\f189\";\n}\n.icon-weibo:before {\n  content: \"\\f18a\";\n}\n.icon-renren:before {\n  content: \"\\f18b\";\n}\n"; s.id = "css-font-awesome"; document.head.appendChild(s);}, "data/stylesheets/introjs": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = ".introjs-overlay {\n  position: absolute;\n  z-index: 999999;\n  background-color: #000;\n  opacity: 0;\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-showElement {\n  z-index: 9999999;\n}\n\n.introjs-relativePosition {\n  position: relative;\n}\n\n.introjs-helperLayer {\n  position: absolute;\n  z-index: 9999998;\n  background-color: rgba(255,255,255,.9);\n  border: 1px solid rgba(0,0,0,.5);\n  border-radius: 4px;\n  box-shadow: 0 2px 15px rgba(0,0,0,.4);\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-helperNumberLayer {\n  position: absolute;\n  top: -16px;\n  left: -16px;\n  z-index: 9999999999 !important;\n  padding: 2px;\n  font-family: Arial, verdana, tahoma;\n  font-size: 13px;\n  font-weight: bold;\n  color: white;\n  text-align: center;\n  text-shadow: 1px 1px 1px rgba(0,0,0,.3);\n  background: #ff3019; /* Old browsers */\n  background: -webkit-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Chrome10+,Safari5.1+ */\n  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ff3019), color-stop(100%, #cf0404)); /* Chrome,Safari4+ */\n  background:    -moz-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* FF3.6+ */\n  background:     -ms-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* IE10+ */\n  background:      -o-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Opera 11.10+ */\n  background:         linear-gradient(to bottom, #ff3019 0%, #cf0404 100%);  /* W3C */\n  width: 20px;\n  height:20px;\n  line-height: 20px;\n  border: 3px solid white;\n  border-radius: 50%;\n  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff3019', endColorstr='#cf0404', GradientType=0); /* IE6-9 */ \n  filter: progid:DXImageTransform.Microsoft.Shadow(direction=135, strength=2, color=ff0000); /* IE10 text shadows */\n  box-shadow: 0 2px 5px rgba(0,0,0,.4);\n}\n\n.introjs-arrow {\n  border: 5px solid white;\n  content:'';\n  position: absolute;\n}\n.introjs-arrow.top {\n  top: -10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:white;\n  border-left-color:transparent;\n}\n.introjs-arrow.right {\n  right: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:white;\n}\n.introjs-arrow.bottom {\n  bottom: -10px;\n  border-top-color:white;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n.introjs-arrow.left {\n  left: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:white;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n\n.introjs-tooltip {\n  position: absolute;\n  padding: 10px;\n  background-color: white;\n  min-width: 200px;\n  border-radius: 3px;\n  box-shadow: 0 1px 10px rgba(0,0,0,.4);\n  -webkit-transition: opacity 0.1s ease-out;\n     -moz-transition: opacity 0.1s ease-out;\n      -ms-transition: opacity 0.1s ease-out;\n       -o-transition: opacity 0.1s ease-out;\n          transition: opacity 0.1s ease-out;\n}\n\n.introjs-tooltipbuttons {\n  text-align: right;\n}\n\n/* \n Buttons style by http://nicolasgallagher.com/lab/css3-github-buttons/ \n Changed by Afshin Mehrabani\n*/\n.introjs-button {\n  position: relative;\n  overflow: visible;\n  display: inline-block;\n  padding: 0.3em 0.8em;\n  border: 1px solid #d4d4d4;\n  margin: 0;\n  text-decoration: none;\n  text-shadow: 1px 1px 0 #fff;\n  font: 11px/normal sans-serif;\n  color: #333;\n  white-space: nowrap;\n  cursor: pointer;\n  outline: none;\n  background-color: #ececec;\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));\n  background-image: -moz-linear-gradient(#f4f4f4, #ececec);\n  background-image: -o-linear-gradient(#f4f4f4, #ececec);\n  background-image: linear-gradient(#f4f4f4, #ececec);\n  -webkit-background-clip: padding;\n  -moz-background-clip: padding;\n  -o-background-clip: padding-box;\n  /*background-clip: padding-box;*/ /* commented out due to Opera 11.10 bug */\n  -webkit-border-radius: 0.2em;\n  -moz-border-radius: 0.2em;\n  border-radius: 0.2em;\n  /* IE hacks */\n  zoom: 1;\n  *display: inline;\n  margin-top: 10px;\n}\n\n.introjs-button:hover {\n  border-color: #bcbcbc;\n  text-decoration: none; \n  box-shadow: 0px 1px 1px #e3e3e3;\n}\n\n.introjs-button:focus,\n.introjs-button:active {\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ececec), to(#f4f4f4));\n  background-image: -moz-linear-gradient(#ececec, #f4f4f4);\n  background-image: -o-linear-gradient(#ececec, #f4f4f4);\n  background-image: linear-gradient(#ececec, #f4f4f4);\n}\n\n/* overrides extra padding on button elements in Firefox */\n.introjs-button::-moz-focus-inner {\n  padding: 0;\n  border: 0;\n}\n\n.introjs-skipbutton {\n  margin-right: 5px;\n  color: #7a7a7a;\n}\n\n.introjs-prevbutton {\n  -webkit-border-radius: 0.2em 0 0 0.2em;\n  -moz-border-radius: 0.2em 0 0 0.2em;\n  border-radius: 0.2em 0 0 0.2em;\n  border-right: none;\n}\n\n.introjs-nextbutton {\n  -webkit-border-radius: 0 0.2em 0.2em 0;\n  -moz-border-radius: 0 0.2em 0.2em 0;\n  border-radius: 0 0.2em 0.2em 0;\n}\n\n.introjs-disabled, .introjs-disabled:hover {\n  color: #9a9a9a;\n  border-color: #d4d4d4;\n  box-shadow: none;\n  cursor: default;\n  background-color: #f4f4f4;\n  background-image: none;\n}"; s.id = "css-introjs"; document.head.appendChild(s);}, "data/views/app/account": function(exports, require, module) {module.exports = function(__obj) {
+return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/font-awesome": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = "/*!\n *  Font Awesome 3.2.1\n *  the iconic font designed for Bootstrap\n *  ------------------------------------------------------------------------------\n *  The full suite of pictographic icons, examples, and documentation can be\n *  found at http://fontawesome.io.  Stay up to date on Twitter at\n *  http://twitter.com/fontawesome.\n *\n *  License\n *  ------------------------------------------------------------------------------\n *  - The Font Awesome font is licensed under SIL OFL 1.1 -\n *    http://scripts.sil.org/OFL\n *  - Font Awesome CSS, LESS, and SASS files are licensed under MIT License -\n *    http://opensource.org/licenses/mit-license.html\n *  - Font Awesome documentation licensed under CC BY 3.0 -\n *    http://creativecommons.org/licenses/by/3.0/\n *  - Attribution is no longer required in Font Awesome 3.0, but much appreciated:\n *    \"Font Awesome by Dave Gandy - http://fontawesome.io\"\n *\n *  Author - Dave Gandy\n *  ------------------------------------------------------------------------------\n *  Email: dave@fontawesome.io\n *  Twitter: http://twitter.com/davegandy\n *  Work: Lead Product Designer @ Kyruus - http://kyruus.com\n */\n/* FONT PATH\n * -------------------------- */\n@font-face {\n  font-family: 'FontAwesome';\n  src: url('<<INSERT FONTAWESOME EOT HERE>>');\n  src: url('<<INSERT FONTAWESOME EOT HERE>>?#iefix') format('embedded-opentype'), url('<<INSERT FONTAWESOME WOFF HERE>>') format('woff'), url('<<INSERT FONTAWESOME TTF HERE>>') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n}\n/* FONT AWESOME CORE\n * -------------------------- */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  font-family: FontAwesome;\n  font-weight: normal;\n  font-style: normal;\n  text-decoration: inherit;\n  -webkit-font-smoothing: antialiased;\n  *margin-right: .3em;\n}\n[class^=\"icon-\"]:before,\n[class*=\" icon-\"]:before {\n  text-decoration: inherit;\n  display: inline-block;\n  speak: none;\n}\n/* makes the font 33% larger relative to the icon container */\n.icon-large:before {\n  vertical-align: -10%;\n  font-size: 1.3333333333333333em;\n}\n/* makes sure icons active on rollover in links */\na [class^=\"icon-\"],\na [class*=\" icon-\"] {\n  display: inline;\n}\n/* increased font size for icon-large */\n[class^=\"icon-\"].icon-fixed-width,\n[class*=\" icon-\"].icon-fixed-width {\n  display: inline-block;\n  width: 1.1428571428571428em;\n  text-align: right;\n  padding-right: 0.2857142857142857em;\n}\n[class^=\"icon-\"].icon-fixed-width.icon-large,\n[class*=\" icon-\"].icon-fixed-width.icon-large {\n  width: 1.4285714285714286em;\n}\n.icons-ul {\n  margin-left: 2.142857142857143em;\n  list-style-type: none;\n}\n.icons-ul > li {\n  position: relative;\n}\n.icons-ul .icon-li {\n  position: absolute;\n  left: -2.142857142857143em;\n  width: 2.142857142857143em;\n  text-align: center;\n  line-height: inherit;\n}\n[class^=\"icon-\"].hide,\n[class*=\" icon-\"].hide {\n  display: none;\n}\n.icon-muted {\n  color: #eeeeee;\n}\n.icon-light {\n  color: #ffffff;\n}\n.icon-dark {\n  color: #333333;\n}\n.icon-border {\n  border: solid 1px #eeeeee;\n  padding: .2em .25em .15em;\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.icon-2x {\n  font-size: 2em;\n}\n.icon-2x.icon-border {\n  border-width: 2px;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.icon-3x {\n  font-size: 3em;\n}\n.icon-3x.icon-border {\n  border-width: 3px;\n  -webkit-border-radius: 5px;\n  -moz-border-radius: 5px;\n  border-radius: 5px;\n}\n.icon-4x {\n  font-size: 4em;\n}\n.icon-4x.icon-border {\n  border-width: 4px;\n  -webkit-border-radius: 6px;\n  -moz-border-radius: 6px;\n  border-radius: 6px;\n}\n.icon-5x {\n  font-size: 5em;\n}\n.icon-5x.icon-border {\n  border-width: 5px;\n  -webkit-border-radius: 7px;\n  -moz-border-radius: 7px;\n  border-radius: 7px;\n}\n.pull-right {\n  float: right;\n}\n.pull-left {\n  float: left;\n}\n[class^=\"icon-\"].pull-left,\n[class*=\" icon-\"].pull-left {\n  margin-right: .3em;\n}\n[class^=\"icon-\"].pull-right,\n[class*=\" icon-\"].pull-right {\n  margin-left: .3em;\n}\n/* BOOTSTRAP SPECIFIC CLASSES\n * -------------------------- */\n/* Bootstrap 2.0 sprites.less reset */\n[class^=\"icon-\"],\n[class*=\" icon-\"] {\n  display: inline;\n  width: auto;\n  height: auto;\n  line-height: normal;\n  vertical-align: baseline;\n  background-image: none;\n  background-position: 0% 0%;\n  background-repeat: repeat;\n  margin-top: 0;\n}\n/* more sprites.less reset */\n.icon-white,\n.nav-pills > .active > a > [class^=\"icon-\"],\n.nav-pills > .active > a > [class*=\" icon-\"],\n.nav-list > .active > a > [class^=\"icon-\"],\n.nav-list > .active > a > [class*=\" icon-\"],\n.navbar-inverse .nav > .active > a > [class^=\"icon-\"],\n.navbar-inverse .nav > .active > a > [class*=\" icon-\"],\n.dropdown-menu > li > a:hover > [class^=\"icon-\"],\n.dropdown-menu > li > a:hover > [class*=\" icon-\"],\n.dropdown-menu > .active > a > [class^=\"icon-\"],\n.dropdown-menu > .active > a > [class*=\" icon-\"],\n.dropdown-submenu:hover > a > [class^=\"icon-\"],\n.dropdown-submenu:hover > a > [class*=\" icon-\"] {\n  background-image: none;\n}\n/* keeps Bootstrap styles with and without icons the same */\n.btn [class^=\"icon-\"].icon-large,\n.nav [class^=\"icon-\"].icon-large,\n.btn [class*=\" icon-\"].icon-large,\n.nav [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].icon-spin,\n.nav [class^=\"icon-\"].icon-spin,\n.btn [class*=\" icon-\"].icon-spin,\n.nav [class*=\" icon-\"].icon-spin {\n  display: inline-block;\n}\n.nav-tabs [class^=\"icon-\"],\n.nav-pills [class^=\"icon-\"],\n.nav-tabs [class*=\" icon-\"],\n.nav-pills [class*=\" icon-\"],\n.nav-tabs [class^=\"icon-\"].icon-large,\n.nav-pills [class^=\"icon-\"].icon-large,\n.nav-tabs [class*=\" icon-\"].icon-large,\n.nav-pills [class*=\" icon-\"].icon-large {\n  line-height: .9em;\n}\n.btn [class^=\"icon-\"].pull-left.icon-2x,\n.btn [class*=\" icon-\"].pull-left.icon-2x,\n.btn [class^=\"icon-\"].pull-right.icon-2x,\n.btn [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .18em;\n}\n.btn [class^=\"icon-\"].icon-spin.icon-large,\n.btn [class*=\" icon-\"].icon-spin.icon-large {\n  line-height: .8em;\n}\n.btn.btn-small [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-small [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-small [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .25em;\n}\n.btn.btn-large [class^=\"icon-\"],\n.btn.btn-large [class*=\" icon-\"] {\n  margin-top: 0;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x,\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-top: .05em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-left.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-left.icon-2x {\n  margin-right: .2em;\n}\n.btn.btn-large [class^=\"icon-\"].pull-right.icon-2x,\n.btn.btn-large [class*=\" icon-\"].pull-right.icon-2x {\n  margin-left: .2em;\n}\n/* Fixes alignment in nav lists */\n.nav-list [class^=\"icon-\"],\n.nav-list [class*=\" icon-\"] {\n  line-height: inherit;\n}\n/* EXTRAS\n * -------------------------- */\n/* Stacked and layered icon */\n.icon-stack {\n  position: relative;\n  display: inline-block;\n  width: 2em;\n  height: 2em;\n  line-height: 2em;\n  vertical-align: -35%;\n}\n.icon-stack [class^=\"icon-\"],\n.icon-stack [class*=\" icon-\"] {\n  display: block;\n  text-align: center;\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  font-size: 1em;\n  line-height: inherit;\n  *line-height: 2em;\n}\n.icon-stack .icon-stack-base {\n  font-size: 2em;\n  *line-height: 1em;\n}\n/* Animated rotating icon */\n.icon-spin {\n  display: inline-block;\n  -moz-animation: spin 2s infinite linear;\n  -o-animation: spin 2s infinite linear;\n  -webkit-animation: spin 2s infinite linear;\n  animation: spin 2s infinite linear;\n}\n/* Prevent stack and spinners from being taken inline when inside a link */\na .icon-stack,\na .icon-spin {\n  display: inline-block;\n  text-decoration: none;\n}\n@-moz-keyframes spin {\n  0% {\n    -moz-transform: rotate(0deg);\n  }\n  100% {\n    -moz-transform: rotate(359deg);\n  }\n}\n@-webkit-keyframes spin {\n  0% {\n    -webkit-transform: rotate(0deg);\n  }\n  100% {\n    -webkit-transform: rotate(359deg);\n  }\n}\n@-o-keyframes spin {\n  0% {\n    -o-transform: rotate(0deg);\n  }\n  100% {\n    -o-transform: rotate(359deg);\n  }\n}\n@-ms-keyframes spin {\n  0% {\n    -ms-transform: rotate(0deg);\n  }\n  100% {\n    -ms-transform: rotate(359deg);\n  }\n}\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(359deg);\n  }\n}\n/* Icon rotations and mirroring */\n.icon-rotate-90:before {\n  -webkit-transform: rotate(90deg);\n  -moz-transform: rotate(90deg);\n  -ms-transform: rotate(90deg);\n  -o-transform: rotate(90deg);\n  transform: rotate(90deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);\n}\n.icon-rotate-180:before {\n  -webkit-transform: rotate(180deg);\n  -moz-transform: rotate(180deg);\n  -ms-transform: rotate(180deg);\n  -o-transform: rotate(180deg);\n  transform: rotate(180deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);\n}\n.icon-rotate-270:before {\n  -webkit-transform: rotate(270deg);\n  -moz-transform: rotate(270deg);\n  -ms-transform: rotate(270deg);\n  -o-transform: rotate(270deg);\n  transform: rotate(270deg);\n  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);\n}\n.icon-flip-horizontal:before {\n  -webkit-transform: scale(-1, 1);\n  -moz-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n.icon-flip-vertical:before {\n  -webkit-transform: scale(1, -1);\n  -moz-transform: scale(1, -1);\n  -ms-transform: scale(1, -1);\n  -o-transform: scale(1, -1);\n  transform: scale(1, -1);\n}\n/* ensure rotation occurs inside anchor tags */\na .icon-rotate-90:before,\na .icon-rotate-180:before,\na .icon-rotate-270:before,\na .icon-flip-horizontal:before,\na .icon-flip-vertical:before {\n  display: inline-block;\n}\n/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen\n   readers do not read off random characters that represent icons */\n.icon-glass:before {\n  content: \"\\f000\";\n}\n.icon-music:before {\n  content: \"\\f001\";\n}\n.icon-search:before {\n  content: \"\\f002\";\n}\n.icon-envelope-alt:before {\n  content: \"\\f003\";\n}\n.icon-heart:before {\n  content: \"\\f004\";\n}\n.icon-star:before {\n  content: \"\\f005\";\n}\n.icon-star-empty:before {\n  content: \"\\f006\";\n}\n.icon-user:before {\n  content: \"\\f007\";\n}\n.icon-film:before {\n  content: \"\\f008\";\n}\n.icon-th-large:before {\n  content: \"\\f009\";\n}\n.icon-th:before {\n  content: \"\\f00a\";\n}\n.icon-th-list:before {\n  content: \"\\f00b\";\n}\n.icon-ok:before {\n  content: \"\\f00c\";\n}\n.icon-remove:before {\n  content: \"\\f00d\";\n}\n.icon-zoom-in:before {\n  content: \"\\f00e\";\n}\n.icon-zoom-out:before {\n  content: \"\\f010\";\n}\n.icon-power-off:before,\n.icon-off:before {\n  content: \"\\f011\";\n}\n.icon-signal:before {\n  content: \"\\f012\";\n}\n.icon-gear:before,\n.icon-cog:before {\n  content: \"\\f013\";\n}\n.icon-trash:before {\n  content: \"\\f014\";\n}\n.icon-home:before {\n  content: \"\\f015\";\n}\n.icon-file-alt:before {\n  content: \"\\f016\";\n}\n.icon-time:before {\n  content: \"\\f017\";\n}\n.icon-road:before {\n  content: \"\\f018\";\n}\n.icon-download-alt:before {\n  content: \"\\f019\";\n}\n.icon-download:before {\n  content: \"\\f01a\";\n}\n.icon-upload:before {\n  content: \"\\f01b\";\n}\n.icon-inbox:before {\n  content: \"\\f01c\";\n}\n.icon-play-circle:before {\n  content: \"\\f01d\";\n}\n.icon-rotate-right:before,\n.icon-repeat:before {\n  content: \"\\f01e\";\n}\n.icon-refresh:before {\n  content: \"\\f021\";\n}\n.icon-list-alt:before {\n  content: \"\\f022\";\n}\n.icon-lock:before {\n  content: \"\\f023\";\n}\n.icon-flag:before {\n  content: \"\\f024\";\n}\n.icon-headphones:before {\n  content: \"\\f025\";\n}\n.icon-volume-off:before {\n  content: \"\\f026\";\n}\n.icon-volume-down:before {\n  content: \"\\f027\";\n}\n.icon-volume-up:before {\n  content: \"\\f028\";\n}\n.icon-qrcode:before {\n  content: \"\\f029\";\n}\n.icon-barcode:before {\n  content: \"\\f02a\";\n}\n.icon-tag:before {\n  content: \"\\f02b\";\n}\n.icon-tags:before {\n  content: \"\\f02c\";\n}\n.icon-book:before {\n  content: \"\\f02d\";\n}\n.icon-bookmark:before {\n  content: \"\\f02e\";\n}\n.icon-print:before {\n  content: \"\\f02f\";\n}\n.icon-camera:before {\n  content: \"\\f030\";\n}\n.icon-font:before {\n  content: \"\\f031\";\n}\n.icon-bold:before {\n  content: \"\\f032\";\n}\n.icon-italic:before {\n  content: \"\\f033\";\n}\n.icon-text-height:before {\n  content: \"\\f034\";\n}\n.icon-text-width:before {\n  content: \"\\f035\";\n}\n.icon-align-left:before {\n  content: \"\\f036\";\n}\n.icon-align-center:before {\n  content: \"\\f037\";\n}\n.icon-align-right:before {\n  content: \"\\f038\";\n}\n.icon-align-justify:before {\n  content: \"\\f039\";\n}\n.icon-list:before {\n  content: \"\\f03a\";\n}\n.icon-indent-left:before {\n  content: \"\\f03b\";\n}\n.icon-indent-right:before {\n  content: \"\\f03c\";\n}\n.icon-facetime-video:before {\n  content: \"\\f03d\";\n}\n.icon-picture:before {\n  content: \"\\f03e\";\n}\n.icon-pencil:before {\n  content: \"\\f040\";\n}\n.icon-map-marker:before {\n  content: \"\\f041\";\n}\n.icon-adjust:before {\n  content: \"\\f042\";\n}\n.icon-tint:before {\n  content: \"\\f043\";\n}\n.icon-edit:before {\n  content: \"\\f044\";\n}\n.icon-share:before {\n  content: \"\\f045\";\n}\n.icon-check:before {\n  content: \"\\f046\";\n}\n.icon-move:before {\n  content: \"\\f047\";\n}\n.icon-step-backward:before {\n  content: \"\\f048\";\n}\n.icon-fast-backward:before {\n  content: \"\\f049\";\n}\n.icon-backward:before {\n  content: \"\\f04a\";\n}\n.icon-play:before {\n  content: \"\\f04b\";\n}\n.icon-pause:before {\n  content: \"\\f04c\";\n}\n.icon-stop:before {\n  content: \"\\f04d\";\n}\n.icon-forward:before {\n  content: \"\\f04e\";\n}\n.icon-fast-forward:before {\n  content: \"\\f050\";\n}\n.icon-step-forward:before {\n  content: \"\\f051\";\n}\n.icon-eject:before {\n  content: \"\\f052\";\n}\n.icon-chevron-left:before {\n  content: \"\\f053\";\n}\n.icon-chevron-right:before {\n  content: \"\\f054\";\n}\n.icon-plus-sign:before {\n  content: \"\\f055\";\n}\n.icon-minus-sign:before {\n  content: \"\\f056\";\n}\n.icon-remove-sign:before {\n  content: \"\\f057\";\n}\n.icon-ok-sign:before {\n  content: \"\\f058\";\n}\n.icon-question-sign:before {\n  content: \"\\f059\";\n}\n.icon-info-sign:before {\n  content: \"\\f05a\";\n}\n.icon-screenshot:before {\n  content: \"\\f05b\";\n}\n.icon-remove-circle:before {\n  content: \"\\f05c\";\n}\n.icon-ok-circle:before {\n  content: \"\\f05d\";\n}\n.icon-ban-circle:before {\n  content: \"\\f05e\";\n}\n.icon-arrow-left:before {\n  content: \"\\f060\";\n}\n.icon-arrow-right:before {\n  content: \"\\f061\";\n}\n.icon-arrow-up:before {\n  content: \"\\f062\";\n}\n.icon-arrow-down:before {\n  content: \"\\f063\";\n}\n.icon-mail-forward:before,\n.icon-share-alt:before {\n  content: \"\\f064\";\n}\n.icon-resize-full:before {\n  content: \"\\f065\";\n}\n.icon-resize-small:before {\n  content: \"\\f066\";\n}\n.icon-plus:before {\n  content: \"\\f067\";\n}\n.icon-minus:before {\n  content: \"\\f068\";\n}\n.icon-asterisk:before {\n  content: \"\\f069\";\n}\n.icon-exclamation-sign:before {\n  content: \"\\f06a\";\n}\n.icon-gift:before {\n  content: \"\\f06b\";\n}\n.icon-leaf:before {\n  content: \"\\f06c\";\n}\n.icon-fire:before {\n  content: \"\\f06d\";\n}\n.icon-eye-open:before {\n  content: \"\\f06e\";\n}\n.icon-eye-close:before {\n  content: \"\\f070\";\n}\n.icon-warning-sign:before {\n  content: \"\\f071\";\n}\n.icon-plane:before {\n  content: \"\\f072\";\n}\n.icon-calendar:before {\n  content: \"\\f073\";\n}\n.icon-random:before {\n  content: \"\\f074\";\n}\n.icon-comment:before {\n  content: \"\\f075\";\n}\n.icon-magnet:before {\n  content: \"\\f076\";\n}\n.icon-chevron-up:before {\n  content: \"\\f077\";\n}\n.icon-chevron-down:before {\n  content: \"\\f078\";\n}\n.icon-retweet:before {\n  content: \"\\f079\";\n}\n.icon-shopping-cart:before {\n  content: \"\\f07a\";\n}\n.icon-folder-close:before {\n  content: \"\\f07b\";\n}\n.icon-folder-open:before {\n  content: \"\\f07c\";\n}\n.icon-resize-vertical:before {\n  content: \"\\f07d\";\n}\n.icon-resize-horizontal:before {\n  content: \"\\f07e\";\n}\n.icon-bar-chart:before {\n  content: \"\\f080\";\n}\n.icon-twitter-sign:before {\n  content: \"\\f081\";\n}\n.icon-facebook-sign:before {\n  content: \"\\f082\";\n}\n.icon-camera-retro:before {\n  content: \"\\f083\";\n}\n.icon-key:before {\n  content: \"\\f084\";\n}\n.icon-gears:before,\n.icon-cogs:before {\n  content: \"\\f085\";\n}\n.icon-comments:before {\n  content: \"\\f086\";\n}\n.icon-thumbs-up-alt:before {\n  content: \"\\f087\";\n}\n.icon-thumbs-down-alt:before {\n  content: \"\\f088\";\n}\n.icon-star-half:before {\n  content: \"\\f089\";\n}\n.icon-heart-empty:before {\n  content: \"\\f08a\";\n}\n.icon-signout:before {\n  content: \"\\f08b\";\n}\n.icon-linkedin-sign:before {\n  content: \"\\f08c\";\n}\n.icon-pushpin:before {\n  content: \"\\f08d\";\n}\n.icon-external-link:before {\n  content: \"\\f08e\";\n}\n.icon-signin:before {\n  content: \"\\f090\";\n}\n.icon-trophy:before {\n  content: \"\\f091\";\n}\n.icon-github-sign:before {\n  content: \"\\f092\";\n}\n.icon-upload-alt:before {\n  content: \"\\f093\";\n}\n.icon-lemon:before {\n  content: \"\\f094\";\n}\n.icon-phone:before {\n  content: \"\\f095\";\n}\n.icon-unchecked:before,\n.icon-check-empty:before {\n  content: \"\\f096\";\n}\n.icon-bookmark-empty:before {\n  content: \"\\f097\";\n}\n.icon-phone-sign:before {\n  content: \"\\f098\";\n}\n.icon-twitter:before {\n  content: \"\\f099\";\n}\n.icon-facebook:before {\n  content: \"\\f09a\";\n}\n.icon-github:before {\n  content: \"\\f09b\";\n}\n.icon-unlock:before {\n  content: \"\\f09c\";\n}\n.icon-credit-card:before {\n  content: \"\\f09d\";\n}\n.icon-rss:before {\n  content: \"\\f09e\";\n}\n.icon-hdd:before {\n  content: \"\\f0a0\";\n}\n.icon-bullhorn:before {\n  content: \"\\f0a1\";\n}\n.icon-bell:before {\n  content: \"\\f0a2\";\n}\n.icon-certificate:before {\n  content: \"\\f0a3\";\n}\n.icon-hand-right:before {\n  content: \"\\f0a4\";\n}\n.icon-hand-left:before {\n  content: \"\\f0a5\";\n}\n.icon-hand-up:before {\n  content: \"\\f0a6\";\n}\n.icon-hand-down:before {\n  content: \"\\f0a7\";\n}\n.icon-circle-arrow-left:before {\n  content: \"\\f0a8\";\n}\n.icon-circle-arrow-right:before {\n  content: \"\\f0a9\";\n}\n.icon-circle-arrow-up:before {\n  content: \"\\f0aa\";\n}\n.icon-circle-arrow-down:before {\n  content: \"\\f0ab\";\n}\n.icon-globe:before {\n  content: \"\\f0ac\";\n}\n.icon-wrench:before {\n  content: \"\\f0ad\";\n}\n.icon-tasks:before {\n  content: \"\\f0ae\";\n}\n.icon-filter:before {\n  content: \"\\f0b0\";\n}\n.icon-briefcase:before {\n  content: \"\\f0b1\";\n}\n.icon-fullscreen:before {\n  content: \"\\f0b2\";\n}\n.icon-group:before {\n  content: \"\\f0c0\";\n}\n.icon-link:before {\n  content: \"\\f0c1\";\n}\n.icon-cloud:before {\n  content: \"\\f0c2\";\n}\n.icon-beaker:before {\n  content: \"\\f0c3\";\n}\n.icon-cut:before {\n  content: \"\\f0c4\";\n}\n.icon-copy:before {\n  content: \"\\f0c5\";\n}\n.icon-paperclip:before,\n.icon-paper-clip:before {\n  content: \"\\f0c6\";\n}\n.icon-save:before {\n  content: \"\\f0c7\";\n}\n.icon-sign-blank:before {\n  content: \"\\f0c8\";\n}\n.icon-reorder:before {\n  content: \"\\f0c9\";\n}\n.icon-list-ul:before {\n  content: \"\\f0ca\";\n}\n.icon-list-ol:before {\n  content: \"\\f0cb\";\n}\n.icon-strikethrough:before {\n  content: \"\\f0cc\";\n}\n.icon-underline:before {\n  content: \"\\f0cd\";\n}\n.icon-table:before {\n  content: \"\\f0ce\";\n}\n.icon-magic:before {\n  content: \"\\f0d0\";\n}\n.icon-truck:before {\n  content: \"\\f0d1\";\n}\n.icon-pinterest:before {\n  content: \"\\f0d2\";\n}\n.icon-pinterest-sign:before {\n  content: \"\\f0d3\";\n}\n.icon-google-plus-sign:before {\n  content: \"\\f0d4\";\n}\n.icon-google-plus:before {\n  content: \"\\f0d5\";\n}\n.icon-money:before {\n  content: \"\\f0d6\";\n}\n.icon-caret-down:before {\n  content: \"\\f0d7\";\n}\n.icon-caret-up:before {\n  content: \"\\f0d8\";\n}\n.icon-caret-left:before {\n  content: \"\\f0d9\";\n}\n.icon-caret-right:before {\n  content: \"\\f0da\";\n}\n.icon-columns:before {\n  content: \"\\f0db\";\n}\n.icon-sort:before {\n  content: \"\\f0dc\";\n}\n.icon-sort-down:before {\n  content: \"\\f0dd\";\n}\n.icon-sort-up:before {\n  content: \"\\f0de\";\n}\n.icon-envelope:before {\n  content: \"\\f0e0\";\n}\n.icon-linkedin:before {\n  content: \"\\f0e1\";\n}\n.icon-rotate-left:before,\n.icon-undo:before {\n  content: \"\\f0e2\";\n}\n.icon-legal:before {\n  content: \"\\f0e3\";\n}\n.icon-dashboard:before {\n  content: \"\\f0e4\";\n}\n.icon-comment-alt:before {\n  content: \"\\f0e5\";\n}\n.icon-comments-alt:before {\n  content: \"\\f0e6\";\n}\n.icon-bolt:before {\n  content: \"\\f0e7\";\n}\n.icon-sitemap:before {\n  content: \"\\f0e8\";\n}\n.icon-umbrella:before {\n  content: \"\\f0e9\";\n}\n.icon-paste:before {\n  content: \"\\f0ea\";\n}\n.icon-lightbulb:before {\n  content: \"\\f0eb\";\n}\n.icon-exchange:before {\n  content: \"\\f0ec\";\n}\n.icon-cloud-download:before {\n  content: \"\\f0ed\";\n}\n.icon-cloud-upload:before {\n  content: \"\\f0ee\";\n}\n.icon-user-md:before {\n  content: \"\\f0f0\";\n}\n.icon-stethoscope:before {\n  content: \"\\f0f1\";\n}\n.icon-suitcase:before {\n  content: \"\\f0f2\";\n}\n.icon-bell-alt:before {\n  content: \"\\f0f3\";\n}\n.icon-coffee:before {\n  content: \"\\f0f4\";\n}\n.icon-food:before {\n  content: \"\\f0f5\";\n}\n.icon-file-text-alt:before {\n  content: \"\\f0f6\";\n}\n.icon-building:before {\n  content: \"\\f0f7\";\n}\n.icon-hospital:before {\n  content: \"\\f0f8\";\n}\n.icon-ambulance:before {\n  content: \"\\f0f9\";\n}\n.icon-medkit:before {\n  content: \"\\f0fa\";\n}\n.icon-fighter-jet:before {\n  content: \"\\f0fb\";\n}\n.icon-beer:before {\n  content: \"\\f0fc\";\n}\n.icon-h-sign:before {\n  content: \"\\f0fd\";\n}\n.icon-plus-sign-alt:before {\n  content: \"\\f0fe\";\n}\n.icon-double-angle-left:before {\n  content: \"\\f100\";\n}\n.icon-double-angle-right:before {\n  content: \"\\f101\";\n}\n.icon-double-angle-up:before {\n  content: \"\\f102\";\n}\n.icon-double-angle-down:before {\n  content: \"\\f103\";\n}\n.icon-angle-left:before {\n  content: \"\\f104\";\n}\n.icon-angle-right:before {\n  content: \"\\f105\";\n}\n.icon-angle-up:before {\n  content: \"\\f106\";\n}\n.icon-angle-down:before {\n  content: \"\\f107\";\n}\n.icon-desktop:before {\n  content: \"\\f108\";\n}\n.icon-laptop:before {\n  content: \"\\f109\";\n}\n.icon-tablet:before {\n  content: \"\\f10a\";\n}\n.icon-mobile-phone:before {\n  content: \"\\f10b\";\n}\n.icon-circle-blank:before {\n  content: \"\\f10c\";\n}\n.icon-quote-left:before {\n  content: \"\\f10d\";\n}\n.icon-quote-right:before {\n  content: \"\\f10e\";\n}\n.icon-spinner:before {\n  content: \"\\f110\";\n}\n.icon-circle:before {\n  content: \"\\f111\";\n}\n.icon-mail-reply:before,\n.icon-reply:before {\n  content: \"\\f112\";\n}\n.icon-github-alt:before {\n  content: \"\\f113\";\n}\n.icon-folder-close-alt:before {\n  content: \"\\f114\";\n}\n.icon-folder-open-alt:before {\n  content: \"\\f115\";\n}\n.icon-expand-alt:before {\n  content: \"\\f116\";\n}\n.icon-collapse-alt:before {\n  content: \"\\f117\";\n}\n.icon-smile:before {\n  content: \"\\f118\";\n}\n.icon-frown:before {\n  content: \"\\f119\";\n}\n.icon-meh:before {\n  content: \"\\f11a\";\n}\n.icon-gamepad:before {\n  content: \"\\f11b\";\n}\n.icon-keyboard:before {\n  content: \"\\f11c\";\n}\n.icon-flag-alt:before {\n  content: \"\\f11d\";\n}\n.icon-flag-checkered:before {\n  content: \"\\f11e\";\n}\n.icon-terminal:before {\n  content: \"\\f120\";\n}\n.icon-code:before {\n  content: \"\\f121\";\n}\n.icon-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-mail-reply-all:before {\n  content: \"\\f122\";\n}\n.icon-star-half-full:before,\n.icon-star-half-empty:before {\n  content: \"\\f123\";\n}\n.icon-location-arrow:before {\n  content: \"\\f124\";\n}\n.icon-crop:before {\n  content: \"\\f125\";\n}\n.icon-code-fork:before {\n  content: \"\\f126\";\n}\n.icon-unlink:before {\n  content: \"\\f127\";\n}\n.icon-question:before {\n  content: \"\\f128\";\n}\n.icon-info:before {\n  content: \"\\f129\";\n}\n.icon-exclamation:before {\n  content: \"\\f12a\";\n}\n.icon-superscript:before {\n  content: \"\\f12b\";\n}\n.icon-subscript:before {\n  content: \"\\f12c\";\n}\n.icon-eraser:before {\n  content: \"\\f12d\";\n}\n.icon-puzzle-piece:before {\n  content: \"\\f12e\";\n}\n.icon-microphone:before {\n  content: \"\\f130\";\n}\n.icon-microphone-off:before {\n  content: \"\\f131\";\n}\n.icon-shield:before {\n  content: \"\\f132\";\n}\n.icon-calendar-empty:before {\n  content: \"\\f133\";\n}\n.icon-fire-extinguisher:before {\n  content: \"\\f134\";\n}\n.icon-rocket:before {\n  content: \"\\f135\";\n}\n.icon-maxcdn:before {\n  content: \"\\f136\";\n}\n.icon-chevron-sign-left:before {\n  content: \"\\f137\";\n}\n.icon-chevron-sign-right:before {\n  content: \"\\f138\";\n}\n.icon-chevron-sign-up:before {\n  content: \"\\f139\";\n}\n.icon-chevron-sign-down:before {\n  content: \"\\f13a\";\n}\n.icon-html5:before {\n  content: \"\\f13b\";\n}\n.icon-css3:before {\n  content: \"\\f13c\";\n}\n.icon-anchor:before {\n  content: \"\\f13d\";\n}\n.icon-unlock-alt:before {\n  content: \"\\f13e\";\n}\n.icon-bullseye:before {\n  content: \"\\f140\";\n}\n.icon-ellipsis-horizontal:before {\n  content: \"\\f141\";\n}\n.icon-ellipsis-vertical:before {\n  content: \"\\f142\";\n}\n.icon-rss-sign:before {\n  content: \"\\f143\";\n}\n.icon-play-sign:before {\n  content: \"\\f144\";\n}\n.icon-ticket:before {\n  content: \"\\f145\";\n}\n.icon-minus-sign-alt:before {\n  content: \"\\f146\";\n}\n.icon-check-minus:before {\n  content: \"\\f147\";\n}\n.icon-level-up:before {\n  content: \"\\f148\";\n}\n.icon-level-down:before {\n  content: \"\\f149\";\n}\n.icon-check-sign:before {\n  content: \"\\f14a\";\n}\n.icon-edit-sign:before {\n  content: \"\\f14b\";\n}\n.icon-external-link-sign:before {\n  content: \"\\f14c\";\n}\n.icon-share-sign:before {\n  content: \"\\f14d\";\n}\n.icon-compass:before {\n  content: \"\\f14e\";\n}\n.icon-collapse:before {\n  content: \"\\f150\";\n}\n.icon-collapse-top:before {\n  content: \"\\f151\";\n}\n.icon-expand:before {\n  content: \"\\f152\";\n}\n.icon-euro:before,\n.icon-eur:before {\n  content: \"\\f153\";\n}\n.icon-gbp:before {\n  content: \"\\f154\";\n}\n.icon-dollar:before,\n.icon-usd:before {\n  content: \"\\f155\";\n}\n.icon-rupee:before,\n.icon-inr:before {\n  content: \"\\f156\";\n}\n.icon-yen:before,\n.icon-jpy:before {\n  content: \"\\f157\";\n}\n.icon-renminbi:before,\n.icon-cny:before {\n  content: \"\\f158\";\n}\n.icon-won:before,\n.icon-krw:before {\n  content: \"\\f159\";\n}\n.icon-bitcoin:before,\n.icon-btc:before {\n  content: \"\\f15a\";\n}\n.icon-file:before {\n  content: \"\\f15b\";\n}\n.icon-file-text:before {\n  content: \"\\f15c\";\n}\n.icon-sort-by-alphabet:before {\n  content: \"\\f15d\";\n}\n.icon-sort-by-alphabet-alt:before {\n  content: \"\\f15e\";\n}\n.icon-sort-by-attributes:before {\n  content: \"\\f160\";\n}\n.icon-sort-by-attributes-alt:before {\n  content: \"\\f161\";\n}\n.icon-sort-by-order:before {\n  content: \"\\f162\";\n}\n.icon-sort-by-order-alt:before {\n  content: \"\\f163\";\n}\n.icon-thumbs-up:before {\n  content: \"\\f164\";\n}\n.icon-thumbs-down:before {\n  content: \"\\f165\";\n}\n.icon-youtube-sign:before {\n  content: \"\\f166\";\n}\n.icon-youtube:before {\n  content: \"\\f167\";\n}\n.icon-xing:before {\n  content: \"\\f168\";\n}\n.icon-xing-sign:before {\n  content: \"\\f169\";\n}\n.icon-youtube-play:before {\n  content: \"\\f16a\";\n}\n.icon-dropbox:before {\n  content: \"\\f16b\";\n}\n.icon-stackexchange:before {\n  content: \"\\f16c\";\n}\n.icon-instagram:before {\n  content: \"\\f16d\";\n}\n.icon-flickr:before {\n  content: \"\\f16e\";\n}\n.icon-adn:before {\n  content: \"\\f170\";\n}\n.icon-bitbucket:before {\n  content: \"\\f171\";\n}\n.icon-bitbucket-sign:before {\n  content: \"\\f172\";\n}\n.icon-tumblr:before {\n  content: \"\\f173\";\n}\n.icon-tumblr-sign:before {\n  content: \"\\f174\";\n}\n.icon-long-arrow-down:before {\n  content: \"\\f175\";\n}\n.icon-long-arrow-up:before {\n  content: \"\\f176\";\n}\n.icon-long-arrow-left:before {\n  content: \"\\f177\";\n}\n.icon-long-arrow-right:before {\n  content: \"\\f178\";\n}\n.icon-apple:before {\n  content: \"\\f179\";\n}\n.icon-windows:before {\n  content: \"\\f17a\";\n}\n.icon-android:before {\n  content: \"\\f17b\";\n}\n.icon-linux:before {\n  content: \"\\f17c\";\n}\n.icon-dribbble:before {\n  content: \"\\f17d\";\n}\n.icon-skype:before {\n  content: \"\\f17e\";\n}\n.icon-foursquare:before {\n  content: \"\\f180\";\n}\n.icon-trello:before {\n  content: \"\\f181\";\n}\n.icon-female:before {\n  content: \"\\f182\";\n}\n.icon-male:before {\n  content: \"\\f183\";\n}\n.icon-gittip:before {\n  content: \"\\f184\";\n}\n.icon-sun:before {\n  content: \"\\f185\";\n}\n.icon-moon:before {\n  content: \"\\f186\";\n}\n.icon-archive:before {\n  content: \"\\f187\";\n}\n.icon-bug:before {\n  content: \"\\f188\";\n}\n.icon-vk:before {\n  content: \"\\f189\";\n}\n.icon-weibo:before {\n  content: \"\\f18a\";\n}\n.icon-renren:before {\n  content: \"\\f18b\";\n}\n"; s.id = "css-font-awesome"; document.head.appendChild(s);}, "data/stylesheets/introjs": function(exports, require, module) {s = document.createElement('style'); s.innerHTML = ".introjs-overlay {\n  position: absolute;\n  z-index: 999999;\n  background-color: #000;\n  opacity: 0;\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-showElement {\n  z-index: 9999999;\n}\n\n.introjs-relativePosition {\n  position: relative;\n}\n\n.introjs-helperLayer {\n  position: absolute;\n  z-index: 9999998;\n  background-color: rgba(255,255,255,.9);\n  border: 1px solid rgba(0,0,0,.5);\n  border-radius: 4px;\n  box-shadow: 0 2px 15px rgba(0,0,0,.4);\n  -webkit-transition: all 0.3s ease-out;\n     -moz-transition: all 0.3s ease-out;\n      -ms-transition: all 0.3s ease-out;\n       -o-transition: all 0.3s ease-out;\n          transition: all 0.3s ease-out;\n}\n\n.introjs-helperNumberLayer {\n  position: absolute;\n  top: -16px;\n  left: -16px;\n  z-index: 9999999999 !important;\n  padding: 2px;\n  font-family: Arial, verdana, tahoma;\n  font-size: 13px;\n  font-weight: bold;\n  color: white;\n  text-align: center;\n  text-shadow: 1px 1px 1px rgba(0,0,0,.3);\n  background: #ff3019; /* Old browsers */\n  background: -webkit-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Chrome10+,Safari5.1+ */\n  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ff3019), color-stop(100%, #cf0404)); /* Chrome,Safari4+ */\n  background:    -moz-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* FF3.6+ */\n  background:     -ms-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* IE10+ */\n  background:      -o-linear-gradient(top, #ff3019 0%, #cf0404 100%); /* Opera 11.10+ */\n  background:         linear-gradient(to bottom, #ff3019 0%, #cf0404 100%);  /* W3C */\n  width: 20px;\n  height:20px;\n  line-height: 20px;\n  border: 3px solid white;\n  border-radius: 50%;\n  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff3019', endColorstr='#cf0404', GradientType=0); /* IE6-9 */ \n  filter: progid:DXImageTransform.Microsoft.Shadow(direction=135, strength=2, color=ff0000); /* IE10 text shadows */\n  box-shadow: 0 2px 5px rgba(0,0,0,.4);\n}\n\n.introjs-arrow {\n  border: 5px solid white;\n  content:'';\n  position: absolute;\n}\n.introjs-arrow.top {\n  top: -10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:white;\n  border-left-color:transparent;\n}\n.introjs-arrow.right {\n  right: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:white;\n}\n.introjs-arrow.bottom {\n  bottom: -10px;\n  border-top-color:white;\n  border-right-color:transparent;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n.introjs-arrow.left {\n  left: -10px;\n  top: 10px;\n  border-top-color:transparent;\n  border-right-color:white;\n  border-bottom-color:transparent;\n  border-left-color:transparent;\n}\n\n.introjs-tooltip {\n  position: absolute;\n  padding: 10px;\n  background-color: white;\n  min-width: 200px;\n  border-radius: 3px;\n  box-shadow: 0 1px 10px rgba(0,0,0,.4);\n  -webkit-transition: opacity 0.1s ease-out;\n     -moz-transition: opacity 0.1s ease-out;\n      -ms-transition: opacity 0.1s ease-out;\n       -o-transition: opacity 0.1s ease-out;\n          transition: opacity 0.1s ease-out;\n}\n\n.introjs-tooltipbuttons {\n  text-align: right;\n}\n\n/* \n Buttons style by http://nicolasgallagher.com/lab/css3-github-buttons/ \n Changed by Afshin Mehrabani\n*/\n.introjs-button {\n  position: relative;\n  overflow: visible;\n  display: inline-block;\n  padding: 0.3em 0.8em;\n  border: 1px solid #d4d4d4;\n  margin: 0;\n  text-decoration: none;\n  text-shadow: 1px 1px 0 #fff;\n  font: 11px/normal sans-serif;\n  color: #333;\n  white-space: nowrap;\n  cursor: pointer;\n  outline: none;\n  background-color: #ececec;\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f4f4f4), to(#ececec));\n  background-image: -moz-linear-gradient(#f4f4f4, #ececec);\n  background-image: -o-linear-gradient(#f4f4f4, #ececec);\n  background-image: linear-gradient(#f4f4f4, #ececec);\n  -webkit-background-clip: padding;\n  -moz-background-clip: padding;\n  -o-background-clip: padding-box;\n  /*background-clip: padding-box;*/ /* commented out due to Opera 11.10 bug */\n  -webkit-border-radius: 0.2em;\n  -moz-border-radius: 0.2em;\n  border-radius: 0.2em;\n  /* IE hacks */\n  zoom: 1;\n  *display: inline;\n  margin-top: 10px;\n}\n\n.introjs-button:hover {\n  border-color: #bcbcbc;\n  text-decoration: none; \n  box-shadow: 0px 1px 1px #e3e3e3;\n}\n\n.introjs-button:focus,\n.introjs-button:active {\n  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ececec), to(#f4f4f4));\n  background-image: -moz-linear-gradient(#ececec, #f4f4f4);\n  background-image: -o-linear-gradient(#ececec, #f4f4f4);\n  background-image: linear-gradient(#ececec, #f4f4f4);\n}\n\n/* overrides extra padding on button elements in Firefox */\n.introjs-button::-moz-focus-inner {\n  padding: 0;\n  border: 0;\n}\n\n.introjs-skipbutton {\n  margin-right: 5px;\n  color: #7a7a7a;\n}\n\n.introjs-prevbutton {\n  -webkit-border-radius: 0.2em 0 0 0.2em;\n  -moz-border-radius: 0.2em 0 0 0.2em;\n  border-radius: 0.2em 0 0 0.2em;\n  border-right: none;\n}\n\n.introjs-nextbutton {\n  -webkit-border-radius: 0 0.2em 0.2em 0;\n  -moz-border-radius: 0 0.2em 0.2em 0;\n  border-radius: 0 0.2em 0.2em 0;\n}\n\n.introjs-disabled, .introjs-disabled:hover {\n  color: #9a9a9a;\n  border-color: #d4d4d4;\n  box-shadow: none;\n  cursor: default;\n  background-color: #f4f4f4;\n  background-image: none;\n}"; s.id = "css-introjs"; document.head.appendChild(s);}, "data/views/index": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -45331,903 +38358,33 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<div ng-controller="AccountController">\n\t<h1>Account Stuff</h1>\n\t<div class="form">\n\t\t<label for="account-name">\n\t\t\t<span ');
+      __out.push('<aside ng-class="{');
     
-      __out.push(__sanitize(_T("Name")));
+      __out.push(__sanitize(this.States.closed));
     
-      __out.push('></span>\n\t\t\t<input type="text" id="account-name" ng-model="user.data.name" ');
+      __out.push(': \'closed\', ');
     
-      __out.push(__sanitize(_T("Name", "placeholder")));
+      __out.push(__sanitize(this.States.open));
     
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<hr>\n\t\t<label for="account-email">\n\t\t\t<span ');
+      __out.push(': \'open\'}[sidebarStatus]">');
     
-      __out.push(__sanitize(_T("EMail")));
+      __out.push(DepMan.render("menu", {
+        Pages: this.Pages
+      }));
     
-      __out.push('></span>\n\t\t\t<input type="text" id="account-email" ng-model="user.data.email" ');
+      __out.push('</aside>\n<section ng-class="{');
     
-      __out.push(__sanitize(_T("EMail", "placeholder")));
+      __out.push(__sanitize(this.States.open));
     
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<hr>\n\t\t<label for="account-password">\n\t\t\t<span ');
+      __out.push(': \'closed\', ');
     
-      __out.push(__sanitize(_T("Current Password")));
+      __out.push(__sanitize(this.States.closed));
     
-      __out.push('></span>\n\t\t\t<input type="password" id="account-password" ng-model="currentpass" ');
+      __out.push(': \'open\'}[sidebarStatus]">\n\t<div class="triangle"></div>\n\t<div class="tip">There is a menu here. <br>Try to hover, I dare you!</div>\n\t');
     
-      __out.push(__sanitize(_T("Current Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<br>\n\t\t<label for="account-new-password">\n\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("New Password")));
-    
-      __out.push('></span>\n\t\t\t<input type="password" id="account-new-password" ng-model="newpass" ');
-    
-      __out.push(__sanitize(_T("New Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<br>\n\t\t<label for="account-new-password-verify">\n\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("Verify the New Password")));
-    
-      __out.push('></span>\n\t\t\t<input type="password" id="account-new-password-verify" ng-model="newpassverify" ');
-    
-      __out.push(__sanitize(_T("Verify the New Password", "placeholder")));
-    
-      __out.push(' ng-change="">\n\t\t</label>\n\t\t<button ');
-    
-      __out.push(__sanitize(_T("Change Password")));
-    
-      __out.push(' ng-click="changePassword()"></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/applications": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="recipies-container" ng-controller="ApplicationsController">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Applications")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="recipe in recipeModel.recipes | filter:searchTerms" ng-show="runtime.props[\'active-tab\'] == 1">\n\t\t<h2 ng-bind="recipe._id"></h2>\n\t\t<select ng-change="installApp(recipe)" ng-model="info.device" ng-options="device.name for (key, device) in user.devices"></select>\n\t</article>\n</div>ac');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/develop": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div ng-controller="RecipeController" id="recipies-container">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Your Recipes")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="recipe in recipeModel.recipes | filter:searchTerms" ng-show="runtime.props[\'active-tab\'] == 3">\n\t\t<h2 ng-bind="recipe._id"></h2>\n\t\t<nav>\n\t\t\t<li ng-click="toggleEditing(recipe)"><i class="icon-wrench"></i></li>\n\t\t\t<li ng-click="remove(recipe)"><i class="icon-remove"></i></li>\n\t\t</nav>\n\t\t<div ng-class="{true: \'active\', false: \'inactive\', undefined: \'inactive\'}[recipe.editing]">\n\t\t\t<label for="recipe-name-{{recipe._uuid}}">\n\t\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("The name of the recipe")));
-    
-      __out.push('></span>\n\t\t\t\t<input type="text" id=\'recipe-name-{{recipe._uuid}}\' ng-model="recipe._id" ');
-    
-      __out.push(__sanitize(_T("Recipe Name", "placeholder")));
-    
-      __out.push(' ng-change="recipe.data.name = recipe._id" >\n\t\t\t</label>\n\t\t\t<article ng-repeat="stub in recipe.data.stubs">\n\t\t\t\t<label for="recipe-stub-{{recipe._uuid}}">\n\t\t\t\t\t<span ');
-    
-      __out.push(__sanitize(_T("The URL of the dependency")));
-    
-      __out.push('></span>\n\t\t\t\t\t<input type="text" id="recipe-stub-{{recipe._uuid}}" ng-model="stub.url" ');
-    
-      __out.push(__sanitize(_T("URL", "placeholder")));
-    
-      __out.push('>\n\t\t\t\t</label>\n\t\t\t\t<div class="instructions container">\n\t\t\t\t\t<li ng-repeat="(index, instruction) in stub.instructions">\n\t\t\t\t\t\t<label for="recipe-name-{{recipe._uuid}}-{{index}}">\n\t\t\t\t\t\t\t<span><span ');
-    
-      __out.push(__sanitize(_T("Instruction number")));
-    
-      __out.push('></span> <span>{{index + 1}}</span></span>\n\t\t\t\t\t\t\t<input type="text" id="recipe-name-{{recipe._uuid}}-{{index}}" ng-model="instruction.command" ');
-    
-      __out.push(__sanitize(_T("Instruction", "placeholder")));
-    
-      __out.push('>\n\t\t\t\t\t\t</label>\n\t\t\t\t\t\t<nav>\n\t\t\t\t\t\t\t<li ng-click="removeInstruction(instruction, stub.instructions)"><i class="icon-remove"></i></li>\n\t\t\t\t\t\t</nav>\n\t\t\t\t\t</li>\n\t\t\t\t\t<nav class="add">\n\t\t\t\t\t\t<li ng-click="addInstruction(stub.instructions)"><i class="icon-plus"></i></li>\n\t\t\t\t\t</nav>\n\t\t\t\t</div>\n\t\t\t\t<nav>\n\t\t\t\t\t<li ng-click="removeStub(stub, recipe.data.stubs)"><i class="icon-remove"></i></li>\n\t\t\t\t</nav>\n\t\t\t</article>\n\t\t\t<nav class="add">\n\t\t\t\t<li ng-click="addStub(recipe.data)"><i class="icon-plus"></i></li>\n\t\t\t</nav>\n\t\t\t<button class="save" ng-click=\'recipe.save()\' ');
-    
-      __out.push(__sanitize(_T("Save")));
-    
-      __out.push('></button>\n\t\t</div>\n\t</article>\n\t<nav class="add">\n\t\t<li ng-click="addRecipe()"><i class="icon-plus"></i></li>\n\t</nav>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/devices": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="recipies-container" ng-controller="DevicesController">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Devices Management")));
-    
-      __out.push('></h1>\n\t<input type="search" ng-model="searchTerms.data" ');
-    
-      __out.push(__sanitize(_T("Search", "placeholder")));
-    
-      __out.push('>\n\t<article ng-repeat="(uuid, device) in user.devices | filter:searchTerms">\n\t\t<h2 ng-bind="device.name"></h2>\n\t\t<nav>\n\t\t\t<li ng-click="remove(uuid)"><i class=\'icon-remove\'></i></li>\n\t\t</nav>\n\t\t<textarea name="" id="">{{device.installed_apps.join("\\n")}}</textarea>\n\t\t<textarea name="" id="">{{device.app_stack.join("\\n")}}</textarea>\n\t</article>\n\t<nav class="add">\n\t\t<li ng-click="add()"><i class=\'icon-plus\'></i></li>\n\t</nav>\n\t<input type="text" ng-model="info.device" ng-change="add()" ');
-    
-      __out.push(__sanitize(_T("Add", "placeholder")));
-    
-      __out.push('>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/app/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      var ICONS, TABS, index, tab, _i, _j, _len, _len1;
-    
-      TABS = ["account", "applications", "devices", "develop"];
-    
-      __out.push('\n');
-    
-      ICONS = ["user", "list", "desktop", "code"];
-    
-      __out.push('\n<div ng-controller="AppRouter" id="approuter-container">\n\t<aside ng-class="{0: \'active\'}[tabState]">\n\t\t<h1>');
-    
-      __out.push(__sanitize(AppInfo.displayname));
-    
-      __out.push('</h1>\n\t\t');
-    
-      for (index = _i = 0, _len = TABS.length; _i < _len; index = ++_i) {
-        tab = TABS[index];
-        __out.push('\n\t\t\t<li id=\'');
-        __out.push(__sanitize(tab));
-        __out.push('\' ng-click=\'this.runtime.set("active-tab", ');
-        __out.push(__sanitize(index));
-        __out.push(')\' ng-class="{');
-        __out.push(__sanitize(index));
-        __out.push(': \'active\'}[activeTab]"><i class="icon-');
-        __out.push(__sanitize(ICONS[index]));
-        __out.push('"></i>');
-        __out.push(__sanitize(tab[0].toUpperCase() + tab.substr(1)));
-        __out.push('</li>\n\t\t');
-      }
-    
-      __out.push('\n\t</aside>\n\t<section ng-class="{1: \'active\'}[tabState]">\n\t\t');
-    
-      for (index = _j = 0, _len1 = TABS.length; _j < _len1; index = ++_j) {
-        tab = TABS[index];
-        __out.push('\n\t\t<article ng-class="{');
-        __out.push(__sanitize(index));
-        __out.push(': \'active\'}[activeTab]">');
-        __out.push(DepMan.render(["app", tab]));
-        __out.push('</article>\n\t\t');
-      }
-    
-      __out.push('\n\t</section>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_alt": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<aside id="secondary" ng-class="{false: \'inactive\', true: \'active\'}[node.$viewmore]">\n\t<label for="relation{{node.$index}}" id="relationplaceholder">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Relation between this node and the previous.")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<input type="text" ng-model="node.relation" ng-change="replicate(node, \'relation\')" id="relation{{node.$index}}">\n\t\t</div>\n\t</label>\n\t<label for="node{{node.$index}}" id="noteplacehoder">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Notes associated")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<textarea id="node{{node.$index}}" ng-model="node.note" ng-change="replicate(node, \'note\')"></textarea>\n\t\t</div>\n\t</label>\n</aside>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_main": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<aside id="primary">\n\t<nav>\n\t');
-    
-      __out.push(DepMan.render(["document", "_misc"]));
-    
-      __out.push('\n\t</nav>\t\t\t\t\n\t<label for="text{{node.$index}}">\n\t\t<span ');
-    
-      __out.push(__sanitize(_T("Node Text")));
-    
-      __out.push('></span>\n\t\t<div>\n\t\t\t<input type="text" ng-model="node.text" ng-change="replicate(node, \'text\')"/>\n\t\t</div>\n\t</label>\n\t<nav id="primary">\n\t');
-    
-      __out.push(DepMan.render(["document", "_nav"]));
-    
-      __out.push('\n\t</nav>\n</aside>\t\t\t\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_misc": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<label for="folding{{node.$index}}" ng-class="{\'determinate\': \'active\', \'indeterminate\': \'active\', \'checked\': \'inactive\', \'unchecked\': \'inactive\'}[node.status]">\n\t<input type="checkbox" id="folding{{node.$index}}" ng-model="node.$folded" ng-change="refresh(node)"/>\n\t<i ng-class="{true: \'icon-chevron-right\', false: \'icon-chevron-down\'}[node.$folded]"></i>\n</label>\n<label for="status{{node.$index}}">\n\t<input type="checkbox" id="status{{node.$index}}" ng-model="node.$status" ng-change="changeStatus(node)">\n\t<i ng-class="{\'checked\': \'icon-check\', \'unchecked\': \'icon-check-empty\', \'determinate\': \'icon-circle\', \'indeterminate\': \'icon-adjust\'}[node.status]"></i>\n</label>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/_nav": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<li ng-click="add(node)" class="add button"><i class="icon-plus"></i></li>\n<li ng-click="remove(node)" class="remove button"><i class="icon-remove"></i></li>\n<li ng-click="modalEdit(node)" class="modal button"><i class="icon-gear"></i></li>\n<li class="button showhide">\n\t<label for="showhide{{node.$index}}"><input type="checkbox" ng-model="node.$viewmore" id="showhide{{node.$index}}"><i ng-class="{true: \'icon-eye-open\', false: \'icon-eye-close\'}[node.$viewmore]"></i></label>\n</li>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/editform": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div id="editform">\n\t<div id="textcontainer"><label for="text" ');
-    
-      __out.push(__sanitize(_T("The text of the node")));
-    
-      __out.push('></label><input type="text" id="text"></div>\n\t<div id="checkcontainer"><label for="checked" ');
-    
-      __out.push(__sanitize(_T("Is this node checked?")));
-    
-      __out.push('></label><input type="checkbox"  id="checked"></div>\n\t<div id="foldcontainer"><label for="folded" ');
-    
-      __out.push(__sanitize(_T("Is this node folded?")));
-    
-      __out.push('></label><input type="checkbox" id="folded"></div>\n\t<div id="relationcontainer"><label for="relation" ');
-    
-      __out.push(__sanitize(_T("Relation with its parent")));
-    
-      __out.push('></label><input type="text" id="relation"></div>\n\t<div id="notecontainer"><label for="note" ');
-    
-      __out.push(__sanitize(_T("Notes attached")));
-    
-      __out.push('></label><textarea id="note"></textarea></div>\n\t<br>\n\t<div id="buttoncontainer">\n\t\t<input type="button" id="addnode" ');
-    
-      __out.push(__sanitize(_T("Add a new node", "value")));
-    
-      __out.push('>\n\t\t<input type="button" id="removenode" ');
-    
-      __out.push(__sanitize(_T("Remove this node", "value")));
-    
-      __out.push('>\n\t</div>\n\t<br>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section ng-controller="Document" ng-class="{0: \'sidebarclosed\', 1: \'sidebaropen\'}[runtime.props[\'sidebar-state\']]">\n\t<header>\n\t\t{{activeDocument.title}} \n\t\t<nav>\n\t\t\t<li ng-click="runtime.set(\'document-state\', 1)" ng-class="{0: \'inactive\', 1: \'active\'}[runtime.props[\'document-state\']]"><i class="icon-sitemap"></i></li>\n\t\t\t<li ng-click="runtime.set(\'document-state\', 0)" ng-class="{0: \'active\', 1: \'inactive\'}[runtime.props[\'document-state\']]"><i class="icon-list"></i></li>\n\t\t</nav>\n\t</header>\n\t<section id="outline" ng-class="{1: \'inactive\', 0: \'active\'}[runtime.props[\'document-state\']]">\n\t\t<article ng-repeat="node in activeDocument.indexes" ng-class="{true: \'inactive\', false: \'active\'}[node.$hidden]" ng-style="getStyles(node)">\n\t\t \t');
-    
-      __out.push(DepMan.render(["document", "_main"]));
-    
-      __out.push('\n\t\t \t');
-    
-      __out.push(DepMan.render(["document", "_alt"]));
-    
-      __out.push('\n\t\t</article>\n\t\t<aside ng-click="addRoot()"><i class="icon-plus"></i></aside>\n\t</section>\n\t<section id="mindmap" ng-class="{0: \'inactive\', 1: \'active\'}[runtime.props[\'document-state\']]">\n\t\t<canvas></canvas>\n\t</section>\n</section>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/document/list": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section ng-controller="DocumentList">\n\t<nav>\n\t\t<div class="slider">\n\t\t\t<li ng-click="addDocument()"><i class="icon-plus"></i></li>\n\t\t\t<li ng-click="deleteDocument()"><i class="icon-remove"></i></li>\n\t\t\t<li ng-click="saveDocument()"><i class="icon-save"></i></li>\n\t\t\t<li ng-click="downloadDocument()"><i class="icon-cloud-download"></i></li>\n\t\t\t<li ng-click="uploadDocument()"><i class="icon-cloud-upload"></i></li>\n\t\t\t<li ng-click="duplicateDocument()"><i class="icon-copy"></i></li>\n\t\t</div>\n\t</nav>\n\t<article ng-repeat="(id, document) in models._reccords">\n\t\t<input type="text" ng-model="document.title" ngc-focus="switch(id)" ng-change="replicate()" />\n\t\t<small>{{id}}</small>\n\t</article>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab1": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>To start using the application, click on the eye button (<span class=\'key\'><i class="icon-eye-open"></i></span>) on the top left to open up the sidebar or use the keyboard shortcuts (<span class="key">⌘-[1-4]</span> / <span class="key">Control-[1-4]</span>) to access the individual tabs.</p>\n<p>The application supports two ways of viewing and editing the data. To move between them use the buttons on the upper right side of the application (<span class="key"><i class="icon-sitemap"></i></span> and <span class="key"><i class="icon-list"></i></span>) </p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab2": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>With the sidebar window you can change the tabs using the keyboard shortcuts using the keyboards explained earlier, or with the four tabs on the bottom (<span class="key"><i class="icon-list"></i></span>, <span class="key"><i class="icon-signal"></i></span>, <span class="key"><i class="icon-gear"></i></span>, <span class="key"><i class="icon-code"></i></span>).</p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/help/tab3": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<p>To connect to another client, access the server tab of the sidebar, copy your clientID (or scan the QR code) and give that code to the person that wants to connect to you. Then that person will input that code into the second input of the page, and then he will receive the data you are already editing.</p>\n<p>From that moment on, untill you reconnect, you two will be linked together. Any action you take will be replicated between you and your connection.</p>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section id="help">\n\t');
-    
-      __out.push(DepMan.render(["pages", "help"]));
-    
-      __out.push('\n</section>\n<section id="landing">\n\t');
-    
-      __out.push(DepMan.render(["pages", "landing"]));
-    
-      __out.push('\n</section>\n<section id="application">\n\t');
-    
-      __out.push(DepMan.render(["app", "index"]));
+      __out.push(DepMan.render("pages", {
+        Pages: this.Pages
+      }));
     
       __out.push('\n</section>');
     
@@ -46236,7 +38393,7 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/loading/index": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/menu": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -46275,662 +38432,30 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<section id="loadingscreen">\n\t<section></section>\n\t<aside data-location=\'left\'></aside>\n\t<aside data-location=\'right\'></aside>\n\t<article>\n\t\t<div><p>Revelati</p></div>\n\t\t<span></span>\n\t\t<div><p>n</p></div>\n\t\t<p><span id="loadingmessage"></span></p>\n\t</article>\n</section>\n');
+      var index, page, _i, _len, _ref;
     
-    }).call(this);
+      __out.push('<nav>\n\t');
     
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/modal": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push(__sanitize(console.log(this)));
-    
-      __out.push('\n<section ng-controller=\'Modal\' id=\'modal-window\' ng-class="{');
-    
-      __out.push(__sanitize(this.States["closed"]));
-    
-      __out.push(': \'closed\', ');
-    
-      __out.push(__sanitize(this.States["normal"]));
-    
-      __out.push(': \'normal\', ');
-    
-      __out.push(__sanitize(this.States["fullscreen"]));
-    
-      __out.push(': \'fullscreen\'}[runtime.props[\'modal-state\']]">\n\t<section>\n\t<header ng-bind=\'title\'></header>\n\t  <nav>\n\t\t<li ng-click=\'runtime.set("modal-state", ');
-    
-      __out.push(__sanitize(this.States['closed']));
-    
-      __out.push(')\' ><i class="icon-remove"></i></li>\n\t\t<li ng-click=\'toggle()\'><i class="icon-fullscreen"></i></li>\n\t  </nav>\n\t  <article ng-bind-html-unsafe=\'content\'></article>\n\t</section>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/help": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<section class="help wrapper" ng-controller="Help" ng-click="verifyState($event)">\n\t<aside class="left" ng-click="changeState(-1)"></aside>\n\t<section>\n\t\t<article ng-repeat="doc in articles" ng-class="{true: \'active\', false: \'\'}[$index == runtime.props[\'help-state\']]" ng-bind-html-unsafe="doc">\n\t\t</article>\n\t</section>\n\t<aside class="right" ng-click="changeState(1)"></aside>\n\t<nav>\n\t\t<li ng-repeat="article in articles" ng-click="runtime.set(\'help-state\', $index)" ng-class="{true: \'active\', false: \'\'}[$index == runtime.props[\'help-state\']]"></li>\n\t</nav>\n</section>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing-content": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-    
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div ng-controller="Landing" id="landingpage">\n\t<section>\n\t  <header>\n\t  \t<h1 class="left">Rasp</h1>\n\t  \t<img src="');
-    
-      __out.push(__sanitize(DepMan.image("logo")));
-    
-      __out.push('" alt="" />\n\t  \t<h1 class="right">Store</h1>\n\t  </header>\n\t</section>\n\t<section id=\'raspmenu\' ng-style="height(\'login\')">\n\t\t<aside>');
-    
-      __out.push(DepMan.render("pages/landing/login"));
-    
-      __out.push('</aside>\n\t\t<aside>');
-    
-      __out.push(DepMan.render("pages/landing/register"));
-    
-      __out.push('</aside>\n\t\t<nav><h1 ng-click="readMore()" ');
-    
-      __out.push(__sanitize(_T("Read More")));
-    
-      __out.push('></h1></nav>\n\t</section>\n\t<section ng-repeat="(section, html) in sections" ng-style="height(\'full\')" >\n\t\t<div class=\'container\' id="{{section}}" ng-bind-html-unsafe="html"></div>\n\t</section>\n\t<section id="contact">');
-    
-      __out.push(DepMan.render("pages/landing/contact"));
-    
-      __out.push('</section>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/about": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>About the app</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/contact": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container">\n\t<h1>A very basic contact form</h1>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/linux": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>A bit about the Linux Ecosystem</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/login": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container" id="login-form">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Login")));
-    
-      __out.push('></h1>\n\t<div class="content">\n\t\t<input type="text" id=\'login-email\' ');
-    
-      __out.push(__sanitize(_T("EMail", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id=\'login-password\' ');
-    
-      __out.push(__sanitize(_T("Password", "placeholder")));
-    
-      __out.push('>\n\t\t<button id=\'submit-button\' ');
-    
-      __out.push(__sanitize(_T("Submit")));
-    
-      __out.push('></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/macos": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>About the Mac OS ecosystem</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/rasp": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1>Raspberry PI</h1>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/pages/landing/register": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<div class="container" id="register-form">\n\t<h1 ');
-    
-      __out.push(__sanitize(_T("Register")));
-    
-      __out.push('></h1>\n\t<div class="content">\n\t\t<input type="text" id="register-email" ');
-    
-      __out.push(__sanitize(_T("EMail", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id="register-pass" ');
-    
-      __out.push(__sanitize(_T("Password", "placeholder")));
-    
-      __out.push('>\n\t\t<input type="password" id="register-pass-verify" ');
-    
-      __out.push(__sanitize(_T("Password Verification", "placeholder")));
-    
-      __out.push('>\n\t\t<button ');
-    
-      __out.push(__sanitize(_T("Submit")));
-    
-      __out.push(' id="submit-button"></button>\n\t</div>\n</div>');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/sidebar/index": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      var index, tab, _i, _len, _ref;
-    
-      __out.push('<section ng-controller="Sidebar" class="{{STATES[runtime.props[\'sidebar-state\']]}}">\n\t<nav>\n\t\t<li ng-repeat="tab in TABS" ng-click="runtime.set(\'sidebar-tab\', Tabs[tab])" ng-class="{true: \'active\'}[runtime.props[\'sidebar-tab\'] == $index]"><i class="{{ICONS[$index]}}"></i></li>\n\t</nav>\n\t<section>\n\t\t');
-    
-      _ref = this.TABS;
+      _ref = this.Pages;
       for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
-        tab = _ref[index];
-        __out.push('\n\t\t<article ng-class="{true: \'active\'}[runtime.props[\'sidebar-tab\'] == ');
+        page = _ref[index];
+        __out.push('\n\t\t');
+        console.log(page, index);
+        __out.push('\n\t\t<li ng-click=\'changeActiveTab(');
         __out.push(__sanitize(index));
-        __out.push(']">');
-        __out.push(DepMan.render(['sidebar', 'tabs', tab]));
-        __out.push('</article>\n\t\t');
+        __out.push(')\'>');
+        __out.push(__sanitize(page[0].toUpperCase() + page.substr(1)));
+        __out.push('</li>\n\t');
       }
     
-      __out.push('\n\t</section>\n\t<aside ng-click="toggleState()"><i ng-class="{');
-    
-      __out.push(__sanitize(this.States.open));
-    
-      __out.push(':\' icon-eye-open\', ');
-    
-      __out.push(__sanitize(this.States.closed));
-    
-      __out.push(': \'icon-eye-close\'}[runtime.props[\'sidebar-state\']]"></i></aside>\n</section>\n');
+      __out.push('\n</nav>');
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/experimental": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -46969,34 +38494,24 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
+      var index, page, _i, _len, _ref;
     
-      __out.push(__sanitize(_T("Experimental Features")));
-    
-      __out.push('></h1>\n<ul>\n\t<li onclick="Toast(\'Example\', \'With Content\')"><p ');
-    
-      __out.push(__sanitize(_T("Activate a Toast")));
-    
-      __out.push('></p></li>\n\t<li onclick="Notifications.toastNormal(\'Example\', [ \'With Content\' ])"><p ');
-    
-      __out.push(__sanitize(_T("Activate a Toast (Modal Override)")));
-    
-      __out.push('></p></li>\n\t<li onclick="Modal.show({title: \'Some Title\', content: \'Some Example Content\'})"><p ');
-    
-      __out.push(__sanitize(_T("Open a modal window")));
-    
-      __out.push('></p></li>\n\t<li onclick="Loading.start(); Loading.progress(\'I will turn off in 5 seconds!\'); setTimeout(Loading.end, 5000)"><p ');
-    
-      __out.push(__sanitize(_T("Open the Loading Screen")));
-    
-      __out.push('></p></li>\n</ul>\n');
+      _ref = this.Pages;
+      for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
+        page = _ref[index];
+        __out.push('\n\t<article ng-class=\'{');
+        __out.push(__sanitize(index));
+        __out.push(': "active"}[activeTab]\'>');
+        __out.push(DepMan.render("pages/" + page));
+        __out.push('</article>\n');
+      }
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/general": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages/demo": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -47035,38 +38550,14 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("General Application Settings")));
-    
-      __out.push('></h1>\n<ul>\n\t<li ng-click="runtime.set(\'app-state\', 0)"><p ');
-    
-      __out.push(__sanitize(_T("Activate the landing page")));
-    
-      __out.push('></p></li>\n\t<li ng-click="runtime.set(\'app-state\', 2)"><p ');
-    
-      __out.push(__sanitize(_T("Activate the help page")));
-    
-      __out.push('></p></li>\n\t<li>\n\t\t<label for="languageselect" ');
-    
-      __out.push(__sanitize(_T("Select your language of choice")));
-    
-      __out.push('></label>\n\t\t<select ng-change="runtime.set(\'language\', language)" ng-model=\'language\' id="languageselect">\n\t\t\t<option value="en-US" ');
-    
-      __out.push(__sanitize(_T("English")));
-    
-      __out.push('></option>\n\t\t\t<option value="ro-RO" ');
-    
-      __out.push(__sanitize(_T("Romanian")));
-    
-      __out.push('></option>\n\t\t</select>\n\t</li>\n</ul>\n');
+      __out.push('<h1>Demo</h1>');
     
     }).call(this);
     
   }).call(__obj);
   __obj.safe = __objSafe, __obj.escape = __escape;
   return __out.join('');
-}}, "data/views/sidebar/tabs/list": function(exports, require, module) {module.exports = function(__obj) {
+}}, "data/views/pages/home": function(exports, require, module) {module.exports = function(__obj) {
   if (!__obj) __obj = {};
   var __out = [], __capture = function(callback) {
     var out = __out, result;
@@ -47105,73 +38596,7 @@ return window.JSONImport['ro-RO'] = module.exports = item;}, "data/stylesheets/f
   }
   (function() {
     (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("Document List")));
-    
-      __out.push('></h1>\n');
-    
-    }).call(this);
-    
-  }).call(__obj);
-  __obj.safe = __objSafe, __obj.escape = __escape;
-  return __out.join('');
-}}, "data/views/sidebar/tabs/server": function(exports, require, module) {module.exports = function(__obj) {
-  if (!__obj) __obj = {};
-  var __out = [], __capture = function(callback) {
-    var out = __out, result;
-    __out = [];
-    callback.call(this);
-    result = __out.join('');
-    __out = out;
-    return __safe(result);
-  }, __sanitize = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else if (typeof value !== 'undefined' && value != null) {
-      return __escape(value);
-    } else {
-      return '';
-    }
-  }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
-  __safe = __obj.safe = function(value) {
-    if (value && value.ecoSafe) {
-      return value;
-    } else {
-      if (!(typeof value !== 'undefined' && value != null)) value = '';
-      var result = new String(value);
-      result.ecoSafe = true;
-      return result;
-    }
-  };
-  if (!__escape) {
-    __escape = __obj.escape = function(value) {
-      return ('' + value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    };
-  }
-  (function() {
-    (function() {
-      __out.push('<h1 ');
-    
-      __out.push(__sanitize(_T("Connection Manager")));
-    
-      __out.push('></h1>\n<ul>\n\t<li ');
-    
-      __out.push(__sanitize(_T("Reconnect")));
-    
-      __out.push(' ng-click="Client.reconnect()"></li>\n</ul>\n<img id="client-qrcode" src="" alt="" class="qrcode" ng-click=\'verifyAndConnect()\' />\n<ul>\n\t<li><label for="self-client-id" ');
-    
-      __out.push(__sanitize(_T("Your Client ID")));
-    
-      __out.push('></label><input type="text" ng-model="Client.id" disabled id="self-client-id" /></li>\n\t<li><label for="remote-client-id" ');
-    
-      __out.push(__sanitize(_T("Client ID to connect to")));
-    
-      __out.push('></label><input type="text"  id="remote-client-id" ng-model="clientid"/></li>\n</ul>\n');
+      __out.push('<h1>Hackasoton</h1>');
     
     }).call(this);
     
@@ -50649,7 +42074,7 @@ window.isDev = true;(function() {
 window.addEventListener('load', (function(){
 	window.getStylesheets = function() {
 		element = document.createElement('style');
-		element.innerHTML = "body,html {  overflow: hidden;  width: 100%;  height: 100%;  margin: 0;  padding: 0;}body {  width: 100%;  height: 100%;  font-size: 10pt;  font-family: Roboto, sans-serif;  color: #242424;  background: #100;}@font-face {  font-family: 'Open Sans';  font-style: normal;  font-weight: 300;  src: local('Open Sans Light'), local('OpenSans-Light'), url('<<INSERT OPEN SANS 300 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Open Sans';  font-style: normal;  font-weight: 400;  src: local('Open Sans'), local('OpenSans'), url('<<INSERT OPEN SANS 400 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Electrolize';  font-style: normal;  font-weight: 400;  src: local('Electrolize'), local('Electrolize-Regular'), url('<<INSERT ELECTROLIZE WOFF HERE>>') format('woff');}@font-face {  font-family: 'Roboto';  font-style: normal;  font-weight: 100;  src: local('Roboto Thin'), local('Roboto-Thin'), url('<<INSERT ROBOTO 100 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Roboto';  font-style: normal;  font-weight: 400;  src: local('Roboto Regular'), local('Roboto-Regular'), url('<<INSERT ROBOTO 400 WOFF HERE>>') format('woff');}body #appwrapper > section {  position: absolute;  font-weight: 100;  z-index: 1;  left: 0;  top: 0;  bottom: 0;  right: 0;  -webkit-perspective: 1600px;  -moz-perspective: 1600px;  -ms-perspective: 1600px;  perspective: 1600px;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  font-family: Roboto;  overflow: hidden;}body #appwrapper > section#help {  background: rgba(0,0,0,0.9);  z-index: 3;  -webkit-transform: translateY(-100%);  -moz-transform: translateY(-100%);  -o-transform: translateY(-100%);  -ms-transform: translateY(-100%);  transform: translateY(-100%);}body #appwrapper > section#help .dragger {  background: rgba(0,0,0,0.8);  border-color: #000;  color: #fff;  bottom: 0;  left: 25px;  border-bottom-right-radius: 0;  border-bottom-left-radius: 0;  border-bottom: none;}body #appwrapper > section#help .wrapper {  display: table;  width: 100%;  height: 100%;  text-align: center;}body #appwrapper > section#help .wrapper aside {  position: absolute;  top: 0;  bottom: 0;  width: 15%;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  background: rgba(255,255,255,0.1);}body #appwrapper > section#help .wrapper aside.right {  right: 0;}body #appwrapper > section#help .wrapper aside.left {  left: 0;}body #appwrapper > section#help .wrapper aside:hover {  background: rgba(255,255,255,0.2);}body #appwrapper > section#help .wrapper nav {  position: absolute;  top: 70%;  width: 500px;  left: 50%;  margin-left: -250px;  text-align: center;}body #appwrapper > section#help .wrapper nav li {  display: inline-block;  width: 0;  height: 0;  border: solid 5px rgba(255,255,255,0.4);  -webkit-border-radius: 100%;  border-radius: 100%;  margin: 10px;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #appwrapper > section#help .wrapper nav li:hover {  border-color: rgba(255,255,255,0.6);}body #appwrapper > section#help .wrapper nav li.active {  border-color: #fff;}body #appwrapper > section#help .wrapper section {  position: absolute;  height: 40%;  top: 20%;  left: 50%;  margin-left: -250px;  width: 500px;  -webkit-box-shadow: 0 0 50px rgba(0,0,0,0.1);  box-shadow: 0 0 50px rgba(0,0,0,0.1);  overflow: hidden;  -webkit-border-radius: 4px;  border-radius: 4px;  -webkit-perspective: 200px;  -moz-perspective: 200px;  -ms-perspective: 200px;  perspective: 200px;}body #appwrapper > section#help .wrapper section article {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  padding: 25px;  color: #fff;  text-shadow: 0 1px 1px #000;  -webkit-transform: translateX(-200%) rotateY(90deg);  -moz-transform: translateX(-200%) rotateY(90deg);  -o-transform: translateX(-200%) rotateY(90deg);  -ms-transform: translateX(-200%) rotateY(90deg);  transform: translateX(-200%) rotateY(90deg);  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  text-align: left;  text-indent: 25px;  -webkit-box-shadow: 0 0 50px rgba(100,100,100,0.1) inset;  box-shadow: 0 0 50px rgba(100,100,100,0.1) inset;}body #appwrapper > section#help .wrapper section article.active {  -webkit-transform: translateX(0) rotateY(0);  -moz-transform: translateX(0) rotateY(0);  -o-transform: translateX(0) rotateY(0);  -ms-transform: translateX(0) rotateY(0);  transform: translateX(0) rotateY(0);  background: rgba(100,100,100,0.1);}body #appwrapper > section#help .wrapper section article.active ~ article {  -webkit-transform: translateX(200%) rotateY(-90deg);  -moz-transform: translateX(200%) rotateY(-90deg);  -o-transform: translateX(200%) rotateY(-90deg);  -ms-transform: translateX(200%) rotateY(-90deg);  transform: translateX(200%) rotateY(-90deg);}body #appwrapper > section#help .wrapper section article .key {  display: inline-block;  background: #fff;  border: solid 2px #aaa;  border-top: none;  border-bottom-width: 3px;  -webkit-border-radius: 4px;  border-radius: 4px;  color: #444;  text-shadow: none;  font-weight: normal;  text-indent: 0;  padding: 2px 4px;}body #appwrapper > section#landing {  background: #fff;  overflow: auto;  -webkit-transform: scale(0.8) translateX(-150%);  -moz-transform: scale(0.8) translateX(-150%);  -o-transform: scale(0.8) translateX(-150%);  -ms-transform: scale(0.8) translateX(-150%);  transform: scale(0.8) translateX(-150%);}body #appwrapper > section#landing section {  height: 600px;  position: relative;  color: #444;  overflow: hidden;}body #appwrapper > section#landing section h1 {  display: block;  margin: 10px 0 0;  padding: 0;  font-size: 24pt;}body #appwrapper > section#landing section:nth-child(2n + 1) {  background: #222;  color: #d62b00;}body #appwrapper > section#landing section:nth-child(2n) > * {  color: #08d;}body #appwrapper > section#landing section:first-child {  height: 300px;}body #appwrapper > section#landing section#raspmenu {  height: 390px;}body #appwrapper > section#landing section > .container {  margin: 0 auto;  width: 1000px;}body #appwrapper > section#landing header {  background: #d62b00;  text-align: center;  height: 100%;  color: #000;}body #appwrapper > section#landing header img,body #appwrapper > section#landing header h1 {  line-height: 300px;  display: inline;  margin: 0;  padding: 0;  font-size: 72pt;  color: #fff;  text-shadow: 0 1px 1px #000;  vertical-align: middle;  padding: 10px;  font-family: Roboto;}body #appwrapper > section#landing nav {  color: #000;  background: #fff;  text-align: center;  position: absolute;  left: 50%;  top: 50px;  margin: 0 -180px;  width: 320px;  height: 250px;  background: #d62b00;  border: solid 10px #ffb5a3;  border-top-left-radius: 450px;  border-top-right-radius: 450px;  border-bottom-left-radius: 550px 800px;  border-bottom-right-radius: 550px 800px;  padding: 20px;  -webkit-transition: border-color 0.5s ease-in-out;  -moz-transition: border-color 0.5s ease-in-out;  -o-transition: border-color 0.5s ease-in-out;  -ms-transition: border-color 0.5s ease-in-out;  transition: border-color 0.5s ease-in-out;}body #appwrapper > section#landing nav h1 {  font-size: 42pt;  color: rgba(255,255,255,0.4);  text-transform: uppercase;  padding: 50px;  margin: 0;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #appwrapper > section#landing nav:hover {  border-color: #ffded6;}body #appwrapper > section#landing nav:hover h1 {  text-shadow: 0 1px 1px #000;  color: #fff;}body #appwrapper > section#landing aside {  position: absolute;  top: 50px;  left: 50px;  right: 50px;  bottom: 50px;  color: #000;}body #appwrapper > section#landing aside:first-of-type {  right: 50%;  padding-right: 230px;}body #appwrapper > section#landing aside:last-of-type {  left: 50%;  padding-left: 230px;}body #appwrapper > section#landing aside .container {  overflow: hidden;  background: #08d;  border: solid 10px #c4e8ff;  position: relative;  padding: 0;  margin: 0;  height: 100%;  -webkit-box-shadow: 0 0 10px rgba(0,0,0,0.3) inset;  box-shadow: 0 0 10px rgba(0,0,0,0.3) inset;}body #appwrapper > section#landing aside .container > * {  padding: 5px 15px;  margin: 0;}body #appwrapper > section#landing aside .container h1 {  color: #fff;  background: #0069aa;  height: 45px;  line-height: 45px;  text-shadow: 0 1px 1px #000;}body #appwrapper > section#landing aside .container .content {  padding-bottom: 20px;  position: absolute;  left: 0;  right: 0;  bottom: 0;  top: 55px;  padding-top: 5px;  padding: 5px 0;  background: rgba(255,255,255,0.4);}body #appwrapper > section#landing aside .container .content input,body #appwrapper > section#landing aside .container .content button {  width: 100%;  padding: 15px 0;  margin: 10px 0 0 0;  line-height: 15px;  height: 15px;  background: #fff;  border: none;  border-bottom: solid 1px #ccc;  background: rgba(255,255,255,0.8);  text-indent: 5px;  outline: none;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #appwrapper > section#landing aside .container .content input:hover,body #appwrapper > section#landing aside .container .content button:hover {  background: #fff;}body #appwrapper > section#landing aside .container .content button {  position: absolute;  bottom: 0;  left: 0;  right: 0;  height: 25px;  padding: 15px 0 30px 0;  text-indent: 0;}body #appwrapper > section#application {  background: #444;  z-index: 2;  -webkit-transform: translateX(150%) scale(0.8);  -moz-transform: translateX(150%) scale(0.8);  -o-transform: translateX(150%) scale(0.8);  -ms-transform: translateX(150%) scale(0.8);  transform: translateX(150%) scale(0.8);}body #appwrapper > section#application aside,body #appwrapper > section#application section {  position: absolute;  top: 0;  bottom: 0;  left: 0;  right: 0;}body #appwrapper > section#application aside {  left: 0;  right: auto;  width: 300px;  background: #222;  color: #fff;  -webkit-transform: translateX(-150px) scale(0.8);  -moz-transform: translateX(-150px) scale(0.8);  -o-transform: translateX(-150px) scale(0.8);  -ms-transform: translateX(-150px) scale(0.8);  transform: translateX(-150px) scale(0.8);  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;}body #appwrapper > section#application aside.active {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper > section#application aside h1 {  height: 40px;  line-height: 30px;  font-size: 24pt;  border-bottom: solid 2px #999;  margin-bottom: 75px;  text-indent: 25px;}body #appwrapper > section#application aside > li {  display: block;  padding: 15px 15px;  font-size: 14pt;  border-bottom: solid 1px #444;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  color: #d62b00;}body #appwrapper > section#application aside > li i {  margin-right: 15px;}body #appwrapper > section#application aside > li:first-of-type {  border-top: solid 1px #444;}body #appwrapper > section#application aside > li:hover {  background: rgba(255,255,255,0.1);}body #appwrapper > section#application aside > li.active {  color: #08d;  background: rgba(255,255,255,0.8);}body #appwrapper > section#application aside > li.active:hover {  background: #fff;}body #appwrapper > section#application section {  background: #fff;  -webkit-transform: translateX(300px) scale(1.2);  -moz-transform: translateX(300px) scale(1.2);  -o-transform: translateX(300px) scale(1.2);  -ms-transform: translateX(300px) scale(1.2);  transform: translateX(300px) scale(1.2);  -webkit-transform-origin: left center;  -moz-transform-origin: left center;  -o-transform-origin: left center;  -ms-transform-origin: left center;  transform-origin: left center;  overflow: hidden;  -webkit-box-shadow: 0 0 15px #000;  box-shadow: 0 0 15px #000;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  background: #222;}body #appwrapper > section#application section.active {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper > section#application section > article {  position: absolute;  top: 0;  bottom: 0;  left: 0;  right: 0;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  -webkit-transform: translateX(-110%);  -moz-transform: translateX(-110%);  -o-transform: translateX(-110%);  -ms-transform: translateX(-110%);  transform: translateX(-110%);  padding: 25px;  background: #fff;  overflow: auto;}body #appwrapper > section#application section > article.active {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper > section#application section > article.active ~ article {  -webkit-transform: translateX(110%);  -moz-transform: translateX(110%);  -o-transform: translateX(110%);  -ms-transform: translateX(110%);  transform: translateX(110%);}body #appwrapper > section#application section > article h1 {  margin: -25px -25px 0;  padding: 15px;  font-size: 20pt;  color: #d62b00;  border-bottom: solid 1px #d62b00;  -webkit-box-shadow: 0 0 5px rgba(0,0,0,0.2);  box-shadow: 0 0 5px rgba(0,0,0,0.2);  background: #222;  font-weight: 100;}body #appwrapper > section#application section > article .form {  display: block;  margin: 50px 0 0 0;  padding: 25px;  border: solid 5px #ddf2ff;  padding-bottom: 75px;  position: relative;}body #appwrapper > section#application section > article .form hr {  border: none;  border-top: solid 1px #ddf2ff;  margin: 25px -25px;  clear: both;}body #appwrapper > section#application section > article .form br {  clear: both;}body #appwrapper > section#application section > article .form label {  display: block;  overflow: hidden;  clear: both;  background: transparent;}body #appwrapper > section#application section > article .form label span,body #appwrapper > section#application section > article .form label input {  display: inline-block;  float: left;  padding: 7px 0;  margin: 0 0 20px;}body #appwrapper > section#application section > article .form label span:last-of-type,body #appwrapper > section#application section > article .form label input:last-of-type {  margin: 0;}body #appwrapper > section#application section > article .form label span {  width: 30%;}body #appwrapper > section#application section > article .form label input {  width: 65%;}body #appwrapper > section#application section > article .form button {  display: block;  background: #77cbff;  border: none;  position: absolute;  bottom: -5px;  left: -5px;  right: -5px;  height: 50px;  line-height: 50px;  color: rgba(255,255,255,0.7);  margin: 0;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #appwrapper > section#application section > article .form button:hover {  background: #08d;  color: #fff;}body #appwrapper > section#application section > article #recipies-container nav {  position: absolute;  top: 0;  right: 0;  height: 25px;}body #appwrapper > section#application section > article #recipies-container nav li {  list-style: none;  float: right;  display: inline-block;  height: 25px;  width: 25px;  text-align: center;  line-height: 25px;  font-size: 12pt;  margin: 5px 10px;}body #appwrapper > section#application section > article #recipies-container nav.add {  display: block;  position: relative;}body #appwrapper > section#application section > article #recipies-container nav.add li {  width: 100%;}body #appwrapper > section#application section > article #recipies-container > input {  width: 100%;  padding: 20px 25px;  margin-top: 20px;  background: #08d;  color: #fff;  border: none;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  outline: none;  font-size: 18pt;}body #appwrapper > section#application section > article #recipies-container > input::-webkit-input-placeholder {  color: rgba(255,255,255,0.5);}body #appwrapper > section#application section > article #recipies-container > input:-moz-placeholder {  color: rgba(255,255,255,0.5);}body #appwrapper > section#application section > article #recipies-container > input::-moz-placeholder {  color: rgba(255,255,255,0.5);}body #appwrapper > section#application section > article #recipies-container > input:-ms-input-placeholder {  color: rgba(255,255,255,0.5);}body #appwrapper > section#application section > article #recipies-container > input:hover,body #appwrapper > section#application section > article #recipies-container > input:active,body #appwrapper > section#application section > article #recipies-container > input:focus {  background: #d62b00;  color: #000;}body #appwrapper > section#application section > article #recipies-container > input:hover::-webkit-input-placeholder,body #appwrapper > section#application section > article #recipies-container > input:active::-webkit-input-placeholder,body #appwrapper > section#application section > article #recipies-container > input:focus::-webkit-input-placeholder {  color: rgba(0,0,0,0.5);}body #appwrapper > section#application section > article #recipies-container > input:hover:-moz-placeholder,body #appwrapper > section#application section > article #recipies-container > input:active:-moz-placeholder,body #appwrapper > section#application section > article #recipies-container > input:focus:-moz-placeholder {  color: rgba(0,0,0,0.5);}body #appwrapper > section#application section > article #recipies-container > input:hover::-moz-placeholder,body #appwrapper > section#application section > article #recipies-container > input:active::-moz-placeholder,body #appwrapper > section#application section > article #recipies-container > input:focus::-moz-placeholder {  color: rgba(0,0,0,0.5);}body #appwrapper > section#application section > article #recipies-container > input:hover:-ms-input-placeholder,body #appwrapper > section#application section > article #recipies-container > input:active:-ms-input-placeholder,body #appwrapper > section#application section > article #recipies-container > input:focus:-ms-input-placeholder {  color: rgba(0,0,0,0.5);}body #appwrapper > section#application section > article #recipies-container article,body #appwrapper > section#application section > article #recipies-container label,body #appwrapper > section#application section > article #recipies-container div,body #appwrapper > section#application section > article #recipies-container li {  display: block;  position: relative;}body #appwrapper > section#application section > article #recipies-container .active {  display: block;}body #appwrapper > section#application section > article #recipies-container .inactive {  display: none;}body #appwrapper > section#application section > article #recipies-container article article {  padding-left: 25px;}body #appwrapper > section#application section > article #recipies-container article {  background: #fff;  border: solid 5px #ddf2ff;  padding: 5px 10px;  margin: 10px 0;}body #appwrapper > section#application section > article #recipies-container article article {  background: #aadeff;}body #appwrapper.landing section#landing,body #appwrapper.help section#help,body #appwrapper.application section#application,body #appwrapper.settings section#settings {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper.help section#help ~ section#application,body #appwrapper.settings section#settings ~ section#application {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper {  position: relative;  width: 100%;  height: 100%;  -webkit-perspective: 1600px;  -moz-perspective: 1600px;  -ms-perspective: 1600px;  perspective: 1600px;  -webkit-perspective-origin: bottom center;  -moz-perspective-origin: bottom center;  -ms-perspective-origin: bottom center;  perspective-origin: bottom center;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  font-family: Roboto;  font-weight: 100;  overflow: hidden;}body #modal-window {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  background: rgba(0,0,0,0);  z-index: -1;}body #modal-window section {  position: absolute;  left: 50%;  top: 50%;  right: 50%;  bottom: 50%;  -webkit-border-radius: 2px;  border-radius: 2px;  width: 480px;  height: 290px;  margin: -150px 0 0 -250px;  -webkit-box-shadow: -1px 1px 5px rgba(0,0,0,0.4);  box-shadow: -1px 1px 5px rgba(0,0,0,0.4);  background: #fff;  -webkit-transform: scale(0.2);  -moz-transform: scale(0.2);  -o-transform: scale(0.2);  -ms-transform: scale(0.2);  transform: scale(0.2);  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';}body #modal-window section > * {  position: absolute;  left: 0;  right: 0;}body #modal-window section header {  top: 0;  height: 55px;  line-height: 55px;  overflow: hiden;  font-size: 18pt;  font-weight: 100;  padding-left: 10px;}body #modal-window section nav {  top: 10px;  right: 10px;}body #modal-window section nav li {  list-style: none;  margin: 5px;  display: inline-block;  float: right;  font-size: 12pt;}body #modal-window section article {  overflow: auto;  top: 70px;  bottom: 0;  padding: 0 20px 20px;}body #modal-window section article > div > div {  overflow: hidden;  clear: both;  min-height: 35px;  position: relative;}body #modal-window section article > div > div label {  height: 35px;  line-height: 35px;  float: left;}body #modal-window section article > div > div input,body #modal-window section article > div > div textarea {  width: 99%;  margin: 0;  padding: 5px 0;  text-indent: 5px;  outline: none;  border: solid 1px #ccc;  -webkit-box-shadow: 0 0 15px rgba(0,0,0,0.1) inset;  box-shadow: 0 0 15px rgba(0,0,0,0.1) inset;  color: #444;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #modal-window section article > div > div input:hover,body #modal-window section article > div > div textarea:hover,body #modal-window section article > div > div input:active,body #modal-window section article > div > div textarea:active,body #modal-window section article > div > div input:focus,body #modal-window section article > div > div textarea:focus {  -webkit-box-shadow: none;  box-shadow: none;  color: #111;}body #modal-window section article > div > div textarea {  height: 50px;}body #modal-window section article > div > div input[type='checkbox'] {  width: auto;  float: right;  -webkit-box-shadow: none;  box-shadow: none;  height: 35px;}body #modal-window section article > div > div input[type='button'] {  position: absolute;  left: 0;  right: 50%;  border: solid 1px #ccc;  background: -webkit-gradient(linear, left top, left bottom, color-stop(0, rgba(0,0,0,0)), color-stop(1, rgba(0,0,0,0.1)));  background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);  background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);  background: -o-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);  background: -ms-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);  background: linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%);  background-color: #fff;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  top: 0;  bottom: 0;  width: auto;}body #modal-window section article > div > div input[type='button']:hover {  background-color: #ccc;}body #modal-window section article > div > div input[type='button']:last-child {  right: 0;  left: 50%;}body #modal-window.fullscreen section {  width: 100%;  height: 100%;  margin: 0;  left: 0;  top: 0;  bottom: 0;  right: 0;}body .modal-active {  -webkit-transform: scale(0.9);  -moz-transform: scale(0.9);  -o-transform: scale(0.9);  -ms-transform: scale(0.9);  transform: scale(0.9);  -webkit-border-radius: 2px;  border-radius: 2px;  opacity: 0.8;  filter: alpha(opacity=80);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=80)';  -webkit-filter: blur(2px);  -moz-filter: blur(2px);  -ms-filter: blur(2px);  -o-filter: blur(2px);  filter: blur(2px);}body .modal-active ~ #modal-container #modal-window {  background: rgba(0,0,0,0.2);  z-index: 1;}body .modal-active ~ #modal-container #modal-window section {  -webkit-transform: scale(1);  -moz-transform: scale(1);  -o-transform: scale(1);  -ms-transform: scale(1);  transform: scale(1);  opacity: 1;  -ms-filter: none;  filter: none;}@media (max-width:320px) {  body #modal-window section {    width: 300px;    margin-left: -150px;  }}body #appwrapper #application #sidebar-container > section {  display: inline-block;  position: fixed;  top: 0;  left: 0;  height: 75%;  max-height: 600px;  width: 250px;  background: #fff;  border-bottom-right-radius: 2px;  border: 1px solid #ccc;  border-left: none;  border-top: none;  -webkit-box-shadow: -1px 1px 5px rgba(0,0,0,0.4);  box-shadow: -1px 1px 5px rgba(0,0,0,0.4);  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  -webkit-transform: translateX(-100%);  -moz-transform: translateX(-100%);  -o-transform: translateX(-100%);  -ms-transform: translateX(-100%);  transform: translateX(-100%);  z-index: 9;}body #appwrapper #application #sidebar-container > section * {  z-index: 2;}body #appwrapper #application #sidebar-container > section aside {  position: absolute;  right: -48px;  top: 0;  width: 47px;  height: 47px;  background: #fff;  font-size: 14pt;  line-height: 47px;  text-align: center;  border-left: solid 1px rgba(0,0,0,0.2);  -webkit-box-shadow: -1px 1px 5px rgba(0,0,0,0.2), 0 0 10px rgba(0,0,0,0.1);  box-shadow: -1px 1px 5px rgba(0,0,0,0.2), 0 0 10px rgba(0,0,0,0.1);  z-index: 999;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;}body #appwrapper #application #sidebar-container > section nav {  position: absolute;  left: 0;  right: 0;  bottom: 0;  height: 45px;  border-top: solid 1px #ccc;  background: #fff;  -webkit-box-shadow: 0 0 15px rgba(0,0,0,0.2) inset;  box-shadow: 0 0 15px rgba(0,0,0,0.2) inset;}body #appwrapper #application #sidebar-container > section nav li {  display: inline-block;  background: #fff;  height: 45px;  margin-top: -1px;  line-height: 45px;  width: 45px;  text-align: center;  font-size: 14pt;  border-right: solid 1px rgba(0,0,0,0.2);  border-top: solid 1px #ccc;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  color: rgba(0,0,0,0.4);}body #appwrapper #application #sidebar-container > section nav li:hover {  color: rgba(0,0,0,0.7);}body #appwrapper #application #sidebar-container > section nav li.active {  border-top: solid 1px #fff;  color: #48f;  text-shadow: 0 1px 1px rgba(0,0,0,0.1);}body #appwrapper #application #sidebar-container > section section {  position: absolute;  bottom: 46px;  top: 0;  right: 0;  left: 0;  overflow: hidden;}body #appwrapper #application #sidebar-container > section section article {  position: absolute;  border: solid 1px rgba(0,0,0,0.2);  left: -1px;  right: -1px;  top: -1px;  bottom: -1px;  overflow: auto;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  -webkit-transform: translateX(-110%);  -moz-transform: translateX(-110%);  -o-transform: translateX(-110%);  -ms-transform: translateX(-110%);  transform: translateX(-110%);}body #appwrapper #application #sidebar-container > section section article h1 {  padding: 15px 0 15px 10px;  display: block;  border-bottom: solid 1px rgba(0,0,0,0.2);  font-size: 10pt;  margin: 0;}body #appwrapper #application #sidebar-container > section section article.active {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper #application #sidebar-container > section section article.active ~ article {  -webkit-transform: translateX(110%);  -moz-transform: translateX(110%);  -o-transform: translateX(110%);  -ms-transform: translateX(110%);  transform: translateX(110%);}body #appwrapper #application #sidebar-container > section section article ul {  padding: 0;  margin: 0;}body #appwrapper #application #sidebar-container > section section article li,body #appwrapper #application #sidebar-container > section section article h1,body #appwrapper #application #sidebar-container > section section article > p {  display: block;  border-bottom: solid 1px rgba(0,0,0,0.2);  font-size: 10pt;  margin: 0;}body #appwrapper #application #sidebar-container > section section article li > *,body #appwrapper #application #sidebar-container > section section article h1 > *,body #appwrapper #application #sidebar-container > section section article > p > * {  margin: 15px 0 15px 10px;}body #appwrapper #application #sidebar-container > section section article input,body #appwrapper #application #sidebar-container > section section article select,body #appwrapper #application #sidebar-container > section section article textarea {  display: block;  margin: 0;  width: 248px;  padding: 0;  height: 35px;  text-indent: 25px;  line-height: 35px;  border: none;  border-top: dotted 1px rgba(0,0,0,0.2);  outline: none;  color: #48f;}body #appwrapper #application #sidebar-container > section section article select {  -webkit-appearance: none;}body #appwrapper #application #sidebar-container > section section article img.qrcode {  width: 190px;  height: 190px;  margin: 10px 25px;  padding: 5px;  -webkit-border-radius: 100%;  border-radius: 100%;  background: #000;}body #appwrapper #application #sidebar-container > section section article label {  display: block;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section {  top: 49px;  bottom: 0;  padding-top: 55px;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section nav {  bottom: auto;  top: 0;  border-top: none;  border-bottom: solid 1px #ccc;  overflow: auto;  overflow-y: hidden;  height: 55px;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section nav .slider {  display: block;  width: 282px;  height: 45px;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section nav li {  display: inline-block;  border: none;  border-right: solid 1px #ddd;  border-bottom: solid 1px #ccc;  float: left;  height: 45px;  width: 45px;  line-height: 45px;  padding: 0;  margin: 0 0 -1px 0;  -webkit-transition-duration: 0.25s;  -moz-transition-duration: 0.25s;  -o-transition-duration: 0.25s;  -ms-transition-duration: 0.25s;  transition-duration: 0.25s;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section nav li:hover {  border-bottom-color: #fff;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section nav li > * {  margin: 0;}body #appwrapper #application #sidebar-container > section section article #documentlistplaceholder section article {  position: relative;  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper #application #sidebar-container > section.open {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;}body #appwrapper #application #sidebar-container > section.open aside {  right: 0;  -webkit-box-shadow: -2px 0 5px rgba(0,0,0,0.2);  box-shadow: -2px 0 5px rgba(0,0,0,0.2);}@media (max-width:320px) {  body #appwrapper #application #sidebar-container > section {    height: 100%;    max-height: 100%;  }}body #loadingscreen {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';  z-index: -1;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  overflow: hidden;}body #loadingscreen * {  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body #loadingscreen > section {  width: 100%;  height: 100%;  background: #000;  opacity: 0.8;  filter: alpha(opacity=80);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=80)';  trnasition: all 1s ease-in-out;}body #loadingscreen > aside {  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  position: absolute;  left: -200%;  right: 200%;  top: 0;  bottom: 0;  background: #fff;  -webkit-box-shadow: 0 0 5px rgba(0,0,0,0.2);  box-shadow: 0 0 5px rgba(0,0,0,0.2);}body #loadingscreen > aside:last-of-type {  border: solid 1px rgba(0,0,0,0.05);  left: 200%;  right: -200%;}body #loadingscreen.active > aside {  left: 0;  right: 0;}body #loadingscreen > article {  height: 200px;  width: 350px;  background: #fff;  -webkit-border-radius: 4px;  border-radius: 4px;  -webkit-box-shadow: 0 5px 5px rgba(0,0,0,0.2);  box-shadow: 0 5px 5px rgba(0,0,0,0.2);  border: solid 1px rgba(0,0,0,0.2);  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';  position: absolute;  z-index: 9;  left: 50%;  top: 50%;  margin: -100px 0 0 -175px;  text-align: center;  -webkit-transform: scale(10);  -moz-transform: scale(10);  -o-transform: scale(10);  -ms-transform: scale(10);  transform: scale(10);  font-family: Roboto;  font-size: 18pt;  font-weight: 100;  text-align: center;  line-height: 200px;  vertical-align: middle;}body #loadingscreen > article > span,body #loadingscreen > article p,body #loadingscreen > article div {  display: inline-block;  vertical-align: middle;}body #loadingscreen > article > span {  width: 30px;  height: 30px;  -webkit-border-radius: 100%;  border-radius: 100%;  border: solid 1px rgba(0,0,0,0.3);  margin-top: -6px;}body #loadingscreen > article div {  width: 0;  overflow: hidden;}body #loadingscreen > article div p {  float: left;}body #loadingscreen > article div:last-of-type p {  float: right;}body #loadingscreen > article > p {  line-height: 1em;  position: absolute;  left: 10%;  right: 10%;  top: 65%;  height: 50px;  font-size: 14pt;  overflow: hidden;}body #loadingscreen > article:hover > span {  border-color: rgba(0,0,0,0.8);}body #loadingscreen > article:hover div {  width: 80px;  margin: 0;  padding: 0;  margin-left: 11px;}body #loadingscreen > article:hover div:last-of-type {  width: 11px;  margin: 0;  margin-right: 80px;}body #loadingscreen.active > article {  opacity: 1;  -ms-filter: none;  filter: none;  -webkit-transform: scale(1);  -moz-transform: scale(1);  -o-transform: scale(1);  -ms-transform: scale(1);  transform: scale(1);}body #loadingscreen.active {  z-index: 99;  opacity: 1;  -ms-filter: none;  filter: none;}body section#application #documentplaceholder > section > section > aside {  display: block;  width: 100%;  height: 100px;  border: solid 1px rgba(0,0,0,0.2);  -webkit-box-shadow: 0 0 25px rgba(0,0,0,0.2) inset;  box-shadow: 0 0 25px rgba(0,0,0,0.2) inset;  text-align: center;  position: relative;  line-height: 100px;  overflow: hidden;}body section#application #documentplaceholder > section > section > aside i {  font-size: 100px;  color: rgba(0,0,0,0.2);  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body section#application #documentplaceholder > section > section > aside:hover i {  color: rgba(0,0,0,0.4);}body section#application #documentplaceholder > section > section > article {  display: block;  margin: 0 -1px;  padding: 0;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  border-left: solid 1px rgba(0,0,0,0.2);  border-right: solid 1px rgba(0,0,0,0.2);  border-bottom: solid 1px #ccc;  background: -webkit-gradient(linear, left top, left bottom, color-stop(0, rgba(0,0,0,0.1)), color-stop(1, rgba(0,0,0,0.2)));  background: -webkit-linear-gradient(top, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.2) 100%);  background: -moz-linear-gradient(top, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.2) 100%);  background: -o-linear-gradient(top, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.2) 100%);  background: -ms-linear-gradient(top, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.2) 100%);  background: linear-gradient(top, rgba(0,0,0,0.1) 0, rgba(0,0,0,0.2) 100%);}body section#application #documentplaceholder > section > section > article * {  -webkit-transition: all 0.25s ease-in-out;  -moz-transition: all 0.25s ease-in-out;  -o-transition: all 0.25s ease-in-out;  -ms-transition: all 0.25s ease-in-out;  transition: all 0.25s ease-in-out;}body section#application #documentplaceholder > section > section > article.inactive {  -webkit-transform: translateX(100%);  -moz-transform: translateX(100%);  -o-transform: translateX(100%);  -ms-transform: translateX(100%);  transform: translateX(100%);  border: none;}body section#application #documentplaceholder > section > section > article.inactive aside {  height: 0;}body section#application #documentplaceholder > section > section > article aside {  height: 45px;  width: 100%;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;  position: relative;}body section#application #documentplaceholder > section > section > article aside > * {  display: block;}body section#application #documentplaceholder > section > section > article aside#secondary {  overflow: 0;  height: 150px;  margin-left: 73px;  background: -webkit-gradient(linear, left top, right top, color-stop(0, rgba(255,255,255,0.8)), color-stop(1, rgba(255,255,255,0.4)));  background: -webkit-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -moz-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -o-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -ms-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);}body section#application #documentplaceholder > section > section > article aside#secondary.inactive {  height: 0;  margin: 0;  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';  z-index: -1;  padding: 0;}body section#application #documentplaceholder > section > section > article aside#secondary label {  display: block;  position: relative;}body section#application #documentplaceholder > section > section > article aside#secondary label span {  left: 0;}body section#application #documentplaceholder > section > section > article aside#secondary label div {  right: 0;  left: 0;}body section#application #documentplaceholder > section > section > article aside#secondary label div input {  border: solid 1px #ccc;}body section#application #documentplaceholder > section > section > article aside#secondary label:last-child {  height: 106px;}body section#application #documentplaceholder > section > section > article aside#secondary label:last-child div {  left: 0;  right: 0;  top: 0;  bottom: 0;  padding: 25px;  border: solid 1px #ccc;  border-bottom: none;  background: #fff;}body section#application #documentplaceholder > section > section > article aside#secondary label:last-child div textarea {  height: 100%;  width: 100%;  margin: 0;  border: none;}body section#application #documentplaceholder > section > section > article aside nav {  position: absolute;  top: 0;  bottom: 0;  left: 0;}body section#application #documentplaceholder > section > section > article aside nav#primary {  left: auto;  right: 0;}body section#application #documentplaceholder > section > section > article aside nav > * {  float: left;  list-style: none;  width: 35px;  height: 45px;  line-height: 45px;  text-align: center;  border-right: solid 1px rgba(0,0,0,0.2);  background: rgba(255,255,255,0.8);  background: -webkit-gradient(linear, left top, right top, color-stop(0, rgba(255,255,255,0.8)), color-stop(1, rgba(255,255,255,0.4)));  background: -webkit-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -moz-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -o-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: -ms-linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);  background: linear-gradient(left, rgba(255,255,255,0.8) 0, rgba(255,255,255,0.4) 100%);}body section#application #documentplaceholder > section > section > article aside nav > * > label {  display: block;  width: 100%;  height: 100%;}body section#application #documentplaceholder > section > section > article aside nav > *:first-child {  border-left: solid 1px rgba(0,0,0,0.2);}body section#application #documentplaceholder > section > section > article aside nav > *.inactive {  color: transparent;}body section#application #documentplaceholder > section > section > article aside nav input {  display: none;}body section#application #documentplaceholder > section > section > article aside input {  height: 45px;  width: 100%;  margin: 0;  border: none;  text-indent: 25px;  outline: none;  padding: 0;  -webkit-border-radius: 0;  border-radius: 0;}body section#application #documentplaceholder > section > section > article aside input[type='checkbox'] {  z-index: -1;  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';  -webkit-transform: translateX(-1000%);  -moz-transform: translateX(-1000%);  -o-transform: translateX(-1000%);  -ms-transform: translateX(-1000%);  transform: translateX(-1000%);}body section#application #documentplaceholder > section > section > article aside label {  height: 45px;}body section#application #documentplaceholder > section > section > article aside label span {  position: absolute;  height: 25px;  width: auto;  padding: 0 10px;  line-height: 25px;  bottom: 0;  left: 73px;  opacity: 0;  filter: alpha(opacity=0);  -ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';  z-index: -1;  background: #ccc;  color: #000;  text-shadow: 0 1px 1px #fff;  -webkit-box-shadow: 0 0 2px rgba(0,0,0,0.5);  box-shadow: 0 0 2px rgba(0,0,0,0.5);}body section#application #documentplaceholder > section > section > article aside label div {  position: absolute;  left: 73px;  right: 109px;}body section#application #documentplaceholder > section > section > article aside label:hover span {  -webkit-transform: translateY(25px);  -moz-transform: translateY(25px);  -o-transform: translateY(25px);  -ms-transform: translateY(25px);  transform: translateY(25px);  opacity: 1;  -ms-filter: none;  filter: none;  z-index: 1;}body section#application #documentplaceholder > section > section > article aside label:hover input {  z-index: 2;}body section#application #documentplaceholder > section > section > article .modal.button {  display: none;}body section#application #documentplaceholder > section > section {  overflow-y: auto;  overflow-x: hidden;}@media (max-width:320px) {  body section#application #documentplaceholder > section > section nav > * {    width: 25px !important;    height: 35px !important;    line-height: 35px !important;  }  body section#application #documentplaceholder > section > section .button.add,  body section#application #documentplaceholder > section > section .button.remove,  body section#application #documentplaceholder > section > section .button.showhide {    display: none;  }  body section#application #documentplaceholder > section > section .button.modal {    display: block !important;    border-left: solid 1px #ccc;  }  body section#application #documentplaceholder > section > section input,  body section#application #documentplaceholder > section > section label,  body section#application #documentplaceholder > section > section aside#primary {    height: 35px !important;  }  body section#application #documentplaceholder > section > section aside#primary div {    right: 26px;    left: 52px;  }  body section#application #documentplaceholder > section > section article.inactive aside#primary {    height: 0 !important;  }}body section#application #documentplaceholder > section {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  -webkit-perspective: 200px;  -moz-perspective: 200px;  -ms-perspective: 200px;  perspective: 200px;  background: -moz-radial-gradient(center, ellipse cover, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, rgba(0,0,0,0)), color-stop(100%, rgba(0,0,0,0.4)));  background: -webkit-radial-gradient(center, ellipse cover, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);  background: -o-radial-gradient(center, ellipse cover, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);  background: -ms-radial-gradient(center, ellipse cover, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);  background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);}body section#application #documentplaceholder > section header {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  height: 45px;  line-height: 45px;  font-size: 14pt;  font-weight: 100;  bottom: auto;  padding-left: 65px;  background: #fff;  border-bottom: solid 1px #ccc;  -webkit-box-shadow: 0 0 5px rgba(0,0,0,0.2);  box-shadow: 0 0 5px rgba(0,0,0,0.2);  z-index: 3;  overflow: hidden;  -webkit-transition: all 0.75s ease-in-out;  -moz-transition: all 0.75s ease-in-out;  -o-transition: all 0.75s ease-in-out;  -ms-transition: all 0.75s ease-in-out;  transition: all 0.75s ease-in-out;  -webkit-transition-delay: 0.25s;  -moz-transition-delay: 0.25s;  -o-transition-delay: 0.25s;  -ms-transition-delay: 0.25s;  transition-delay: 0.25s;}body section#application #documentplaceholder > section header nav {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  height: 45px;  line-height: 45px;  font-size: 14pt;  font-weight: 100;  left: auto;}body section#application #documentplaceholder > section header nav li {  float: right;  list-style: none;  padding: 0 15px;  display: inline-block;  color: rgba(0,0,0,0.4);  text-shadow: 0 1px 1px #fff;  -webkit-transition: all 0.5s ease-in-out;  -moz-transition: all 0.5s ease-in-out;  -o-transition: all 0.5s ease-in-out;  -ms-transition: all 0.5s ease-in-out;  transition: all 0.5s ease-in-out;}body section#application #documentplaceholder > section header nav li:hover {  color: rgba(0,0,0,0.8);}body section#application #documentplaceholder > section header nav li.active {  color: #000;}body section#application #documentplaceholder > section > section {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  top: 45px;  -webkit-backface-visibility: hidden;  -moz-backface-visibility: hidden;  -ms-backface-visibility: hidden;  backface-visibility: hidden;  background: #fff;  z-index: 1;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;  -webkit-transform: rotateY(-90deg) translateX(-100%);  -moz-transform: rotateY(-90deg) translateX(-100%);  -o-transform: rotateY(-90deg) translateX(-100%);  -ms-transform: rotateY(-90deg) translateX(-100%);  transform: rotateY(-90deg) translateX(-100%);  left: -100%;  right: 100%;  -webkit-box-shadow: 0 0 15px rgba(0,0,0,0.8);  box-shadow: 0 0 15px rgba(0,0,0,0.8);  background: #fff;}body section#application #documentplaceholder > section > section.active {  left: 0 !important;  right: 0 !important;  -webkit-transform: none !important;  -moz-transform: none !important;  -o-transform: none !important;  -ms-transform: none !important;  transform: none !important;  z-index: 2 !important;}body section#application #documentplaceholder > section > section:last-child {  -webkit-transform: rotateY(90deg) translateX(100%);  -moz-transform: rotateY(90deg) translateX(100%);  -o-transform: rotateY(90deg) translateX(100%);  -ms-transform: rotateY(90deg) translateX(100%);  transform: rotateY(90deg) translateX(100%);  right: -100%;  left: 100%;}body section#application #documentplaceholder > section.sidebaropen header {  padding-left: 265px;  -webkit-transition-duration: 0.5s;  -moz-transition-duration: 0.5s;  -o-transition-duration: 0.5s;  -ms-transition-duration: 0.5s;  transition-duration: 0.5s;  -webkit-transition-delay: 0;  -moz-transition-delay: 0;  -o-transition-delay: 0;  -ms-transition-delay: 0;  transition-delay: 0;}";
+		element.innerHTML = "@font-face {  font-family: 'Open Sans';  font-style: normal;  font-weight: 300;  src: local('Open Sans Light'), local('OpenSans-Light'), url('<<INSERT OPEN SANS 300 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Open Sans';  font-style: normal;  font-weight: 400;  src: local('Open Sans'), local('OpenSans'), url('<<INSERT OPEN SANS 400 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Electrolize';  font-style: normal;  font-weight: 400;  src: local('Electrolize'), local('Electrolize-Regular'), url('<<INSERT ELECTROLIZE WOFF HERE>>') format('woff');}@font-face {  font-family: 'Roboto';  font-style: normal;  font-weight: 100;  src: local('Roboto Thin'), local('Roboto-Thin'), url('<<INSERT ROBOTO 100 WOFF HERE>>') format('woff');}@font-face {  font-family: 'Roboto';  font-style: normal;  font-weight: 400;  src: local('Roboto Regular'), local('Roboto-Regular'), url('<<INSERT ROBOTO 400 WOFF HERE>>') format('woff');}body,html {  overflow: hidden;  width: 100%;  height: 100%;  margin: 0;  padding: 0;}body {  width: 100%;  height: 100%;  font-size: 10pt;  font-family: Roboto, sans-serif;  color: #242424;  background: #100;}body {  -webkit-transform-origin: 100% 50%;  -moz-transform-origin: 100% 50%;  -o-transform-origin: 100% 50%;  -ms-transform-origin: 100% 50%;  transform-origin: 100% 50%;  -webkit-perspective: 800px;  -moz-perspective: 800px;  -ms-perspective: 800px;  perspective: 800px;}body section {  background-color: #2b82c3;  -webkit-background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;  -moz-background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;  background-image: 'escape-nib - linear-gradient(rgba(256, 256, 256, 0.8) 2px, transparent 2px), linear-gradient(90deg, rgba(256, 256, 256, 0.8) 2px, transparent 2px), linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)';  -webkit-transform-origin: 0 50%;  -moz-transform-origin: 0 50%;  -o-transform-origin: 0 50%;  -ms-transform-origin: 0 50%;  transform-origin: 0 50%;  z-index: 1;  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;  -webkit-perspective: 600px;  -moz-perspective: 600px;  -ms-perspective: 600px;  perspective: 600px;  overflow: hidden;}body section.closed {  -webkit-transform: translateX(250px) rotateY(20deg);  -moz-transform: translateX(250px) rotateY(20deg);  -o-transform: translateX(250px) rotateY(20deg);  -ms-transform: translateX(250px) rotateY(20deg);  transform: translateX(250px) rotateY(20deg);  -webkit-filter: blur(0px);}body aside {  background: #f00;  width: 250px;  left: auto;  z-index: 2;  -webkit-transform-origin: 100% 50%;  -moz-transform-origin: 100% 50%;  -o-transform-origin: 100% 50%;  -ms-transform-origin: 100% 50%;  transform-origin: 100% 50%;  background: 'escape-nib - radial-gradient(black 15%, transparent 16%) 0 0, radial-gradient(black 15%, transparent 16%) 8px 8px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px';  background-color: #282828;  -webkit-background-size: 16px 16px;  -moz-background-size: 16px 16px;  background-size: 16px 16px;}body aside.closed {  -webkit-transform: translateX(-250px) rotateY(-20deg);  -moz-transform: translateX(-250px) rotateY(-20deg);  -o-transform: translateX(-250px) rotateY(-20deg);  -ms-transform: translateX(-250px) rotateY(-20deg);  transform: translateX(-250px) rotateY(-20deg);  -webkit-filter: blur(0px);}body aside nav {  padding: 50px 0 0;  margin: 0;}body aside nav li {  list-style: none;  padding: 15px 0;  margin: 5px 0;  text-indent: 15px;  background: rgba(0,0,0,0.5);  color: #fff;  font-size: 24pt;}body aside,body section,body article {  position: absolute;  left: 0;  right: 0;  top: 0;  bottom: 0;  -webkit-transition: all 1s ease-in-out;  -moz-transition: all 1s ease-in-out;  -o-transition: all 1s ease-in-out;  -ms-transition: all 1s ease-in-out;  transition: all 1s ease-in-out;}body .triangle {  position: absolute;  width: 0;  height: 0;  border: solid 15px transparent;  border-left-color: #444;  top: 50%;  left: 5px;  margin-top: -15px;}body .triangle:before {  position: absolute;  content: '';  width: 0;  height: 0;  top: -14px;  bottom: 0;  left: -13px;  right: 0;  border: solid 15px transparent;  border-left-color: rgba(255,255,255,0.4);}body .triangle:after {  position: absolute;  content: '';  width: 0;  height: 0;  top: -15px;  bottom: 0;  left: -14px;  right: 0;  border: solid 15px transparent;  border-left-color: #222;}body .tip {  color: #fff;  text-shadow: 0 1px 1px #000;  width: 200px;  -webkit-transform: rotateZ(-90deg);  -moz-transform: rotateZ(-90deg);  -o-transform: rotateZ(-90deg);  -ms-transform: rotateZ(-90deg);  transform: rotateZ(-90deg);  margin: 220px 0 90px 10px;  -webkit-transform-origin: 0 0;  -moz-transform-origin: 0 0;  -o-transform-origin: 0 0;  -ms-transform-origin: 0 0;  transform-origin: 0 0;  font-size: 12pt;}body article {  -webkit-transform: translateY(-100%) rotateX(20deg) scaleY(0.5);  -moz-transform: translateY(-100%) rotateX(20deg) scaleY(0.5);  -o-transform: translateY(-100%) rotateX(20deg) scaleY(0.5);  -ms-transform: translateY(-100%) rotateX(20deg) scaleY(0.5);  transform: translateY(-100%) rotateX(20deg) scaleY(0.5);  -webkit-transform-origin: 100% 100%;  -moz-transform-origin: 100% 100%;  -o-transform-origin: 100% 100%;  -ms-transform-origin: 100% 100%;  transform-origin: 100% 100%;  background: rgba(255,255,255,0.8);  -webkit-box-shadow: 0 0 1000px rgba(255,255,255,0.5) inset;  box-shadow: 0 0 1000px rgba(255,255,255,0.5) inset;  z-index: -1;  margin-left: 100px;  padding: 25px;}body article.active {  -webkit-transform: none;  -moz-transform: none;  -o-transform: none;  -ms-transform: none;  transform: none;  z-index: 1;  background: rgba(255,255,255,0.4);  border-left: solid 1px rgba(0,0,0,0.4);}body article.active ~ article {  -webkit-transform-origin: 100% 0;  -moz-transform-origin: 100% 0;  -o-transform-origin: 100% 0;  -ms-transform-origin: 100% 0;  transform-origin: 100% 0;  -webkit-transform: translateY(100%) rotateX(-20deg) scaleY(0.5);  -moz-transform: translateY(100%) rotateX(-20deg) scaleY(0.5);  -o-transform: translateY(100%) rotateX(-20deg) scaleY(0.5);  -ms-transform: translateY(100%) rotateX(-20deg) scaleY(0.5);  transform: translateY(100%) rotateX(-20deg) scaleY(0.5);}body article > h1 {  color: #fff;  text-shadow: 0 1px 2px #000;  font-size: 94pt;  padding: 0;  margin: 0;}";
 		element.id = "compiled_styles";
 		return element;
 	}
