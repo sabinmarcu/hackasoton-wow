@@ -1,9 +1,6 @@
-<section id="help">
-	<%- DepMan.render ["pages", "help"] %>
-</section>
-<section id="landing">
-	<%- DepMan.render [ "pages", "landing" ] %>
-</section>
-<section id="application">
-	<%- DepMan.render [ "app", "index"] %>
+<aside ng-class="{<%= @States.closed %>: 'closed', <%= @States.open %>: 'open'}[sidebarStatus]"><%- DepMan.render "menu", Pages: @Pages %></aside>
+<section ng-class="{<%= @States.open %>: 'closed', <%= @States.closed %>: 'open'}[sidebarStatus]">
+	<div class="triangle"></div>
+	<div class="tip">There is a menu here. <br>Try to hover, I dare you!</div>
+	<%- DepMan.render "pages", Pages: @Pages %>
 </section>

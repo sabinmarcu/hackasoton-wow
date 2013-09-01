@@ -1,0 +1,6 @@
+<nav>
+	<% for page, index in @Pages: %>
+		<% console.log page, index %>
+		<li ng-click='changeActiveTab(<%= index %>)'><%= page[0].toUpperCase() + page.substr 1 %></li>
+	<% end %>
+</nav>

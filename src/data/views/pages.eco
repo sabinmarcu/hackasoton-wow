@@ -1,0 +1,3 @@
+<% for page, index in @Pages: %>
+	<article ng-class='{<%= index %>: "active"}[activeTab]'><%- DepMan.render "pages/#{page}" %></article>
+<% end %>

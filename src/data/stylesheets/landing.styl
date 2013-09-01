@@ -1,0 +1,115 @@
+&
+	transform-origin 100% 50%
+	perspective 800px
+asidesize = 250px
+tiltangle = 20deg
+blursize = 0px
+section
+	background-color lighten(#269, 10)
+	background-size 100px 100px, 100px 100px, 20px 20px, 20px 20px
+	background-position -2px -2px, -2px -2px, -1px -1px, -1px -1px
+	background-image "escape-nib - linear-gradient(rgba(256, 256, 256, 0.8) 2px, transparent 2px), linear-gradient(90deg, rgba(256, 256, 256, 0.8) 2px, transparent 2px), linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)"
+	transform-origin 0 50%
+	z-index 1
+	transform none
+	perspective 600px
+	&.closed
+		transform translateX(asidesize) rotateY(tiltangle)
+		-webkit-filter blur(blursize)
+	overflow hidden
+aside
+	background red
+	width asidesize
+	left auto
+	z-index 2
+	transform-origin 100% 50%
+	background "escape-nib - radial-gradient(black 15%, transparent 16%) 0 0, radial-gradient(black 15%, transparent 16%) 8px 8px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px"
+	background-color #282828
+	background-size 16px 16px
+	&.closed
+		transform translateX(-(asidesize)) rotateY(-(tiltangle))
+		-webkit-filter blur(blursize)
+	nav
+		padding 50px 0 0
+		margin 0
+		li
+			list-style none
+			padding 15px 0
+			margin 5px 0
+			text-indent 15px
+			background rgba(0, 0, 0, 0.5)
+			color white
+			font-size 24pt
+
+aside, section, article
+	position absolute
+	left 0
+	right 0
+	top 0
+	bottom 0
+	transition all 1s ease-in-out
+
+.triangle 
+	position absolute
+	width 0
+	height 0
+	border solid 15px transparent
+	border-left-color #444
+	top 50%
+	left 5px
+	margin-top -15px
+	&:before
+		position absolute
+		content ""
+		width 0
+		height 0
+		top -14px
+		bottom 0
+		left -13px
+		right 0
+		border solid 15px transparent
+		border-left-color rgba(256, 256, 256, 0.4)
+	&:after
+		position absolute
+		content ""
+		width 0
+		height 0
+		top -15px
+		bottom 0
+		left -14px
+		right 0
+		border solid 15px transparent
+		border-left-color #222
+
+.tip
+	color white
+	text-shadow 0 1px 1px black
+	width 200px
+	transform rotateZ(-90deg)
+	margin 220px 0 90px 10px
+	transform-origin 0 0
+	font-size 12pt
+
+article
+	transform translateY(-100%) rotateX(tiltangle) scaleY(0.5)
+	transform-origin 100% 100%
+	background rgba(256, 256, 256, 0.8)
+	box-shadow 0 0 1000px rgba(256, 256, 256, 0.5) inset
+	z-index -1
+	margin-left 100px
+	padding 25px
+	&.active
+		transform none
+		z-index 1
+		background rgba(256, 256, 256, 0.4)
+		border-left solid 1px rgba(0, 0, 0, 0.4)
+		~ article
+			transform-origin 100% 0
+			transform translateY(100%) rotateX(-(tiltangle)) scaleY(0.5)
+
+	> h1
+		color white
+		text-shadow 0 1px 2px black
+		font-size 94pt
+		padding 0
+		margin 0
